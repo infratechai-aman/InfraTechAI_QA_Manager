@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   CheckCircle, XCircle, AlertTriangle, Circle, 
   Search, ArrowLeft, ArrowRight, Save, Calendar, 
-  Bug as BugIcon, Command, Keyboard, Check, ListOrdered, CheckCircle2 
+  Bug as BugIcon, Command, Keyboard, Check, 
+  ListOrdered, CheckCircle2, Sparkles, Monitor, RefreshCw
 } from 'lucide-react';
-
 import { formatDate, getStatusConfig } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
 
@@ -57,7 +57,7 @@ export const ExecutionWorkspace = ({
     (id, updates) => {
       setSaveStatus('Saving...');
       updateTest(id, updates);
-      const timer = setTimeout(() => setSaveStatus('Saved'), 400);
+      const timer = setTimeout(() => setSaveStatus('Saved'), 300);
       return () => clearTimeout(timer);
     },
     [updateTest]
@@ -82,7 +82,6 @@ export const ExecutionWorkspace = ({
           testCaseId: currentTest.id,
           projectId: project?.id,
         });
-
         setIsBugModalOpen(true);
       }
     },
@@ -94,6 +93,22 @@ export const ExecutionWorkspace = ({
     onAddBug(formData);
     setIsBugModalOpen(false);
     setBugForm(null);
+  };
+
+  // Quick template for Actual Result
+  const handleCopyExpectedToActual = () => {
+    if (!currentTest) return;
+    const text = currentTest.expectedResult 
+      ? `Observed behavior matches expectation: ${currentTest.expectedResult}`
+      : 'Functionality executed as expected without any discrepancies.';
+    handleUpdate(currentTest.id, { actualResult: text });
+  };
+
+  // Append environment tag to tester notes
+  const handleAppendEnvTag = (tag) => {
+    if (!currentTest) return;
+    const current = currentTest.testerNotes ? `${currentTest.testerNotes} | ${tag}` : tag;
+    handleUpdate(currentTest.id, { testerNotes: current });
   };
 
   // Keyboard navigation shortcuts
@@ -137,23 +152,29 @@ export const ExecutionWorkspace = ({
   }, [handleStatusUpdate, filteredTests.length]);
 
   return (
-    <div className="flex h-full bg-white overflow-hidden w-full">
+    <div className="flex h-full bg-slate-50 overflow-hidden w-full">
       
-      {/* Left Sidebar - Test List */}
-      <div className="w-80 bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 z-10">
+      {/* Left Sidebar - Test Case List */}
+      <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10 shadow-xs">
         
         {/* Controls Header */}
-        <div className="p-4 space-y-3 border-b border-slate-200 bg-white">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Active Test Suite
-          </label>
+        <div className="p-4 space-y-2.5 border-b border-slate-100 bg-white">
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Test Suite
+            </label>
+            <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+              {filteredTests.length} Tests
+            </span>
+          </div>
+
           <select
             value={selectedFileId}
             onChange={(e) => {
               setSelectedFileId(e.target.value);
               setCurrentIndex(0);
             }}
-            className="w-full p-2.5 bg-slate-100 rounded-xl text-xs font-bold text-slate-800 border-none outline-none hover:bg-slate-200/70 transition-colors cursor-pointer"
+            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none hover:bg-slate-100/80 transition-colors cursor-pointer"
           >
             {files.map((f) => (
               <option key={f.id} value={f.id}>
@@ -168,10 +189,10 @@ export const ExecutionWorkspace = ({
             <input
               id="execSearchInput"
               type="text"
-              placeholder="Filter tests (Press '/')"
+              placeholder="Search tests (Press '/')"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white shadow-xs"
+              className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white"
             />
           </div>
 
@@ -182,7 +203,7 @@ export const ExecutionWorkspace = ({
               setFilter(e.target.value);
               setCurrentIndex(0);
             }}
-            className="w-full p-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-700 font-semibold outline-none cursor-pointer"
+            className="w-full p-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 font-semibold outline-none cursor-pointer"
           >
             <option value="All">All Statuses ({filteredTests.length})</option>
             <option value="Not Run">Not Run</option>
@@ -193,7 +214,7 @@ export const ExecutionWorkspace = ({
         </div>
 
         {/* Test Cases List */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 bg-slate-50/50">
           {filteredTests.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-400 flex flex-col items-center">
               No test cases match criteria.
@@ -208,10 +229,10 @@ export const ExecutionWorkspace = ({
                 <div
                   key={tc.id}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                  className={`p-3 rounded-xl cursor-pointer transition-all border text-left ${
                     isActive
-                      ? 'bg-white border-indigo-300 shadow-sm ring-2 ring-indigo-500/10'
-                      : 'bg-transparent border-transparent hover:bg-slate-200/50 hover:border-slate-300/40'
+                      ? 'bg-white border-indigo-400 shadow-sm ring-2 ring-indigo-500/15'
+                      : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
@@ -232,23 +253,23 @@ export const ExecutionWorkspace = ({
           )}
         </div>
 
-        {/* Keyboard Shortcuts Helper Footer */}
-        <div className="p-3 bg-slate-100/70 border-t border-slate-200 text-[10px] text-slate-500 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+        {/* Shortcuts Footer */}
+        <div className="p-3 bg-white border-t border-slate-200 text-[10px] text-slate-500 flex items-center justify-between">
+          <div className="flex items-center gap-1 text-slate-400">
             <Keyboard size={12} />
-            <span>Shortcuts:</span>
+            <span className="font-semibold">Hotkeys:</span>
           </div>
-          <div className="flex gap-1.5 font-mono">
-            <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">P: Pass</span>
-            <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">F: Fail</span>
-            <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">B: Block</span>
-            <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">N: Next</span>
+          <div className="flex gap-1 font-mono text-[10px]">
+            <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">P</span>
+            <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">F</span>
+            <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">B</span>
+            <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">N</span>
           </div>
         </div>
       </div>
 
       {/* Main Execution Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white relative">
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/70 relative overflow-hidden">
         {!currentTest ? (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 space-y-3">
             <Command size={44} className="opacity-20" />
@@ -256,9 +277,9 @@ export const ExecutionWorkspace = ({
           </div>
         ) : (
           <>
-            {/* Top Navigation Bar */}
-            <div className="flex items-center justify-between px-8 py-3.5 border-b border-slate-100 bg-white z-10 shrink-0">
-              <div className="flex items-center gap-3">
+            {/* Top Navigation & Status Bar */}
+            <div className="flex items-center justify-between px-6 lg:px-8 py-3.5 border-b border-slate-200/80 bg-white z-10 shrink-0">
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
                   <button
                     onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
@@ -277,119 +298,220 @@ export const ExecutionWorkspace = ({
                     <ArrowRight size={16} />
                   </button>
                 </div>
-                <span className="text-xs font-semibold text-slate-500">
+                <div className="text-xs font-semibold text-slate-500">
                   Test <strong className="text-slate-900 mx-0.5">{currentIndex + 1}</strong> of {filteredTests.length}
-                </span>
+                </div>
               </div>
 
-              {/* Auto-save Pill */}
-              <div className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200">
-                {saveStatus === 'Saving...' ? (
-                  <Save size={13} className="animate-pulse text-indigo-500" />
-                ) : (
-                  <Check size={13} className="text-emerald-500" />
-                )}
-                <span className={saveStatus === 'Saved' ? 'text-slate-600' : 'text-indigo-600'}>
-                  {saveStatus}
-                </span>
+              {/* Status Badge & Auto-save Pill */}
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200">
+                  {saveStatus === 'Saving...' ? (
+                    <Save size={13} className="animate-pulse text-indigo-500" />
+                  ) : (
+                    <Check size={13} className="text-emerald-500" />
+                  )}
+                  <span className={saveStatus === 'Saved' ? 'text-slate-600' : 'text-indigo-600'}>
+                    {saveStatus}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Test Details Document Area */}
-            <div className="flex-1 overflow-y-auto w-full relative">
-              <div className="p-8 lg:p-12 max-w-3xl mx-auto space-y-8 pb-32">
+            {/* Balanced Two-Column Execution Workspace */}
+            <div className="flex-1 overflow-y-auto w-full p-6 lg:p-8 pb-32">
+              <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
-                {/* Title and Metadata Block */}
-                <div>
-                  <div className="flex flex-wrap items-center gap-2.5 mb-3">
-                    <span className="font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-xs font-bold tracking-tight">
-                      {currentTest.externalId}
-                    </span>
-                    <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
-                      <Calendar size={12} /> {formatDate(currentTest.createdAt)}
-                    </span>
+                {/* LEFT COLUMN: Test Specification (Steps + Expected) - 7 Columns */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  {/* Card: Test Header */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-xs font-bold tracking-tight">
+                        {currentTest.externalId}
+                      </span>
+                      <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
+                        <Calendar size={12} /> {formatDate(currentTest.createdAt)}
+                      </span>
 
-                    {/* Linked Bugs */}
-                    {bugs
-                      .filter((b) => b.testCaseId === currentTest.id)
-                      .map((b) => (
-                        <span
-                          key={b.id}
-                          className="flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-lg border bg-rose-50 text-rose-700 border-rose-200 shadow-xs"
-                          title={b.title}
-                        >
-                          <BugIcon size={12} /> {b.bugId} ({b.status})
-                        </span>
-                      ))}
+                      {/* Linked Bugs */}
+                      {bugs
+                        .filter((b) => b.testCaseId === currentTest.id)
+                        .map((b) => (
+                          <span
+                            key={b.id}
+                            className="flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-lg border bg-rose-50 text-rose-700 border-rose-200 shadow-xs"
+                            title={b.title}
+                          >
+                            <BugIcon size={12} /> {b.bugId} ({b.status})
+                          </span>
+                        ))}
+                    </div>
+
+                    <h1 className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-tight">
+                      {currentTest.title}
+                    </h1>
                   </div>
 
-                  <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 leading-tight">
-                    {currentTest.title}
-                  </h1>
-                </div>
+                  {/* Card: Execution Steps */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <ListOrdered size={15} className="text-indigo-600" />
+                        <span>Execution Steps</span>
+                      </h3>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase">Procedure</span>
+                    </div>
 
-                {/* Steps to Execute (If Available) */}
-                {currentTest.steps && (
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                      <ListOrdered size={15} className="text-indigo-600" />
-                      <span>Test Execution Steps</span>
-                    </h3>
-                    <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl text-slate-800 font-mono text-xs whitespace-pre-wrap leading-relaxed shadow-xs">
-                      {currentTest.steps}
+                    <div className="bg-slate-50/80 border border-slate-200/80 p-5 rounded-xl text-slate-800 font-mono text-xs whitespace-pre-wrap leading-relaxed">
+                      {currentTest.steps || (
+                        <span className="text-slate-400 italic font-sans">
+                          No specific steps documented. Follow test title requirements.
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
 
-                {/* Expected Result */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                    <CheckCircle2 size={15} className="text-emerald-600" />
-                    <span>Expected Result</span>
-                  </h3>
-                  <div className="bg-emerald-50/40 border border-emerald-200/70 p-5 rounded-2xl text-emerald-950 font-medium text-sm whitespace-pre-wrap leading-relaxed shadow-xs">
-                    {currentTest.expectedResult || (
-                      <span className="text-slate-400 italic">No expected result documented.</span>
-                    )}
+                  {/* Card: Expected Result */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 size={15} className="text-emerald-600" />
+                        <span>Expected Result</span>
+                      </h3>
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Target Outcome
+                      </span>
+                    </div>
+
+                    <div className="bg-emerald-50/40 border border-emerald-200/70 p-5 rounded-xl text-emerald-950 font-medium text-sm whitespace-pre-wrap leading-relaxed">
+                      {currentTest.expectedResult || (
+                        <span className="text-slate-400 italic font-normal">
+                          No expected result documented.
+                        </span>
+                      )}
+                    </div>
                   </div>
+
                 </div>
 
+                {/* RIGHT COLUMN: Execution Workbench (Actual Result + Notes + Quick Actions) - 5 Columns */}
+                <div className="lg:col-span-5 space-y-6">
+                  
+                  {/* Card: Quick Decision Bar */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Mark Result
+                      </span>
+                      <span className="text-[10px] text-slate-400">Current: <strong>{currentTest.status}</strong></span>
+                    </div>
 
-                {/* Actual Result & Tester Notes Textareas */}
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      Actual Result
-                    </h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handleStatusUpdate('Pass')}
+                        className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          currentTest.status === 'Pass'
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 ring-2 ring-emerald-500/20'
+                            : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-200'
+                        }`}
+                        title="Pass (P)"
+                      >
+                        <CheckCircle size={15} /> Pass
+                      </button>
+
+                      <button
+                        onClick={() => handleStatusUpdate('Fail')}
+                        className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          currentTest.status === 'Fail'
+                            ? 'bg-rose-600 text-white shadow-md shadow-rose-200 ring-2 ring-rose-500/20'
+                            : 'bg-rose-50 hover:bg-rose-100/80 text-rose-700 border border-rose-200'
+                        }`}
+                        title="Fail & Log Bug (F)"
+                      >
+                        <XCircle size={15} /> Fail
+                      </button>
+
+                      <button
+                        onClick={() => handleStatusUpdate('Blocked')}
+                        className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          currentTest.status === 'Blocked'
+                            ? 'bg-amber-500 text-white shadow-md shadow-amber-200 ring-2 ring-amber-400/20'
+                            : 'bg-amber-50 hover:bg-amber-100/80 text-amber-700 border border-amber-200'
+                        }`}
+                        title="Blocked (B)"
+                      >
+                        <AlertTriangle size={15} /> Blocked
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card: Actual Result Textarea */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Actual Observed Result
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleCopyExpectedToActual}
+                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer bg-indigo-50/70 hover:bg-indigo-100/70 px-2 py-1 rounded-lg border border-indigo-100 transition-colors"
+                        title="Copy expectation into actual result"
+                      >
+                        <Sparkles size={12} /> Same as expected
+                      </button>
+                    </div>
+
                     <textarea
                       value={currentTest.actualResult || ''}
                       onChange={(e) => handleUpdate(currentTest.id, { actualResult: e.target.value })}
-                      placeholder="Describe the observed outcome during execution..."
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none resize-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium text-slate-800 shadow-xs"
+                      placeholder="Type what actually happened during testing..."
+                      className="w-full p-4 bg-slate-50/60 border border-slate-200 rounded-xl text-xs outline-none resize-none placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium text-slate-800 leading-relaxed"
                       rows={4}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      Tester Notes & Environment Details
-                    </h3>
+                  {/* Card: Tester Notes & Environment */}
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <Monitor size={14} className="text-slate-400" />
+                        <span>Tester Remarks & Environment</span>
+                      </h3>
+                    </div>
+
+                    {/* Quick Preset Tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Chrome 124', 'Safari Mobile', 'Staging v2.1', 'Localhost'].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => handleAppendEnvTag(tag)}
+                          className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition-colors cursor-pointer"
+                        >
+                          + {tag}
+                        </button>
+                      ))}
+                    </div>
+
                     <textarea
                       value={currentTest.testerNotes || ''}
                       onChange={(e) => handleUpdate(currentTest.id, { testerNotes: e.target.value })}
-                      placeholder="Add staging environment, browser version, or execution remarks..."
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-xs outline-none resize-none placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-400/10 transition-all text-slate-700 shadow-xs"
+                      placeholder="Add browser versions, test credentials, or environment remarks..."
+                      className="w-full p-4 bg-slate-50/60 border border-slate-200 rounded-xl text-xs outline-none resize-none placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-4 focus:ring-slate-400/10 transition-all text-slate-700 leading-relaxed"
                       rows={3}
                     />
                   </div>
+
                 </div>
 
               </div>
             </div>
 
-            {/* Floating Action Dock */}
+            {/* Floating Action Dock (Bottom Center) */}
             <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
-              <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 p-2 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] flex gap-2 pointer-events-auto items-center">
+              <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 p-2 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex gap-2 pointer-events-auto items-center">
                 <button
                   onClick={() => handleStatusUpdate('Pass')}
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-all shadow-sm group cursor-pointer"

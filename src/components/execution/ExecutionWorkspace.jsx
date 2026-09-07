@@ -3,7 +3,8 @@ import {
   CheckCircle, XCircle, AlertTriangle, Circle, 
   Search, ArrowLeft, ArrowRight, Save, Calendar, 
   Bug as BugIcon, Command, Keyboard, Check, 
-  ListOrdered, CheckCircle2, Sparkles, Monitor, RefreshCw
+  ListOrdered, CheckCircle2, Sparkles, Monitor, 
+  RefreshCw, Flag, Trophy
 } from 'lucide-react';
 import { formatDate, getStatusConfig } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
@@ -14,7 +15,8 @@ export const ExecutionWorkspace = ({
   project, 
   files, 
   onAddBug, 
-  bugs 
+  bugs,
+  onNavigateToBugs,
 }) => {
   const [selectedFileId, setSelectedFileId] = useState(files[0]?.id || '');
   const [filter, setFilter] = useState('All');
@@ -23,25 +25,45 @@ export const ExecutionWorkspace = ({
   const [saveStatus, setSaveStatus] = useState('Saved');
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [bugForm, setBugForm] = useState(null);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
-  // Sync selected file if files change
+  // Sync selected file when files prop changes (e.g. after project switch)
   useEffect(() => {
-    if (!selectedFileId && files.length > 0) {
+    if (files.length > 0) {
       setSelectedFileId(files[0].id);
+      setCurrentIndex(0);
+    } else {
+      setSelectedFileId('');
     }
-  }, [files, selectedFileId]);
+  }, [files.map(f => f.id).join(',')]);
 
-  // Filter test cases
+  // All tests in the currently selected suite (regardless of filter)
+  const suiteTests = useMemo(() => {
+    return tests.filter(t => selectedFileId ? t.fileId === selectedFileId : true);
+  }, [tests, selectedFileId]);
+
+  // Filtered tests for navigation
   const filteredTests = useMemo(() => {
-    return tests.filter((t) => {
-      const matchFile = selectedFileId ? t.fileId === selectedFileId : true;
+    return suiteTests.filter((t) => {
       const matchFilter = filter === 'All' || t.status === filter;
       const matchSearch =
         t.externalId.toLowerCase().includes(search.toLowerCase()) ||
         t.title.toLowerCase().includes(search.toLowerCase());
-      return matchFile && matchFilter && matchSearch;
+      return matchFilter && matchSearch;
     });
-  }, [tests, filter, search, selectedFileId]);
+  }, [suiteTests, filter, search]);
+
+  // Progress computation
+  const progressStats = useMemo(() => {
+    const total = suiteTests.length;
+    const passed = suiteTests.filter(t => t.status === 'Pass').length;
+    const failed = suiteTests.filter(t => t.status === 'Fail').length;
+    const blocked = suiteTests.filter(t => t.status === 'Blocked').length;
+    const notRun = suiteTests.filter(t => t.status === 'Not Run').length;
+    const executed = passed + failed + blocked;
+    const pct = total > 0 ? Math.round((executed / total) * 100) : 0;
+    return { total, passed, failed, blocked, notRun, executed, pct };
+  }, [suiteTests]);
 
   // Keep index within bounds
   useEffect(() => {
@@ -88,11 +110,15 @@ export const ExecutionWorkspace = ({
     [currentTest, currentIndex, filteredTests.length, handleUpdate, project]
   );
 
-  // Submit bug from modal
+  // Submit bug from modal — always records in Bugs & Issues
   const handleSaveBug = (formData) => {
-    onAddBug(formData);
+    onAddBug({ ...formData, projectId: project?.id });
     setIsBugModalOpen(false);
     setBugForm(null);
+    // Advance to next test after logging bug
+    if (currentIndex < filteredTests.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
   };
 
   // Quick template for Actual Result
@@ -183,6 +209,32 @@ export const ExecutionWorkspace = ({
             ))}
           </select>
 
+          {/* Progress Bar */}
+          {progressStats.total > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] font-bold">
+                <span className="text-slate-500">Progress</span>
+                <span className={`${progressStats.pct === 100 ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                  {progressStats.pct}% Executed
+                </span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    progressStats.pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'
+                  }`}
+                  style={{ width: `${progressStats.pct}%` }}
+                />
+              </div>
+              <div className="flex gap-2 text-[10px] font-semibold">
+                <span className="text-emerald-600">{progressStats.passed}P</span>
+                <span className="text-rose-600">{progressStats.failed}F</span>
+                <span className="text-amber-600">{progressStats.blocked}B</span>
+                <span className="text-slate-400">{progressStats.notRun} Left</span>
+              </div>
+            </div>
+          )}
+
           {/* Search */}
           <div className="relative">
             <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
@@ -205,7 +257,7 @@ export const ExecutionWorkspace = ({
             }}
             className="w-full p-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 font-semibold outline-none cursor-pointer"
           >
-            <option value="All">All Statuses ({filteredTests.length})</option>
+            <option value="All">All Statuses ({suiteTests.length})</option>
             <option value="Not Run">Not Run</option>
             <option value="Pass">Pass</option>
             <option value="Fail">Fail</option>
@@ -252,6 +304,23 @@ export const ExecutionWorkspace = ({
             })
           )}
         </div>
+
+        {/* Complete Execution Button */}
+        {progressStats.total > 0 && (
+          <div className="p-3 border-t border-slate-200 bg-white space-y-2">
+            <button
+              onClick={() => setShowCompleteModal(true)}
+              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                progressStats.notRun === 0
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-200'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200'
+              }`}
+            >
+              <Flag size={14} />
+              {progressStats.notRun === 0 ? 'Complete Execution ✓' : `Complete (${progressStats.notRun} remaining)`}
+            </button>
+          </div>
+        )}
 
         {/* Shortcuts Footer */}
         <div className="p-3 bg-white border-t border-slate-200 text-[10px] text-slate-500 flex items-center justify-between">
@@ -305,6 +374,13 @@ export const ExecutionWorkspace = ({
 
               {/* Status Badge & Auto-save Pill */}
               <div className="flex items-center gap-3">
+                {/* Overall progress pill */}
+                <div className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700">
+                  <span>{progressStats.pct}% done</span>
+                  <span className="text-indigo-400">·</span>
+                  <span className="text-emerald-600">{progressStats.passed}P</span>
+                  <span className="text-rose-600">{progressStats.failed}F</span>
+                </div>
                 <div className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200">
                   {saveStatus === 'Saving...' ? (
                     <Save size={13} className="animate-pulse text-indigo-500" />
@@ -396,7 +472,7 @@ export const ExecutionWorkspace = ({
 
                 </div>
 
-                {/* RIGHT COLUMN: Execution Workbench (Actual Result + Notes + Quick Actions) - 5 Columns */}
+                {/* RIGHT COLUMN: Execution Workbench - 5 Columns */}
                 <div className="lg:col-span-5 space-y-6">
                   
                   {/* Card: Quick Decision Bar */}
@@ -547,6 +623,95 @@ export const ExecutionWorkspace = ({
           </>
         )}
       </div>
+
+      {/* Complete Execution Summary Modal */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fadeIn">
+            <div className="text-center mb-6">
+              <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-4 ${
+                progressStats.failed > 0 ? 'bg-rose-50' : 'bg-emerald-50'
+              }`}>
+                <Trophy size={32} className={progressStats.failed > 0 ? 'text-amber-500' : 'text-emerald-500'} />
+              </div>
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-1">
+                Execution {progressStats.notRun > 0 ? 'Summary' : 'Complete!'}
+              </h2>
+              <p className="text-slate-500 text-sm">
+                {progressStats.notRun > 0
+                  ? `${progressStats.notRun} test(s) still pending. Results so far:`
+                  : 'All tests have been executed. Here are the results:'}
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
+                <div className="text-3xl font-extrabold text-emerald-600">{progressStats.passed}</div>
+                <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider mt-1">Passed</div>
+              </div>
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-center">
+                <div className="text-3xl font-extrabold text-rose-600">{progressStats.failed}</div>
+                <div className="text-xs font-bold text-rose-700 uppercase tracking-wider mt-1">Failed</div>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                <div className="text-3xl font-extrabold text-amber-600">{progressStats.blocked}</div>
+                <div className="text-xs font-bold text-amber-700 uppercase tracking-wider mt-1">Blocked</div>
+              </div>
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                <div className="text-3xl font-extrabold text-slate-500">{progressStats.notRun}</div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Not Run</div>
+              </div>
+            </div>
+
+            {/* Pass rate bar */}
+            <div className="mb-6 space-y-1">
+              <div className="flex justify-between text-xs font-bold">
+                <span className="text-slate-600">Pass Rate</span>
+                <span className="text-indigo-600">
+                  {progressStats.executed > 0 
+                    ? Math.round((progressStats.passed / progressStats.executed) * 100)
+                    : 0}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all"
+                  style={{ 
+                    width: progressStats.executed > 0 
+                      ? `${Math.round((progressStats.passed / progressStats.executed) * 100)}%` 
+                      : '0%' 
+                  }}
+                />
+              </div>
+            </div>
+
+            {progressStats.failed > 0 && (
+              <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3 mb-4 font-medium text-center">
+                🐛 {progressStats.failed} bug(s) have been logged in Bugs &amp; Issues automatically.
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCompleteModal(false)}
+                className="flex-1 py-2.5 px-4 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Keep Testing
+              </button>
+              <button
+                onClick={() => {
+                  setShowCompleteModal(false);
+                  if (onNavigateToBugs && progressStats.failed > 0) onNavigateToBugs();
+                }}
+                className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm"
+              >
+                {progressStats.failed > 0 ? 'View Bugs' : 'Done'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

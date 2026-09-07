@@ -44,13 +44,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       setTests(loadedTests);
       setBugs(loadedBugs);
 
-      if (loadedProjects.length > 0) {
-        setActiveProjectId(loadedProjects[0].id);
-        setActiveTab('dashboard');
-      } else {
-        setActiveProjectId(null);
-        setActiveTab('projects');
-      }
+      // Always start at the Projects screen — user must explicitly open a project
+      setActiveProjectId(null);
+      setActiveTab('projects');
 
       // 2. Check for latest cloud updates from user's private Firestore collection
       try {
@@ -60,9 +56,6 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           if (cloudData.files) setFiles(cloudData.files);
           if (cloudData.tests) setTests(cloudData.tests);
           if (cloudData.bugs) setBugs(cloudData.bugs);
-          if (cloudData.projects && cloudData.projects.length > 0) {
-            setActiveProjectId(cloudData.projects[0].id);
-          }
         }
       } catch (err) {
         console.warn('Private cloud pull check completed:', err);
@@ -92,6 +85,12 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     });
     setActiveProjectId(newProject.id);
     setActiveTab('dashboard');
+  };
+
+  // --- Exit Project (enforce isolation) ---
+  const handleExitProject = () => {
+    setActiveProjectId(null);
+    setActiveTab('projects');
   };
 
   const handleDeleteProject = (projectId) => {
@@ -319,6 +318,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
         onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
+        onExitProject={handleExitProject}
       />
 
       {/* Main Content Area */}
@@ -356,6 +356,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             files={projectFiles}
             onAddBug={handleAddBug}
             bugs={projectBugs}
+            onNavigateToBugs={() => setActiveTab('bugs')}
           />
         )}
 

@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { 
   CheckCircle, Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List, Trash2, Cloud, 
-  Download, UploadCloud, LogOut, UserCheck
+  Download, UploadCloud, LogOut, LogIn, DoorOpen
 } from 'lucide-react';
 import { isFirebaseConfigured } from '../../config/firebase';
 
@@ -17,7 +17,8 @@ export const Sidebar = ({
   onWipeData,
   onExportBackup,
   onImportBackup,
-  onOpenFirebaseModal
+  onOpenFirebaseModal,
+  onExitProject,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -95,44 +96,55 @@ export const Sidebar = ({
       {/* Nav List */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
         
-        {/* All Projects link */}
-        <button
-          onClick={() => setActiveTab('projects')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-            activeTab === 'projects'
-              ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
-              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-          }`}
-        >
-          <Briefcase size={18} className={activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-400'} />
-          <span>All Projects</span>
-        </button>
+        {/* === NOT INSIDE A PROJECT: Show "All Projects" button === */}
+        {!activeProjectId && (
+          <button
+            onClick={() => setActiveTab('projects')}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+              activeTab === 'projects'
+                ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            <Briefcase size={18} className={activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-400'} />
+            <span>All Projects</span>
+          </button>
+        )}
 
-        {/* Active Project Card */}
-        <div className="space-y-1">
-          <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center mb-1.5">
-            <span>Workspace</span>
-            {activeProject && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
-          </div>
-
-          {activeProject ? (
-            <div 
-              onClick={() => setActiveTab('projects')}
-              className="px-3.5 py-2.5 bg-slate-50 hover:bg-indigo-50/50 rounded-xl border border-slate-200/80 cursor-pointer transition-colors group mb-3"
-              title="Click to switch project"
-            >
-              <p className="text-xs font-bold text-slate-900 truncate group-hover:text-indigo-700">
-                {activeProject.name}
-              </p>
-              <p className="text-[10px] text-slate-400 truncate mt-0.5">Switch project →</p>
+        {/* === INSIDE A PROJECT: Show project context + Exit button === */}
+        {activeProjectId && (
+          <div className="space-y-2">
+            {/* Active Project Display Card */}
+            <div className="px-3.5 py-3 bg-indigo-50/80 rounded-xl border border-indigo-200/80">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 bg-indigo-600 rounded-lg text-white shrink-0 mt-0.5">
+                  <Briefcase size={13} />
+                </div>
+                <div className="overflow-hidden flex-1 min-w-0">
+                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Active Project</p>
+                  <p className="text-xs font-extrabold text-indigo-900 truncate">{activeProject?.name || 'Project'}</p>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="px-3 py-2 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-400 mb-3">
-              No project selected
+
+            {/* Exit Workspace Button */}
+            <button
+              onClick={onExitProject}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-rose-100 hover:border-rose-200"
+            >
+              <DoorOpen size={17} className="text-rose-500" />
+              <span>Exit Workspace</span>
+            </button>
+          </div>
+        )}
+
+        {/* Core Module Nav Items */}
+        <div className="space-y-1">
+          {activeProjectId && (
+            <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+              Workspace
             </div>
           )}
-
-          {/* Core Modules */}
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;

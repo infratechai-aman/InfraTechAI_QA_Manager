@@ -13,9 +13,12 @@ import { BulkImportView } from './components/import/BulkImportView';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { LoginView } from './components/auth/LoginView';
 
-function MainApp() {
-  const { currentUser, logout } = useAuth();
-  const userId = currentUser?.uid || null;
+/**
+ * AuthenticatedWorkspace is only rendered when currentUser is valid.
+ * This guarantees consistent hook execution on every render (no React Error #310).
+ */
+function AuthenticatedWorkspace({ currentUser, logout }) {
+  const userId = currentUser.uid;
 
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState([]);
@@ -57,7 +60,7 @@ function MainApp() {
           if (cloudData.files) setFiles(cloudData.files);
           if (cloudData.tests) setTests(cloudData.tests);
           if (cloudData.bugs) setBugs(cloudData.bugs);
-          if (cloudData.projects && cloudData.projects.length > 0 && !activeProjectId) {
+          if (cloudData.projects && cloudData.projects.length > 0) {
             setActiveProjectId(cloudData.projects[0].id);
           }
         }
@@ -68,11 +71,6 @@ function MainApp() {
 
     initUserData();
   }, [userId]);
-
-  // If user is not authenticated, display the login view
-  if (!currentUser) {
-    return <LoginView />;
-  }
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const projectFiles = files.filter((f) => f.projectId === activeProjectId);
@@ -320,7 +318,7 @@ function MainApp() {
         onWipeData={handleWipeData}
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(false)}
+        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -403,6 +401,16 @@ function MainApp() {
 
     </div>
   );
+}
+
+function MainApp() {
+  const { currentUser, logout } = useAuth();
+
+  if (!currentUser) {
+    return <LoginView />;
+  }
+
+  return <AuthenticatedWorkspace currentUser={currentUser} logout={logout} />;
 }
 
 export default function App() {

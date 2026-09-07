@@ -1,4 +1,3 @@
-import { SEED_PROJECTS, SEED_FILES, SEED_TESTS, SEED_BUGS } from '../constants/seedData';
 import { firestore, isFirebaseConfigured } from '../config/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -51,7 +50,7 @@ export const db = {
   // --- Projects ---
   getProjects: (userId) => {
     const key = getStorageKey('projects', userId);
-    return load(key, SEED_PROJECTS);
+    return load(key, []);
   },
   saveProjects: (projects, userId) => {
     const key = getStorageKey('projects', userId);
@@ -62,7 +61,7 @@ export const db = {
   // --- Test Files ---
   getFiles: (userId) => {
     const key = getStorageKey('files', userId);
-    return load(key, SEED_FILES);
+    return load(key, []);
   },
   saveFiles: (files, userId) => {
     const key = getStorageKey('files', userId);
@@ -73,7 +72,7 @@ export const db = {
   // --- Test Cases ---
   getTestCases: (userId) => {
     const key = getStorageKey('tests', userId);
-    return load(key, SEED_TESTS);
+    return load(key, []);
   },
   saveTestCases: (tests, userId) => {
     const key = getStorageKey('tests', userId);
@@ -84,7 +83,7 @@ export const db = {
   // --- Bugs & Issues ---
   getBugs: (userId) => {
     const key = getStorageKey('bugs', userId);
-    return load(key, SEED_BUGS);
+    return load(key, []);
   },
   saveBugs: (bugs, userId) => {
     const key = getStorageKey('bugs', userId);

@@ -308,17 +308,21 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
           </button>
 
           {/* Title Input */}
-          <input
-            type="text"
-            value={editTitle}
-            onChange={e => { setEditTitle(e.target.value); setIsDirty(true); }}
-            className="flex-1 min-w-0 text-lg font-extrabold text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-indigo-500 transition-colors py-0.5"
-            placeholder="Report title..."
-          />
+          <div className="flex items-center gap-2 flex-1 min-w-0 max-w-xl group bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 rounded-xl px-3 py-1.5 transition-all">
+            <Edit3 size={14} className="text-slate-400 group-focus-within:text-indigo-600 shrink-0" />
+            <input
+              type="text"
+              value={editTitle}
+              onChange={e => { setEditTitle(e.target.value); setIsDirty(true); }}
+              className="flex-1 min-w-0 text-sm sm:text-base font-bold text-slate-900 bg-transparent outline-none placeholder:text-slate-400"
+              placeholder="Enter report title..."
+              title="Click to edit report title"
+            />
+          </div>
 
           {isDirty && (
-            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
-              Unsaved
+            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full shrink-0 animate-pulse">
+              Unsaved changes
             </span>
           )}
         </div>

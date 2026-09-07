@@ -10,6 +10,7 @@ import { ExecutionWorkspace } from './components/execution/ExecutionWorkspace';
 import { TestFilesView } from './components/testFiles/TestFilesView';
 import { BugsView } from './components/bugs/BugsView';
 import { BulkImportView } from './components/import/BulkImportView';
+import { ReportsView } from './components/reports/ReportsView';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { LoginView } from './components/auth/LoginView';
 
@@ -26,6 +27,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const [tests, setTests] = useState([]);
   const [bugs, setBugs] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
+  const [reports, setReports] = useState([]);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
 
   // Initialize and load data whenever authenticated user changes
@@ -43,6 +45,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       setFiles(loadedFiles);
       setTests(loadedTests);
       setBugs(loadedBugs);
+      setReports(db.getReports(userId));
 
       // Always start at the Projects screen — user must explicitly open a project
       setActiveProjectId(null);
@@ -389,6 +392,34 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onAddTest={handleAddTestCase}
             onDeleteTest={handleDeleteTest}
             onUpdateTest={handleUpdateTest}
+          />
+        )}
+
+        {activeTab === 'reports' && (
+          <ReportsView
+            reports={reports.filter(r => r.projectId === activeProjectId)}
+            project={activeProject}
+            onAddReport={(report) => {
+              setReports(prev => {
+                const updated = [report, ...prev];
+                db.saveReports(updated, userId);
+                return updated;
+              });
+            }}
+            onUpdateReport={(id, updates) => {
+              setReports(prev => {
+                const updated = prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r);
+                db.saveReports(updated, userId);
+                return updated;
+              });
+            }}
+            onDeleteReport={(id) => {
+              setReports(prev => {
+                const updated = prev.filter(r => r.id !== id);
+                db.saveReports(updated, userId);
+                return updated;
+              });
+            }}
           />
         )}
       </main>

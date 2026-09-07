@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { 
   Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List,
-  Download, UploadCloud, LogOut, DoorOpen
+  Download, UploadCloud, LogOut, DoorOpen, BookOpen
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -31,6 +31,7 @@ export const Sidebar = ({
     },
     { id: 'import', icon: Upload, label: 'Bulk Import', disabled: !activeProjectId },
     { id: 'files', icon: List, label: 'All Test Cases', disabled: !activeProjectId },
+    { id: 'reports', icon: BookOpen, label: 'Reports', disabled: !activeProjectId },
   ];
 
   const handleFileChange = (e) => {

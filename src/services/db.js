@@ -91,6 +91,17 @@ export const db = {
     syncToFirestore(userId, 'bugs', bugs);
   },
 
+  // --- Reports ---
+  getReports: (userId) => {
+    const key = getStorageKey('reports', userId);
+    return load(key, []);
+  },
+  saveReports: (reports, userId) => {
+    const key = getStorageKey('reports', userId);
+    save(key, reports);
+    syncToFirestore(userId, 'reports', reports);
+  },
+
   // --- Wipe User Data ---
   wipeAllData: async (userId) => {
     localStorage.removeItem(getStorageKey('projects', userId));
@@ -104,6 +115,7 @@ export const db = {
         await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'files'), { payload: '[]' });
         await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'tests'), { payload: '[]' });
         await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'bugs'), { payload: '[]' });
+        await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'reports'), { payload: '[]' });
       } catch (err) {
         console.warn('[Firebase] Clear cloud error for user:', err);
       }

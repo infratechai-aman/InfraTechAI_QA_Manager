@@ -75,6 +75,12 @@ export const getBugStatusConfig = (status) => {
         color: 'text-rose-700 bg-rose-50 border-rose-200',
         dot: 'bg-rose-500'
       };
+    case 'Reopened':
+      return {
+        label: 'Reopened',
+        color: 'text-violet-700 bg-violet-50 border-violet-200',
+        dot: 'bg-violet-500'
+      };
     case 'In Progress':
       return {
         label: 'In Progress',

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { CheckCircle, Lock, Mail, ArrowRight, ShieldCheck, Sparkles, AlertCircle, UserPlus, LogIn } from 'lucide-react';
+import { CheckCircle, Lock, Mail, ArrowRight, AlertCircle, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const LoginView = () => {
   const { login, signup } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('aman@abhyascore.com');
-  const [password, setPassword] = useState('Macbook@M4');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,14 +25,13 @@ export const LoginView = () => {
       console.warn('Auth exception handled:', err);
 
       if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password provider is not enabled yet in your Firebase Console. Please go to Firebase Console > Authentication > Sign-in method and enable "Email/Password".');
+        setError('Email/Password provider is disabled in Firebase Console. Enable it under Firebase Console > Authentication > Sign-in method.');
       } else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        // If login failed, prompt to register or auto-try signup
-        setError('Account not found with this password. Click "Create Account" below if this is your first time signing in.');
+        setError('Invalid email or password. If you have not created an account yet, please click "Sign Up" below.');
       } else if (err.code === 'auth/wrong-password') {
-        setError('Incorrect password. Please verify your password.');
+        setError('Incorrect password. Please try again.');
       } else if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists. Switching to Sign In.');
+        setError('An account with this email already exists. Please Sign In.');
         setIsSignUp(false);
       } else if (err.code === 'auth/weak-password') {
         setError('Password must be at least 6 characters.');
@@ -46,30 +45,6 @@ export const LoginView = () => {
     }
   };
 
-  const handleCreateAccountDirectly = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      await signup(email, password);
-    } catch (err) {
-      if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password provider is not enabled yet in your Firebase Console. Please go to Firebase Console > Authentication > Sign-in method and enable "Email/Password".');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Account already exists! Please click "Sign In".');
-        setIsSignUp(false);
-      } else {
-        setError(err.message || 'Failed to create account.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFillDefault = () => {
-    setEmail('aman@abhyascore.com');
-    setPassword('Macbook@M4');
-  };
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-900 p-4 relative overflow-hidden font-sans">
       
@@ -81,7 +56,7 @@ export const LoginView = () => {
       <div className="w-full max-w-md bg-slate-800/90 backdrop-blur-xl border border-slate-700/80 rounded-3xl shadow-2xl p-8 relative z-10 animate-fadeIn text-slate-100">
         
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-6">
+        <div className="flex flex-col items-center text-center mb-8">
           <div className="bg-indigo-600 p-3 rounded-2xl text-white shadow-lg shadow-indigo-500/30 mb-3">
             <CheckCircle size={28} strokeWidth={2.5} />
           </div>
@@ -89,44 +64,15 @@ export const LoginView = () => {
             InfratechAI QA Manager
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Private QA Workspace & Defect Tracking
+            {isSignUp ? 'Create a private testing workspace' : 'Sign in to your private testing workspace'}
           </p>
-        </div>
-
-        {/* Credentials Pill / Quick Fill */}
-        <div className="mb-6 p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2.5">
-            <ShieldCheck size={18} className="text-indigo-400 shrink-0" />
-            <div>
-              <p className="text-[11px] font-bold text-indigo-300">Target Workspace User</p>
-              <p className="text-[11px] text-slate-300 font-mono">aman@abhyascore.com</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleFillDefault}
-            className="px-2.5 py-1 bg-indigo-600/40 hover:bg-indigo-600 text-indigo-200 hover:text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
-          >
-            <Sparkles size={11} /> Auto-fill
-          </button>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-2xl flex flex-col gap-2 text-xs text-rose-300">
-            <div className="flex items-start gap-2">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
-              <span className="leading-relaxed font-medium">{error}</span>
-            </div>
-            {error.includes('Create Account') && (
-              <button
-                type="button"
-                onClick={handleCreateAccountDirectly}
-                className="self-end px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer"
-              >
-                Create Account Now →
-              </button>
-            )}
+          <div className="mb-5 p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-2xl flex items-start gap-2.5 text-xs text-rose-300">
+            <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
+            <span className="leading-relaxed font-medium">{error}</span>
           </div>
         )}
 
@@ -142,8 +88,9 @@ export const LoginView = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
+                placeholder="name@example.com"
                 required
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium"
               />
             </div>
@@ -159,15 +106,16 @@ export const LoginView = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 required
+                autoComplete={isSignUp ? "new-password" : "current-password"}
                 className="w-full pl-10 pr-4 py-3 bg-slate-900/80 border border-slate-700 rounded-xl text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium"
               />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-2 pt-2">
+          {/* Submit Button */}
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading || !email || !password}
@@ -188,33 +136,22 @@ export const LoginView = () => {
                 </>
               )}
             </button>
-
-            {!isSignUp && (
-              <button
-                type="button"
-                onClick={handleCreateAccountDirectly}
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <UserPlus size={14} /> First time? Register Account
-              </button>
-            )}
           </div>
         </form>
 
         {/* Toggle Mode */}
         <div className="mt-6 pt-5 border-t border-slate-700/60 text-center">
           <p className="text-xs text-slate-400">
-            {isSignUp ? 'Already registered?' : 'Need to switch mode?'}{' '}
+            {isSignUp ? 'Already have an account?' : "Don't have an account yet?"}{' '}
             <button
               type="button"
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError('');
               }}
-              className="text-indigo-400 hover:text-indigo-300 font-bold transition-colors cursor-pointer"
+              className="text-indigo-400 hover:text-indigo-300 font-bold transition-colors cursor-pointer ml-1"
             >
-              {isSignUp ? 'Sign In instead' : 'Toggle Sign Up'}
+              {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>
           </p>
         </div>

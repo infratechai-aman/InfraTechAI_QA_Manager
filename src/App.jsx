@@ -314,10 +314,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         openBugsCount={openBugsCount}
         currentUser={currentUser}
         onLogout={logout}
-        onWipeData={handleWipeData}
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
         onExitProject={handleExitProject}
       />
 

@@ -1,10 +1,9 @@
 import React, { useRef } from 'react';
 import { 
-  CheckCircle, Briefcase, LayoutDashboard, Play, 
-  Bug as BugIcon, Upload, List, Trash2, Cloud, 
-  Download, UploadCloud, LogOut, LogIn, DoorOpen
+  Briefcase, LayoutDashboard, Play, 
+  Bug as BugIcon, Upload, List,
+  Download, UploadCloud, LogOut, DoorOpen
 } from 'lucide-react';
-import { isFirebaseConfigured } from '../../config/firebase';
 
 export const Sidebar = ({ 
   activeTab, 
@@ -14,10 +13,8 @@ export const Sidebar = ({
   openBugsCount = 0,
   currentUser,
   onLogout,
-  onWipeData,
   onExportBackup,
   onImportBackup,
-  onOpenFirebaseModal,
   onExitProject,
 }) => {
   const fileInputRef = useRef(null);
@@ -57,11 +54,13 @@ export const Sidebar = ({
   return (
     <aside className="w-64 border-r border-slate-200 flex flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
       
-      {/* Brand Header */}
-      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-        <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
-          <CheckCircle size={20} strokeWidth={2.5} />
-        </div>
+      {/* Brand Header with Logo */}
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+        <img 
+          src="/qa-logo.png" 
+          alt="QA Manager Logo" 
+          className="w-10 h-10 object-contain shrink-0"
+        />
         <div>
           <span className="font-extrabold text-slate-900 text-base tracking-tight block leading-tight">
             InfratechAI
@@ -70,27 +69,6 @@ export const Sidebar = ({
             QA Manager
           </span>
         </div>
-      </div>
-
-      {/* Cloud Sync Status Indicator */}
-      <div className="px-4 pt-3">
-        <button
-          onClick={onOpenFirebaseModal}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left ${
-            isFirebaseConfigured
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70'
-              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-          }`}
-          title="Click to manage Firebase & Cloud settings"
-        >
-          <div className="flex items-center gap-2 truncate">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${isFirebaseConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
-            <span className="truncate">
-              {isFirebaseConfigured ? 'Firestore Synced' : 'Local Storage Mode'}
-            </span>
-          </div>
-          <Cloud size={13} className={isFirebaseConfigured ? 'text-emerald-600' : 'text-slate-400'} />
-        </button>
       </div>
 
       {/* Nav List */}
@@ -205,7 +183,7 @@ export const Sidebar = ({
         </div>
       )}
 
-      {/* Bottom Footer Actions */}
+      {/* Bottom Footer — Export/Import only */}
       <div className="p-3 border-t border-slate-100 space-y-1">
         <input 
           type="file" 
@@ -230,13 +208,6 @@ export const Sidebar = ({
             <UploadCloud size={13} /> Import
           </button>
         </div>
-
-        <button
-          onClick={onWipeData}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
-        >
-          <Trash2 size={13} /> Wipe My Data
-        </button>
       </div>
 
     </aside>

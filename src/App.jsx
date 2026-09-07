@@ -357,6 +357,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onAddBug={handleAddBug}
             bugs={projectBugs}
             onNavigateToBugs={() => setActiveTab('bugs')}
+            onNavigateToFiles={() => setActiveTab('files')}
           />
         )}
 
@@ -389,6 +390,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onDeleteFile={handleDeleteFile}
             onAddTest={handleAddTestCase}
             onDeleteTest={handleDeleteTest}
+            onUpdateTest={handleUpdateTest}
           />
         )}
       </main>

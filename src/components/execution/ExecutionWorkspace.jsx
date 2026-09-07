@@ -692,21 +692,34 @@ export const ExecutionWorkspace = ({
               </p>
             )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCompleteModal(false)}
-                className="flex-1 py-2.5 px-4 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                Keep Testing
-              </button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCompleteModal(false)}
+                  className="flex-1 py-2.5 px-4 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Keep Testing
+                </button>
+                {progressStats.failed > 0 && (
+                  <button
+                    onClick={() => {
+                      setShowCompleteModal(false);
+                      if (onNavigateToBugs) onNavigateToBugs();
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm"
+                  >
+                    🐛 View Bugs
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => {
                   setShowCompleteModal(false);
-                  if (onNavigateToBugs && progressStats.failed > 0) onNavigateToBugs();
+                  if (onNavigateToFiles) onNavigateToFiles();
                 }}
-                className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm"
+                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >
-                {progressStats.failed > 0 ? 'View Bugs' : 'Done'}
+                <CheckCircle2 size={16} /> Submit & View All Test Cases
               </button>
             </div>
           </div>

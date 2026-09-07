@@ -184,9 +184,11 @@ export const BulkImportView = ({ onImport, project, files, onAddFile }) => {
             ) : (
               <table className="w-full text-left border-collapse text-xs">
                 <thead className="bg-slate-50 sticky top-0 border-b border-slate-200">
+
                   <tr>
-                    <th className="p-3 font-bold text-slate-600 w-24 uppercase tracking-wider">ID</th>
-                    <th className="p-3 font-bold text-slate-600 w-1/3 uppercase tracking-wider">Title</th>
+                    <th className="p-3 font-bold text-slate-600 w-20 uppercase tracking-wider">ID</th>
+                    <th className="p-3 font-bold text-slate-600 w-1/4 uppercase tracking-wider">Title</th>
+                    <th className="p-3 font-bold text-slate-600 w-1/3 uppercase tracking-wider">Steps</th>
                     <th className="p-3 font-bold text-slate-600 uppercase tracking-wider">Expected Result</th>
                   </tr>
                 </thead>
@@ -199,12 +201,16 @@ export const BulkImportView = ({ onImport, project, files, onAddFile }) => {
                       <td className="p-3 font-bold text-slate-900 align-top">
                         {tc.title}
                       </td>
-                      <td className="p-3 text-slate-600 align-top line-clamp-2 leading-relaxed">
+                      <td className="p-3 font-mono text-[11px] text-slate-600 align-top whitespace-pre-wrap leading-relaxed">
+                        {tc.steps || <span className="text-slate-300 italic font-sans">—</span>}
+                      </td>
+                      <td className="p-3 text-slate-600 align-top line-clamp-3 leading-relaxed">
                         {tc.expectedResult}
                       </td>
                     </tr>
                   ))}
                 </tbody>
+
               </table>
             )}
           </div>

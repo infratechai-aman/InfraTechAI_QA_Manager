@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   CheckCircle, XCircle, AlertTriangle, Circle, 
   Search, ArrowLeft, ArrowRight, Save, Calendar, 
-  Bug as BugIcon, Command, Keyboard, Check 
+  Bug as BugIcon, Command, Keyboard, Check, ListOrdered, CheckCircle2 
 } from 'lucide-react';
+
 import { formatDate, getStatusConfig } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
 
@@ -77,10 +78,11 @@ export const ExecutionWorkspace = ({
           priority: 'P1',
           actualBehavior: currentTest.actualResult || '',
           expectedBehavior: currentTest.expectedResult || '',
-          reproductionSteps: currentTest.testerNotes || `Test case ${currentTest.externalId} failed during execution.`,
+          reproductionSteps: currentTest.steps || currentTest.testerNotes || `Test case ${currentTest.externalId} failed during execution.`,
           testCaseId: currentTest.id,
           projectId: project?.id,
         });
+
         setIsBugModalOpen(true);
       }
     },
@@ -326,17 +328,32 @@ export const ExecutionWorkspace = ({
                   </h1>
                 </div>
 
+                {/* Steps to Execute (If Available) */}
+                {currentTest.steps && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <ListOrdered size={15} className="text-indigo-600" />
+                      <span>Test Execution Steps</span>
+                    </h3>
+                    <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl text-slate-800 font-mono text-xs whitespace-pre-wrap leading-relaxed shadow-xs">
+                      {currentTest.steps}
+                    </div>
+                  </div>
+                )}
+
                 {/* Expected Result */}
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Expected Result
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <CheckCircle2 size={15} className="text-emerald-600" />
+                    <span>Expected Result</span>
                   </h3>
-                  <div className="bg-slate-50 border border-slate-200/80 p-5 rounded-2xl text-slate-800 font-medium text-sm whitespace-pre-wrap leading-relaxed">
+                  <div className="bg-emerald-50/40 border border-emerald-200/70 p-5 rounded-2xl text-emerald-950 font-medium text-sm whitespace-pre-wrap leading-relaxed shadow-xs">
                     {currentTest.expectedResult || (
                       <span className="text-slate-400 italic">No expected result documented.</span>
                     )}
                   </div>
                 </div>
+
 
                 {/* Actual Result & Tester Notes Textareas */}
                 <div className="space-y-6">

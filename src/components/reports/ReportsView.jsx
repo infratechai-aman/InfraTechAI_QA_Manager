@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import mermaid from 'mermaid';
 import {
-  Plus, FileText, Trash2, Edit3, Save, X,
-  Eye, Code2, Calendar, ChevronRight, BookOpen,
-  ArrowLeft, Copy, Check
+  Plus, FileText, Trash2, Save, X,
+  Eye, Edit3, Calendar, ChevronRight, BookOpen,
+  ArrowLeft, Copy, Check, Table2, GitBranch,
+  Network, BarChart3, AlignLeft, ChevronDown
 } from 'lucide-react';
-import { formatDate, generateId, getTimestamp } from '../../utils/formatters';
+import { formatDate } from '../../utils/formatters';
+import { generateId, getTimestamp } from '../../utils/formatters';
 
-// Initialize mermaid once
 mermaid.initialize({
   startOnLoad: false,
   theme: 'neutral',
@@ -19,16 +20,12 @@ mermaid.initialize({
     primaryBorderColor: '#e2e8f0',
     lineColor: '#94a3b8',
     secondaryColor: '#f8fafc',
-    tertiaryColor: '#f1f5f9',
-    background: '#ffffff',
     fontFamily: 'Inter, system-ui, sans-serif',
     fontSize: '14px',
   },
-  er: { diagramPadding: 20 },
-  flowchart: { curve: 'basis' },
 });
 
-// Mermaid block renderer
+// Mermaid renderer
 const MermaidBlock = ({ code }) => {
   const ref = useRef(null);
   const [error, setError] = useState(null);
@@ -37,96 +34,58 @@ const MermaidBlock = ({ code }) => {
     if (!ref.current || !code) return;
     const id = `mermaid-${Math.random().toString(36).slice(2)}`;
     mermaid.render(id, code.trim())
-      .then(({ svg }) => {
-        if (ref.current) ref.current.innerHTML = svg;
-        setError(null);
-      })
-      .catch((err) => {
-        setError(err.message || 'Diagram error');
-        if (ref.current) ref.current.innerHTML = '';
-      });
+      .then(({ svg }) => { if (ref.current) ref.current.innerHTML = svg; setError(null); })
+      .catch(err => { setError(err.message || 'Diagram error'); if (ref.current) ref.current.innerHTML = ''; });
   }, [code]);
 
   return (
-    <div>
-      <div ref={ref} className="flex justify-center py-4" />
-      {error && (
-        <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3 font-mono">
-          ⚠ Mermaid error: {error}
-        </div>
-      )}
+    <div className="my-4 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+      <div ref={ref} className="flex justify-center p-4" />
+      {error && <div className="text-xs text-rose-600 bg-rose-50 p-3 font-mono">{error}</div>}
     </div>
   );
 };
 
-// Markdown renderer with mermaid + GFM tables
+// Markdown preview renderer
 const MarkdownPreview = ({ content }) => {
   if (!content?.trim()) {
     return (
-      <div className="text-slate-400 italic text-sm text-center py-12">
-        Nothing to preview yet. Start writing on the left.
+      <div className="text-slate-400 italic text-sm text-center py-20 space-y-2">
+        <Edit3 size={32} className="mx-auto opacity-20" />
+        <p>Your report will appear here as you write.</p>
       </div>
     );
   }
-
   return (
     <div className="prose prose-slate max-w-none text-sm leading-relaxed">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          // Tables
           table: ({ children }) => (
             <div className="overflow-x-auto my-4">
               <table className="w-full border-collapse text-xs">{children}</table>
             </div>
           ),
-          thead: ({ children }) => (
-            <thead className="bg-indigo-50 text-indigo-800">{children}</thead>
-          ),
-          th: ({ children }) => (
-            <th className="border border-slate-200 px-4 py-2 text-left font-bold text-xs uppercase tracking-wider">{children}</th>
-          ),
-          td: ({ children }) => (
-            <td className="border border-slate-200 px-4 py-2 text-slate-700">{children}</td>
-          ),
-          tr: ({ children }) => (
-            <tr className="even:bg-slate-50/60 hover:bg-indigo-50/30 transition-colors">{children}</tr>
-          ),
-          // Mermaid code blocks
-          code: ({ className, children, ...props }) => {
+          thead: ({ children }) => <thead className="bg-indigo-50 text-indigo-800">{children}</thead>,
+          th: ({ children }) => <th className="border border-slate-200 px-4 py-2.5 text-left font-bold text-xs uppercase tracking-wider">{children}</th>,
+          td: ({ children }) => <td className="border border-slate-200 px-4 py-2.5 text-slate-700">{children}</td>,
+          tr: ({ children }) => <tr className="even:bg-slate-50/60 hover:bg-indigo-50/20 transition-colors">{children}</tr>,
+          code: ({ className, children }) => {
             const lang = (className || '').replace('language-', '');
             const code = String(children).replace(/\n$/, '');
-            if (lang === 'mermaid') {
-              return <MermaidBlock code={code} />;
-            }
-            return (
-              <code className="bg-slate-100 text-indigo-700 px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
-                {children}
-              </code>
-            );
+            if (lang === 'mermaid') return <MermaidBlock code={code} />;
+            return <code className="bg-slate-100 text-indigo-700 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>;
           },
-          pre: ({ children }) => (
-            <pre className="bg-slate-900 text-slate-100 rounded-xl p-4 overflow-x-auto text-xs font-mono my-4">
-              {children}
-            </pre>
-          ),
-          // Headings
+          pre: ({ children }) => <pre className="bg-slate-900 text-slate-100 rounded-xl p-4 overflow-x-auto text-xs font-mono my-4">{children}</pre>,
           h1: ({ children }) => <h1 className="text-2xl font-extrabold text-slate-900 mt-6 mb-3 pb-2 border-b border-slate-200">{children}</h1>,
           h2: ({ children }) => <h2 className="text-xl font-bold text-slate-800 mt-5 mb-2 pb-1.5 border-b border-slate-100">{children}</h2>,
           h3: ({ children }) => <h3 className="text-base font-bold text-slate-700 mt-4 mb-2">{children}</h3>,
-          // Blockquote
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-indigo-400 pl-4 my-3 text-slate-600 italic bg-indigo-50/40 py-2 rounded-r-xl">{children}</blockquote>
-          ),
-          // Lists
+          blockquote: ({ children }) => <blockquote className="border-l-4 border-indigo-400 pl-4 my-3 text-slate-600 italic bg-indigo-50/40 py-2 rounded-r-xl">{children}</blockquote>,
           ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-3 text-slate-700">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-3 text-slate-700">{children}</ol>,
           li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-          // Paragraphs
           p: ({ children }) => <p className="my-2 text-slate-700 leading-relaxed">{children}</p>,
-          // Horizontal rule
           hr: () => <hr className="my-5 border-slate-200" />,
-          // Strong / em
           strong: ({ children }) => <strong className="font-bold text-slate-900">{children}</strong>,
           em: ({ children }) => <em className="italic text-slate-600">{children}</em>,
         }}
@@ -137,92 +96,63 @@ const MarkdownPreview = ({ content }) => {
   );
 };
 
-// ─── STARTER TEMPLATE ─────────────────────────────────────────────────────────
-const STARTER_TEMPLATE = `# Report Title
-
-> **Project:** Your Project Name  
-> **Date:** ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}  
-> **Author:** QA Team
-
----
-
-## Executive Summary
-
-Write your summary here...
-
-## Test Results
-
-| Test Case | Status | Notes |
-|-----------|--------|-------|
-| TC001 | ✅ Pass | Works as expected |
-| TC002 | ❌ Fail | See Bug BUG-1234 |
-| TC003 | ⚠ Blocked | Pending env setup |
-
-## ER Diagram
-
-\`\`\`mermaid
-erDiagram
-    PROJECT {
-        string id
-        string name
-        string description
-    }
-    TEST_SUITE {
-        string id
-        string name
-        date createdAt
-    }
-    TEST_CASE {
-        string id
-        string title
-        string status
-        string expectedResult
-    }
-    BUG {
-        string id
-        string title
-        string severity
-        string status
-    }
-    PROJECT ||--o{ TEST_SUITE : "has"
-    TEST_SUITE ||--o{ TEST_CASE : "contains"
-    TEST_CASE ||--o{ BUG : "logs"
-\`\`\`
-
-## Flowchart
-
-\`\`\`mermaid
-flowchart TD
-    A[Start Test Execution] --> B{Test Pass?}
-    B -- Yes --> C[Mark Pass]
-    B -- No --> D[Mark Fail]
-    D --> E[Log Bug]
-    C --> F{More Tests?}
-    E --> F
-    F -- Yes --> A
-    F -- No --> G[Complete Execution]
-\`\`\`
-
-## Observations
-
-- Add your observations here
-- Bullet points work great
-
-## Conclusion
-
-Write conclusions here.
-`;
+// ─── SNIPPETS TO INSERT ────────────────────────────────────────────────────────
+const SNIPPETS = [
+  {
+    label: 'Table',
+    icon: Table2,
+    color: 'text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-100',
+    snippet: `\n| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n| Row 1    | Data     | Data     |\n| Row 2    | Data     | Data     |\n`,
+  },
+  {
+    label: 'ER Diagram',
+    icon: Network,
+    color: 'text-violet-600 bg-violet-50 border-violet-200 hover:bg-violet-100',
+    snippet: `\n\`\`\`mermaid\nerDiagram\n    ENTITY_A {\n        string id\n        string name\n    }\n    ENTITY_B {\n        string id\n        string description\n    }\n    ENTITY_A ||--o{ ENTITY_B : "has"\n\`\`\`\n`,
+  },
+  {
+    label: 'Flowchart',
+    icon: GitBranch,
+    color: 'text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100',
+    snippet: `\n\`\`\`mermaid\nflowchart TD\n    A[Start] --> B{Decision}\n    B -- Yes --> C[Action A]\n    B -- No --> D[Action B]\n    C --> E[End]\n    D --> E\n\`\`\`\n`,
+  },
+  {
+    label: 'Sequence',
+    icon: BarChart3,
+    color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100',
+    snippet: `\n\`\`\`mermaid\nsequenceDiagram\n    participant User\n    participant System\n    participant DB\n    User->>System: Request\n    System->>DB: Query\n    DB-->>System: Result\n    System-->>User: Response\n\`\`\`\n`,
+  },
+  {
+    label: 'Text Block',
+    icon: AlignLeft,
+    color: 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100',
+    snippet: `\n## Section Title\n\nWrite your content here...\n\n`,
+  },
+];
 
 // ─── MAIN REPORTS VIEW ────────────────────────────────────────────────────────
 export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteReport, project }) => {
   const [activeReportId, setActiveReportId] = useState(null);
-  const [mode, setMode] = useState('split'); // 'edit' | 'preview' | 'split'
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [isDirty, setIsDirty] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState('write'); // 'write' | 'preview'
+  const [showSnippets, setShowSnippets] = useState(false);
+  const textareaRef = useRef(null);
+  const snippetBtnRef = useRef(null);
 
   const activeReport = reports.find(r => r.id === activeReportId);
+
+  // Close snippet menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (snippetBtnRef.current && !snippetBtnRef.current.contains(e.target)) {
+        setShowSnippets(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleNewReport = () => {
     const id = `r${generateId()}`;
@@ -230,25 +160,27 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
       id,
       projectId: project?.id,
       title: 'Untitled Report',
-      content: STARTER_TEMPLATE,
+      content: '',
       createdAt: getTimestamp(),
       updatedAt: getTimestamp(),
     };
     onAddReport(report);
     setActiveReportId(id);
     setEditTitle(report.title);
-    setEditContent(report.content);
+    setEditContent('');
     setIsDirty(false);
+    setViewMode('write');
   };
 
   const handleOpen = (report) => {
-    if (isDirty && activeReportId) {
-      if (!window.confirm('You have unsaved changes. Discard them?')) return;
+    if (isDirty) {
+      if (!window.confirm('You have unsaved changes. Discard?')) return;
     }
     setActiveReportId(report.id);
     setEditTitle(report.title);
     setEditContent(report.content);
     setIsDirty(false);
+    setViewMode('write');
   };
 
   const handleSave = () => {
@@ -258,19 +190,33 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Delete this report? This cannot be undone.')) {
-      onDeleteReport(id);
-      if (activeReportId === id) {
-        setActiveReportId(null);
-        setIsDirty(false);
-      }
-    }
+    if (!window.confirm('Delete this report?')) return;
+    onDeleteReport(id);
+    if (activeReportId === id) { setActiveReportId(null); setIsDirty(false); }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(editContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  // Insert snippet at cursor position in textarea
+  const handleInsertSnippet = (snippet) => {
+    setShowSnippets(false);
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setEditContent(prev => prev + snippet);
+      setIsDirty(true);
+      return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = editContent.substring(0, start);
+    const after = editContent.substring(end);
+    const newContent = before + snippet + after;
+    setEditContent(newContent);
+    setIsDirty(true);
+    // Restore cursor after snippet
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = start + snippet.length;
+      textarea.selectionEnd = start + snippet.length;
+    }, 0);
   };
 
   // ── Report List ─────────────────────────────────────────────────────────────
@@ -281,7 +227,8 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Reports</h1>
             <p className="text-slate-500 mt-1">
-              Write rich reports with tables, ER diagrams, and flowcharts for <span className="font-semibold text-slate-800">{project?.name}</span>
+              Write reports with text, tables, ER diagrams & flowcharts for{' '}
+              <span className="font-semibold text-slate-800">{project?.name}</span>
             </p>
           </div>
           <button
@@ -292,22 +239,15 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
           </button>
         </div>
 
-        {/* Supported features chips */}
-        <div className="flex flex-wrap gap-2">
-          {['✅ Rich Markdown', '📊 Tables', '🔷 ER Diagrams', '🔀 Flowcharts', '💡 Blockquotes', '📝 Code blocks'].map(f => (
-            <span key={f} className="text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full">{f}</span>
-          ))}
-        </div>
-
         <div className="space-y-3">
           {reports.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400">
               <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
               <p className="font-semibold text-slate-700 text-base">No reports yet</p>
-              <p className="text-sm mt-1">Create your first report — supports markdown, tables & diagrams.</p>
+              <p className="text-sm mt-1">Create a report — add text, tables, ER diagrams, and flowcharts.</p>
               <button
                 onClick={handleNewReport}
-                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700"
               >
                 <Plus size={15} /> Create Report
               </button>
@@ -328,7 +268,7 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
                       {r.title}
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                      <Calendar size={11} /> Last updated {formatDate(r.updatedAt || r.createdAt)}
+                      <Calendar size={11} /> {formatDate(r.updatedAt || r.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -349,12 +289,12 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
     );
   }
 
-  // ── Editor View ──────────────────────────────────────────────────────────────
+  // ── Editor / Preview View ────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      
+    <div className="flex flex-col h-full overflow-hidden bg-white">
+
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-slate-200 shrink-0 gap-3">
+      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shrink-0 gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <button
             onClick={() => {
@@ -366,13 +306,16 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
           >
             <ArrowLeft size={13} /> Reports
           </button>
+
+          {/* Title Input */}
           <input
             type="text"
             value={editTitle}
             onChange={e => { setEditTitle(e.target.value); setIsDirty(true); }}
-            className="flex-1 min-w-0 text-lg font-extrabold text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-indigo-500 transition-colors py-0.5 truncate"
+            className="flex-1 min-w-0 text-lg font-extrabold text-slate-900 bg-transparent outline-none border-b-2 border-transparent focus:border-indigo-500 transition-colors py-0.5"
             placeholder="Report title..."
           />
+
           {isDirty && (
             <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
               Unsaved
@@ -380,38 +323,59 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
           )}
         </div>
 
+        {/* Right actions */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* View mode toggle */}
-          <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
-            {[
-              { id: 'edit', icon: Code2, label: 'Edit' },
-              { id: 'split', icon: Edit3, label: 'Split' },
-              { id: 'preview', icon: Eye, label: 'Preview' },
-            ].map(({ id, icon: Icon, label }) => (
-              <button
-                key={id}
-                onClick={() => setMode(id)}
-                title={label}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  mode === id
-                    ? 'bg-white text-indigo-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Icon size={13} /> {label}
-              </button>
-            ))}
+
+          {/* Write / Preview Toggle */}
+          <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-0.5">
+            <button
+              onClick={() => setViewMode('write')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'write' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Edit3 size={12} /> Write
+            </button>
+            <button
+              onClick={() => setViewMode('preview')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'preview' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Eye size={12} /> Preview
+            </button>
           </div>
 
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 rounded-xl transition-all cursor-pointer"
-            title="Copy markdown"
-          >
-            {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
+          {/* Insert Snippet Button */}
+          {viewMode === 'write' && (
+            <div className="relative" ref={snippetBtnRef}>
+              <button
+                onClick={() => setShowSnippets(s => !s)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                <Plus size={13} /> Insert <ChevronDown size={11} className={`transition-transform ${showSnippets ? 'rotate-180' : ''}`} />
+              </button>
 
+              {/* Dropdown */}
+              {showSnippets && (
+                <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Insert Element</p>
+                  </div>
+                  {SNIPPETS.map(({ label, icon: Icon, color, snippet }) => (
+                    <button
+                      key={label}
+                      onClick={() => handleInsertSnippet(snippet)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left cursor-pointer group"
+                    >
+                      <div className={`p-1.5 rounded-lg border ${color} transition-colors`}>
+                        <Icon size={13} />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700 group-hover:text-slate-900">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Save */}
           <button
             onClick={handleSave}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -425,44 +389,32 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
         </div>
       </div>
 
-      {/* Editor Area */}
-      <div className={`flex-1 overflow-hidden flex ${mode === 'split' ? 'divide-x divide-slate-200' : ''}`}>
-        
-        {/* Left: Markdown Editor */}
-        {(mode === 'edit' || mode === 'split') && (
-          <div className={`${mode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col overflow-hidden bg-slate-900`}>
-            <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 flex items-center gap-2">
-              <Code2 size={12} className="text-slate-400" />
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Markdown Editor</span>
-            </div>
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {viewMode === 'write' ? (
+          /* Clean white write area */
+          <div className="max-w-3xl mx-auto px-8 py-10">
             <textarea
+              ref={textareaRef}
               value={editContent}
               onChange={e => { setEditContent(e.target.value); setIsDirty(true); }}
-              className="flex-1 w-full bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed p-5 outline-none resize-none placeholder:text-slate-600"
-              placeholder={`# Report Title\n\nStart writing your report...\n\n## Supported:\n- **Bold**, *italic*, \`code\`\n- Tables (GFM)\n- Mermaid diagrams (\`\`\`mermaid ... \`\`\`)\n- ER diagrams, flowcharts, sequence diagrams`}
-              spellCheck={false}
+              className="w-full min-h-[70vh] text-slate-800 text-sm leading-8 outline-none resize-none bg-transparent placeholder:text-slate-300 font-sans"
+              placeholder={`Start writing your report...\n\nTip: Use the "Insert" button in the top-right to add Tables, ER Diagrams, Flowcharts, and more.`}
+              spellCheck
             />
           </div>
-        )}
-
-        {/* Right: Preview */}
-        {(mode === 'preview' || mode === 'split') && (
-          <div className={`${mode === 'split' ? 'w-1/2' : 'w-full'} overflow-y-auto bg-white`}>
-            <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 sticky top-0 z-10">
-              <Eye size={12} className="text-slate-400" />
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Preview</span>
-            </div>
-            <div className="p-6 lg:p-8">
-              <MarkdownPreview content={editContent} />
-            </div>
+        ) : (
+          /* Rendered preview */
+          <div className="max-w-3xl mx-auto px-8 py-10">
+            <MarkdownPreview content={editContent} />
           </div>
         )}
       </div>
 
-      {/* Bottom status bar */}
-      <div className="px-5 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono shrink-0">
-        <span>{editContent.length} chars · {editContent.split('\n').length} lines</span>
-        <span>Markdown + GFM Tables + Mermaid Diagrams</span>
+      {/* Status bar */}
+      <div className="px-6 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400 font-mono shrink-0">
+        <span>{editContent.split('\n').length} lines · {editContent.length} chars</span>
+        <span>Supports Markdown · GFM Tables · Mermaid Diagrams</span>
       </div>
     </div>
   );

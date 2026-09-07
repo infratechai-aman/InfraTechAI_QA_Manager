@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from './services/db';
 import { generateId, getTimestamp } from './utils/formatters';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 import { Sidebar } from './components/layout/Sidebar';
 import { ProjectsView } from './components/projects/ProjectsView';
@@ -10,8 +11,12 @@ import { TestFilesView } from './components/testFiles/TestFilesView';
 import { BugsView } from './components/bugs/BugsView';
 import { BulkImportView } from './components/import/BulkImportView';
 import { FirebaseModal } from './components/modals/FirebaseModal';
+import { LoginView } from './components/auth/LoginView';
 
-export default function App() {
+function MainApp() {
+  const { currentUser, logout } = useAuth();
+  const userId = currentUser?.uid || null;
+
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState([]);
   const [files, setFiles] = useState([]);
@@ -20,14 +25,16 @@ export default function App() {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
 
-  // Initialize data on mount
+  // Initialize and load data whenever authenticated user changes
   useEffect(() => {
-    const initData = async () => {
-      // 1. Load from local cache immediately
-      const loadedProjects = db.getProjects();
-      const loadedFiles = db.getFiles();
-      const loadedTests = db.getTestCases();
-      const loadedBugs = db.getBugs();
+    if (!userId) return;
+
+    const initUserData = async () => {
+      // 1. Load user's private local cache
+      const loadedProjects = db.getProjects(userId);
+      const loadedFiles = db.getFiles(userId);
+      const loadedTests = db.getTestCases(userId);
+      const loadedBugs = db.getBugs(userId);
 
       setProjects(loadedProjects);
       setFiles(loadedFiles);
@@ -37,24 +44,35 @@ export default function App() {
       if (loadedProjects.length > 0) {
         setActiveProjectId(loadedProjects[0].id);
         setActiveTab('dashboard');
+      } else {
+        setActiveProjectId(null);
+        setActiveTab('projects');
       }
 
-      // 2. If Firebase is configured, check for any newer cloud updates
+      // 2. Check for latest cloud updates from user's private Firestore collection
       try {
-        const cloudData = await db.pullFromFirestore();
+        const cloudData = await db.pullFromFirestore(userId);
         if (cloudData) {
           if (cloudData.projects) setProjects(cloudData.projects);
           if (cloudData.files) setFiles(cloudData.files);
           if (cloudData.tests) setTests(cloudData.tests);
           if (cloudData.bugs) setBugs(cloudData.bugs);
+          if (cloudData.projects && cloudData.projects.length > 0 && !activeProjectId) {
+            setActiveProjectId(cloudData.projects[0].id);
+          }
         }
       } catch (err) {
-        console.warn('Initial cloud sync check completed with note:', err);
+        console.warn('Private cloud pull check completed:', err);
       }
     };
 
-    initData();
-  }, []);
+    initUserData();
+  }, [userId]);
+
+  // If user is not authenticated, display the login view
+  if (!currentUser) {
+    return <LoginView />;
+  }
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const projectFiles = files.filter((f) => f.projectId === activeProjectId);
@@ -71,7 +89,7 @@ export default function App() {
     };
     setProjects((prev) => {
       const updated = [...prev, newProject];
-      db.saveProjects(updated);
+      db.saveProjects(updated, userId);
       return updated;
     });
     setActiveProjectId(newProject.id);
@@ -89,10 +107,10 @@ export default function App() {
     setTests(updatedTests);
     setBugs(updatedBugs);
 
-    db.saveProjects(updatedProjects);
-    db.saveFiles(updatedFiles);
-    db.saveTestCases(updatedTests);
-    db.saveBugs(updatedBugs);
+    db.saveProjects(updatedProjects, userId);
+    db.saveFiles(updatedFiles, userId);
+    db.saveTestCases(updatedTests, userId);
+    db.saveBugs(updatedBugs, userId);
 
     if (activeProjectId === projectId) {
       setActiveProjectId(updatedProjects[0]?.id || null);
@@ -113,11 +131,10 @@ export default function App() {
 
     setFiles((prev) => {
       const updated = [newFile, ...prev];
-      db.saveFiles(updated);
+      db.saveFiles(updated, userId);
       return updated;
     });
 
-    // Clone tests if requested
     if (copyFromId) {
       const testsToCopy = tests.filter((t) => t.fileId === copyFromId);
       const duplicatedTests = testsToCopy.map((t) => ({
@@ -132,7 +149,7 @@ export default function App() {
       }));
       setTests((prev) => {
         const updated = [...prev, ...duplicatedTests];
-        db.saveTestCases(updated);
+        db.saveTestCases(updated, userId);
         return updated;
       });
     }
@@ -147,8 +164,8 @@ export default function App() {
     setFiles(updatedFiles);
     setTests(updatedTests);
 
-    db.saveFiles(updatedFiles);
-    db.saveTestCases(updatedTests);
+    db.saveFiles(updatedFiles, userId);
+    db.saveTestCases(updatedTests, userId);
   };
 
   // --- Test Case Management ---
@@ -166,75 +183,87 @@ export default function App() {
       };
       setTests((prev) => {
         const updated = [...prev, newTest];
-        db.saveTestCases(updated);
+        db.saveTestCases(updated, userId);
         return updated;
       });
     },
-    []
+    [userId]
   );
 
-  const handleUpdateTest = useCallback((id, updates) => {
-    setTests((prev) => {
-      const updated = prev.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: getTimestamp() } : t));
-      db.saveTestCases(updated);
-      return updated;
-    });
-  }, []);
+  const handleUpdateTest = useCallback(
+    (id, updates) => {
+      setTests((prev) => {
+        const updated = prev.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: getTimestamp() } : t));
+        db.saveTestCases(updated, userId);
+        return updated;
+      });
+    },
+    [userId]
+  );
 
   const handleDeleteTest = (testId) => {
     setTests((prev) => {
       const updated = prev.filter((t) => t.id !== testId);
-      db.saveTestCases(updated);
+      db.saveTestCases(updated, userId);
       return updated;
     });
   };
 
-  const handleImportTests = useCallback((newTests) => {
-    setTests((prev) => {
-      const updated = [...prev, ...newTests];
-      db.saveTestCases(updated);
-      return updated;
-    });
-    setActiveTab('execute');
-  }, []);
+  const handleImportTests = useCallback(
+    (newTests) => {
+      setTests((prev) => {
+        const updated = [...prev, ...newTests];
+        db.saveTestCases(updated, userId);
+        return updated;
+      });
+      setActiveTab('execute');
+    },
+    [userId]
+  );
 
   // --- Defects & Bugs Management ---
-  const handleAddBug = useCallback((newBugData) => {
-    const newBug = {
-      ...newBugData,
-      id: `b${generateId()}`,
-      bugId: `BUG-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: 'Open',
-      createdAt: getTimestamp(),
-      updatedAt: getTimestamp(),
-    };
-    setBugs((prev) => {
-      const updated = [newBug, ...prev];
-      db.saveBugs(updated);
-      return updated;
-    });
-  }, []);
+  const handleAddBug = useCallback(
+    (newBugData) => {
+      const newBug = {
+        ...newBugData,
+        id: `b${generateId()}`,
+        bugId: `BUG-${Math.floor(1000 + Math.random() * 9000)}`,
+        status: 'Open',
+        createdAt: getTimestamp(),
+        updatedAt: getTimestamp(),
+      };
+      setBugs((prev) => {
+        const updated = [newBug, ...prev];
+        db.saveBugs(updated, userId);
+        return updated;
+      });
+    },
+    [userId]
+  );
 
-  const handleUpdateBug = useCallback((bugId, updates) => {
-    setBugs((prev) => {
-      const updated = prev.map((b) => (b.id === bugId ? { ...b, ...updates, updatedAt: getTimestamp() } : b));
-      db.saveBugs(updated);
-      return updated;
-    });
-  }, []);
+  const handleUpdateBug = useCallback(
+    (bugId, updates) => {
+      setBugs((prev) => {
+        const updated = prev.map((b) => (b.id === bugId ? { ...b, ...updates, updatedAt: getTimestamp() } : b));
+        db.saveBugs(updated, userId);
+        return updated;
+      });
+    },
+    [userId]
+  );
 
   const handleDeleteBug = (bugId) => {
     setBugs((prev) => {
       const updated = prev.filter((b) => b.id !== bugId);
-      db.saveBugs(updated);
+      db.saveBugs(updated, userId);
       return updated;
     });
   };
 
   // --- Backup & Reset ---
   const handleWipeData = async () => {
-    if (window.confirm('Are you sure you want to delete ALL projects, files, and test cases? This action cannot be undone.')) {
-      await db.wipeAllData();
+    if (window.confirm('Are you sure you want to wipe ALL your projects and test cases? This cannot be undone.')) {
+      await db.wipeAllData(userId);
       setProjects([]);
       setFiles([]);
       setTests([]);
@@ -245,27 +274,27 @@ export default function App() {
   };
 
   const handleExportBackup = () => {
-    db.exportToJson();
+    db.exportToJson(userId);
   };
 
   const handleImportBackup = (jsonData) => {
     try {
-      db.importFromJson(jsonData);
-      setProjects(db.getProjects());
-      setFiles(db.getFiles());
-      setTests(db.getTestCases());
-      setBugs(db.getBugs());
+      db.importFromJson(jsonData, userId);
+      setProjects(db.getProjects(userId));
+      setFiles(db.getFiles(userId));
+      setTests(db.getTestCases(userId));
+      setBugs(db.getBugs(userId));
       if (jsonData.projects && jsonData.projects.length > 0) {
         setActiveProjectId(jsonData.projects[0].id);
       }
-      alert('Backup imported successfully!');
+      alert('Backup imported successfully into your account!');
     } catch (e) {
       alert('Failed to import backup: ' + e.message);
     }
   };
 
   const handlePullSync = async () => {
-    const cloudData = await db.pullFromFirestore();
+    const cloudData = await db.pullFromFirestore(userId);
     if (cloudData) {
       if (cloudData.projects) setProjects(cloudData.projects);
       if (cloudData.files) setFiles(cloudData.files);
@@ -286,10 +315,12 @@ export default function App() {
         activeProject={activeProject}
         activeProjectId={activeProjectId}
         openBugsCount={openBugsCount}
+        currentUser={currentUser}
+        onLogout={logout}
         onWipeData={handleWipeData}
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
+        onOpenFirebaseModal={() => setIsFirebaseModalOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -371,5 +402,13 @@ export default function App() {
       />
 
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }

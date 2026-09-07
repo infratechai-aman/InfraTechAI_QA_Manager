@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { 
   CheckCircle, Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List, Trash2, Cloud, 
-  Download, UploadCloud, Database
+  Download, UploadCloud, LogOut, UserCheck
 } from 'lucide-react';
 import { isFirebaseConfigured } from '../../config/firebase';
 
@@ -12,6 +12,8 @@ export const Sidebar = ({
   activeProject, 
   activeProjectId,
   openBugsCount = 0,
+  currentUser,
+  onLogout,
   onWipeData,
   onExportBackup,
   onImportBackup,
@@ -48,6 +50,8 @@ export const Sidebar = ({
     reader.readAsText(file);
     e.target.value = '';
   };
+
+  const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A';
 
   return (
     <aside className="w-64 border-r border-slate-200 flex flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
@@ -94,7 +98,7 @@ export const Sidebar = ({
         {/* All Projects link */}
         <button
           onClick={() => setActiveTab('projects')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
             activeTab === 'projects'
               ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
               : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -137,7 +141,7 @@ export const Sidebar = ({
                 key={item.id}
                 onClick={() => !item.disabled && setActiveTab(item.id)}
                 disabled={item.disabled}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
                   item.disabled
                     ? 'opacity-40 cursor-not-allowed text-slate-400'
                     : isActive
@@ -162,6 +166,33 @@ export const Sidebar = ({
         </div>
       </div>
 
+      {/* User Account Info Bar */}
+      {currentUser && (
+        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+              {userInitial}
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-xs font-bold text-slate-800 truncate" title={currentUser.email}>
+                {currentUser.email}
+              </p>
+              <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Protected</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            title="Sign Out"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
+      )}
+
       {/* Bottom Footer Actions */}
       <div className="p-3 border-t border-slate-100 space-y-1">
         <input 
@@ -174,14 +205,14 @@ export const Sidebar = ({
         <div className="flex gap-1">
           <button
             onClick={onExportBackup}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             title="Download JSON Backup"
           >
             <Download size={13} /> Export
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             title="Import JSON Backup"
           >
             <UploadCloud size={13} /> Import
@@ -190,9 +221,9 @@ export const Sidebar = ({
 
         <button
           onClick={onWipeData}
-          className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold text-rose-600 rounded-xl hover:bg-rose-50 transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer"
         >
-          <Trash2 size={13} /> Wipe All Data
+          <Trash2 size={13} /> Wipe My Data
         </button>
       </div>
 

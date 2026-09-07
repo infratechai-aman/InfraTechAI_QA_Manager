@@ -90,17 +90,20 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. The app wil
 To make the app persist in the cloud across all your devices:
 
 1. Visit the [Firebase Console](https://console.firebase.google.com/) and click **Add Project**.
-2. Go to **Build → Firestore Database** and click **Create Database**. Choose test mode or set your rules:
+2. Go to **Build → Firestore Database** and click **Create Database**. Set your private user-scoped security rules:
    ```javascript
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
-       match /{document=**} {
-         allow read, write: if true; // Or restrict to authenticated users
+       // Only authenticated users can access their own private workspace data
+       match /users/{userId}/{document=**} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
        }
      }
    }
    ```
+3. Go to **Build → Authentication** → **Sign-in method** → Enable **Email/Password**.
+
 3. Go to **Project Settings** (gear icon) → **General** → scroll down to **Your apps** and click the **Web (`</>`)** icon.
 4. Register your app name and copy the `firebaseConfig` keys.
 5. Create a `.env.local` file in the project root:

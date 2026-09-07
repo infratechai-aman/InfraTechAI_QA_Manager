@@ -1,15 +1,14 @@
 import { SEED_PROJECTS, SEED_FILES, SEED_TESTS, SEED_BUGS } from '../constants/seedData';
 import { firestore, isFirebaseConfigured } from '../config/firebase';
-import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-const STORAGE_KEYS = {
-  PROJECTS: 'qa_projects_v2',
-  FILES: 'qa_files_v2',
-  TESTS: 'qa_tests_v2',
-  BUGS: 'qa_bugs_v2',
+// Generate user-scoped storage keys
+const getStorageKey = (key, userId) => {
+  const scope = userId ? `_${userId}` : '_guest';
+  return `qa_${key}_v2${scope}`;
 };
 
-// Safe JSON parser
+// Safe JSON loader
 const load = (key, fallback) => {
   try {
     const raw = localStorage.getItem(key);
@@ -21,7 +20,7 @@ const load = (key, fallback) => {
   }
 };
 
-// Safe JSON serializer
+// Safe JSON saver
 const save = (key, data) => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
@@ -31,111 +30,133 @@ const save = (key, data) => {
 };
 
 /**
- * Cloud sync helper to persist updates to Firestore when configured.
+ * Cloud sync helper scoped to the authenticated user's private collection:
+ * /users/{userId}/qa_manager/{docId}
  */
-const syncToFirestore = async (collectionName, docId, data) => {
-  if (!isFirebaseConfigured || !firestore) return;
+const syncToFirestore = async (userId, docId, data) => {
+  if (!isFirebaseConfigured || !firestore || !userId) return;
   try {
-    const docRef = doc(firestore, collectionName, docId);
-    await setDoc(docRef, { payload: JSON.stringify(data), updatedAt: new Date().toISOString() });
+    const docRef = doc(firestore, 'users', userId, 'qa_manager', docId);
+    await setDoc(docRef, { 
+      payload: JSON.stringify(data), 
+      updatedAt: new Date().toISOString(),
+      ownerId: userId
+    });
   } catch (error) {
-    console.warn(`[Firebase] Failed to sync ${collectionName} to cloud:`, error.message);
+    console.warn(`[Firebase] Failed to sync ${docId} to user ${userId}:`, error.message);
   }
 };
 
 export const db = {
   // --- Projects ---
-  getProjects: () => load(STORAGE_KEYS.PROJECTS, SEED_PROJECTS),
-  saveProjects: (projects) => {
-    save(STORAGE_KEYS.PROJECTS, projects);
-    syncToFirestore('infratech_qa', 'projects', projects);
+  getProjects: (userId) => {
+    const key = getStorageKey('projects', userId);
+    return load(key, SEED_PROJECTS);
+  },
+  saveProjects: (projects, userId) => {
+    const key = getStorageKey('projects', userId);
+    save(key, projects);
+    syncToFirestore(userId, 'projects', projects);
   },
 
   // --- Test Files ---
-  getFiles: () => load(STORAGE_KEYS.FILES, SEED_FILES),
-  saveFiles: (files) => {
-    save(STORAGE_KEYS.FILES, files);
-    syncToFirestore('infratech_qa', 'files', files);
+  getFiles: (userId) => {
+    const key = getStorageKey('files', userId);
+    return load(key, SEED_FILES);
+  },
+  saveFiles: (files, userId) => {
+    const key = getStorageKey('files', userId);
+    save(key, files);
+    syncToFirestore(userId, 'files', files);
   },
 
   // --- Test Cases ---
-  getTestCases: () => load(STORAGE_KEYS.TESTS, SEED_TESTS),
-  saveTestCases: (tests) => {
-    save(STORAGE_KEYS.TESTS, tests);
-    syncToFirestore('infratech_qa', 'tests', tests);
+  getTestCases: (userId) => {
+    const key = getStorageKey('tests', userId);
+    return load(key, SEED_TESTS);
+  },
+  saveTestCases: (tests, userId) => {
+    const key = getStorageKey('tests', userId);
+    save(key, tests);
+    syncToFirestore(userId, 'tests', tests);
   },
 
   // --- Bugs & Issues ---
-  getBugs: () => load(STORAGE_KEYS.BUGS, SEED_BUGS),
-  saveBugs: (bugs) => {
-    save(STORAGE_KEYS.BUGS, bugs);
-    syncToFirestore('infratech_qa', 'bugs', bugs);
+  getBugs: (userId) => {
+    const key = getStorageKey('bugs', userId);
+    return load(key, SEED_BUGS);
+  },
+  saveBugs: (bugs, userId) => {
+    const key = getStorageKey('bugs', userId);
+    save(key, bugs);
+    syncToFirestore(userId, 'bugs', bugs);
   },
 
-  // --- Clear / Reset ---
-  wipeAllData: async () => {
-    localStorage.removeItem(STORAGE_KEYS.PROJECTS);
-    localStorage.removeItem(STORAGE_KEYS.FILES);
-    localStorage.removeItem(STORAGE_KEYS.TESTS);
-    localStorage.removeItem(STORAGE_KEYS.BUGS);
+  // --- Wipe User Data ---
+  wipeAllData: async (userId) => {
+    localStorage.removeItem(getStorageKey('projects', userId));
+    localStorage.removeItem(getStorageKey('files', userId));
+    localStorage.removeItem(getStorageKey('tests', userId));
+    localStorage.removeItem(getStorageKey('bugs', userId));
     
-    if (isFirebaseConfigured && firestore) {
+    if (isFirebaseConfigured && firestore && userId) {
       try {
-        await setDoc(doc(firestore, 'infratech_qa', 'projects'), { payload: '[]' });
-        await setDoc(doc(firestore, 'infratech_qa', 'files'), { payload: '[]' });
-        await setDoc(doc(firestore, 'infratech_qa', 'tests'), { payload: '[]' });
-        await setDoc(doc(firestore, 'infratech_qa', 'bugs'), { payload: '[]' });
+        await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'projects'), { payload: '[]' });
+        await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'files'), { payload: '[]' });
+        await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'tests'), { payload: '[]' });
+        await setDoc(doc(firestore, 'users', userId, 'qa_manager', 'bugs'), { payload: '[]' });
       } catch (err) {
-        console.warn('[Firebase] Clear cloud error:', err);
+        console.warn('[Firebase] Clear cloud error for user:', err);
       }
     }
   },
 
-  // --- Cloud Pull (Initial Firebase load if cloud data exists) ---
-  pullFromFirestore: async () => {
-    if (!isFirebaseConfigured || !firestore) return null;
+  // --- Cloud Pull (Loads this user's private data from Firestore) ---
+  pullFromFirestore: async (userId) => {
+    if (!isFirebaseConfigured || !firestore || !userId) return null;
     try {
       const [projSnap, filesSnap, testsSnap, bugsSnap] = await Promise.all([
-        getDoc(doc(firestore, 'infratech_qa', 'projects')),
-        getDoc(doc(firestore, 'infratech_qa', 'files')),
-        getDoc(doc(firestore, 'infratech_qa', 'tests')),
-        getDoc(doc(firestore, 'infratech_qa', 'bugs')),
+        getDoc(doc(firestore, 'users', userId, 'qa_manager', 'projects')),
+        getDoc(doc(firestore, 'users', userId, 'qa_manager', 'files')),
+        getDoc(doc(firestore, 'users', userId, 'qa_manager', 'tests')),
+        getDoc(doc(firestore, 'users', userId, 'qa_manager', 'bugs')),
       ]);
 
       const result = {};
       if (projSnap.exists() && projSnap.data().payload) {
         result.projects = JSON.parse(projSnap.data().payload);
-        save(STORAGE_KEYS.PROJECTS, result.projects);
+        save(getStorageKey('projects', userId), result.projects);
       }
       if (filesSnap.exists() && filesSnap.data().payload) {
         result.files = JSON.parse(filesSnap.data().payload);
-        save(STORAGE_KEYS.FILES, result.files);
+        save(getStorageKey('files', userId), result.files);
       }
       if (testsSnap.exists() && testsSnap.data().payload) {
         result.tests = JSON.parse(testsSnap.data().payload);
-        save(STORAGE_KEYS.TESTS, result.tests);
+        save(getStorageKey('tests', userId), result.tests);
       }
       if (bugsSnap.exists() && bugsSnap.data().payload) {
         result.bugs = JSON.parse(bugsSnap.data().payload);
-        save(STORAGE_KEYS.BUGS, result.bugs);
+        save(getStorageKey('bugs', userId), result.bugs);
       }
 
       return Object.keys(result).length > 0 ? result : null;
     } catch (err) {
-      console.warn('[Firebase] Could not pull from Firestore:', err);
+      console.warn('[Firebase] Could not pull from Firestore for user:', err);
       return null;
     }
   },
 
-  // --- Export / Backup ---
-  exportToJson: () => {
+  // --- Export User Backup ---
+  exportToJson: (userId) => {
     const data = {
-      projects: db.getProjects(),
-      files: db.getFiles(),
-      tests: db.getTestCases(),
-      bugs: db.getBugs(),
+      userId,
+      projects: db.getProjects(userId),
+      files: db.getFiles(userId),
+      tests: db.getTestCases(userId),
+      bugs: db.getBugs(userId),
       exportedAt: new Date().toISOString(),
-      version: '2.0'
+      version: '2.1'
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -146,12 +167,12 @@ export const db = {
     URL.revokeObjectURL(url);
   },
 
-  // --- Import from Backup ---
-  importFromJson: (jsonData) => {
+  // --- Import Backup ---
+  importFromJson: (jsonData, userId) => {
     if (!jsonData || typeof jsonData !== 'object') throw new Error('Invalid backup file');
-    if (Array.isArray(jsonData.projects)) db.saveProjects(jsonData.projects);
-    if (Array.isArray(jsonData.files)) db.saveFiles(jsonData.files);
-    if (Array.isArray(jsonData.tests)) db.saveTestCases(jsonData.tests);
-    if (Array.isArray(jsonData.bugs)) db.saveBugs(jsonData.bugs);
+    if (Array.isArray(jsonData.projects)) db.saveProjects(jsonData.projects, userId);
+    if (Array.isArray(jsonData.files)) db.saveFiles(jsonData.files, userId);
+    if (Array.isArray(jsonData.tests)) db.saveTestCases(jsonData.tests, userId);
+    if (Array.isArray(jsonData.bugs)) db.saveBugs(jsonData.bugs, userId);
   }
 };

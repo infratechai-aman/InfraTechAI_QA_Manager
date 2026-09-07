@@ -29,6 +29,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [reports, setReports] = useState([]);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
+  const [activeFileToOpen, setActiveFileToOpen] = useState(null);
 
   // Initialize and load data whenever authenticated user changes
   useEffect(() => {
@@ -157,6 +158,91 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     return newFile;
   };
 
+  // Auto-heal orphan test cases: Ensure every test case in active project belongs to a valid test file
+  useEffect(() => {
+    if (!activeProjectId || !userId) return;
+    const currentProjectTests = tests.filter((t) => t.projectId === activeProjectId);
+    if (currentProjectTests.length === 0) return;
+
+    const projectFileIds = new Set(files.filter((f) => f.projectId === activeProjectId).map((f) => f.id));
+    const orphanTests = currentProjectTests.filter((t) => !t.fileId || !projectFileIds.has(t.fileId));
+
+    if (orphanTests.length > 0) {
+      let targetFile = files.find((f) => f.projectId === activeProjectId);
+      let updatedFiles = files;
+
+      if (!targetFile) {
+        targetFile = {
+          id: `f${generateId()}`,
+          projectId: activeProjectId,
+          name: `${activeProject?.name || 'Sprint'} - Test Suite`,
+          date: getTimestamp(),
+          createdAt: getTimestamp(),
+        };
+        updatedFiles = [targetFile, ...files];
+        setFiles(updatedFiles);
+        db.saveFiles(updatedFiles, userId);
+      }
+
+      const updatedTests = tests.map((t) => {
+        if (t.projectId === activeProjectId && (!t.fileId || !projectFileIds.has(t.fileId))) {
+          return { ...t, fileId: targetFile.id, updatedAt: getTimestamp() };
+        }
+        return t;
+      });
+
+      setTests(updatedTests);
+      db.saveTestCases(updatedTests, userId);
+    }
+  }, [activeProjectId, userId, tests, files, activeProject]);
+
+  // Handle execution submit & view all test cases
+  const handleSubmitExecution = useCallback(
+    (preferredFileId) => {
+      let targetFileId = preferredFileId;
+
+      const currentProjectTests = tests.filter((t) => t.projectId === activeProjectId);
+      const projectFileIds = new Set(files.filter((f) => f.projectId === activeProjectId).map((f) => f.id));
+      const orphanTests = currentProjectTests.filter((t) => !t.fileId || !projectFileIds.has(t.fileId));
+
+      if (orphanTests.length > 0) {
+        let targetFile = files.find((f) => f.projectId === activeProjectId);
+        let updatedFiles = files;
+
+        if (!targetFile) {
+          targetFile = {
+            id: `f${generateId()}`,
+            projectId: activeProjectId,
+            name: `${activeProject?.name || 'Sprint'} - Execution Suite`,
+            date: getTimestamp(),
+            createdAt: getTimestamp(),
+          };
+          updatedFiles = [targetFile, ...files];
+          setFiles(updatedFiles);
+          db.saveFiles(updatedFiles, userId);
+        }
+        targetFileId = targetFile.id;
+
+        const updatedTests = tests.map((t) => {
+          if (t.projectId === activeProjectId && (!t.fileId || !projectFileIds.has(t.fileId))) {
+            return { ...t, fileId: targetFile.id, updatedAt: getTimestamp() };
+          }
+          return t;
+        });
+        setTests(updatedTests);
+        db.saveTestCases(updatedTests, userId);
+      } else if (!targetFileId && files.length > 0) {
+        targetFileId = files.find((f) => f.projectId === activeProjectId)?.id;
+      }
+
+      if (targetFileId) {
+        setActiveFileToOpen(targetFileId);
+      }
+      setActiveTab('files');
+    },
+    [tests, files, activeProjectId, activeProject, userId]
+  );
+
   const handleDeleteFile = (fileId) => {
     const updatedFiles = files.filter((f) => f.id !== fileId);
     const updatedTests = tests.filter((t) => t.fileId !== fileId);
@@ -210,13 +296,15 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   const handleImportTests = useCallback(
-    (newTests) => {
+    (newTests, shouldNavigate = false) => {
       setTests((prev) => {
         const updated = [...prev, ...newTests];
         db.saveTestCases(updated, userId);
         return updated;
       });
-      setActiveTab('execute');
+      if (shouldNavigate) {
+        setActiveTab('execute');
+      }
     },
     [userId]
   );
@@ -358,7 +446,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onAddBug={handleAddBug}
             bugs={projectBugs}
             onNavigateToBugs={() => setActiveTab('bugs')}
-            onNavigateToFiles={() => setActiveTab('files')}
+            onNavigateToFiles={() => {
+              setActiveFileToOpen(projectFiles[0]?.id || null);
+              setActiveTab('files');
+            }}
+            onSubmitExecution={handleSubmitExecution}
           />
         )}
 
@@ -373,16 +465,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           />
         )}
 
-        {activeTab === 'import' && (
-          <BulkImportView
-            onImport={handleImportTests}
-            project={activeProject}
-            files={projectFiles}
-            onAddFile={handleAddFile}
-          />
-        )}
-
-        {activeTab === 'files' && (
+        {(activeTab === 'files' || activeTab === 'import') && (
           <TestFilesView
             files={projectFiles}
             tests={projectTests}
@@ -392,6 +475,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onAddTest={handleAddTestCase}
             onDeleteTest={handleDeleteTest}
             onUpdateTest={handleUpdateTest}
+            onImportTests={handleImportTests}
+            initialFileId={activeFileToOpen}
           />
         )}
 

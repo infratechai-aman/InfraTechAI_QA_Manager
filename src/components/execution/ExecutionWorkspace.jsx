@@ -18,6 +18,7 @@ export const ExecutionWorkspace = ({
   bugs,
   onNavigateToBugs,
   onNavigateToFiles,
+  onSubmitExecution,
 }) => {
   const [selectedFileId, setSelectedFileId] = useState(files[0]?.id || '');
   const [filter, setFilter] = useState('All');
@@ -715,12 +716,16 @@ export const ExecutionWorkspace = ({
               </div>
               <button
                 onClick={() => {
-                  // Navigate to All Test Cases
+                  // Navigate to All Test Cases and ensure test file persistence
                   setShowCompleteModal(false);
                   setFilter('All');
                   setSearch('');
                   setCurrentIndex(0);
-                  if (onNavigateToFiles) onNavigateToFiles();
+                  if (onSubmitExecution) {
+                    onSubmitExecution(selectedFileId);
+                  } else if (onNavigateToFiles) {
+                    onNavigateToFiles();
+                  }
                 }}
                 className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >

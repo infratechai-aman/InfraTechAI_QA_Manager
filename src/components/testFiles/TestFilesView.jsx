@@ -1,10 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, Plus, Search, ArrowLeft, ChevronRight, 
   Trash2, Calendar, CheckCircle, XCircle, AlertTriangle, 
-  Circle, X, Edit3, Save, ListOrdered, CheckCircle2, Eye
+  Circle, X, Edit3, Save, ListOrdered, CheckCircle2, Eye,
+  Upload, Sparkles
 } from 'lucide-react';
 import { formatDate, getStatusConfig } from '../../utils/formatters';
+import { parseBulkText } from '../../services/parser';
+
+const SAMPLE_BULK_TEXT = `TC001
+User Authentication via Email OTP
+Steps:
+1. Enter email address
+2. Click Send OTP
+3. Enter 6-digit code
+Expected:
+One-time password should be delivered to registered email and expire in 10 minutes.
+
+TC002
+Checkout discount coupon code validation
+Steps:
+1. Add item to cart
+2. Enter discount code SUMMER20
+3. Verify 20% discount applied to cart total
+Expected:
+Subtotal should reflect 20% discount and discount row displayed in checkout summary.
+
+TC003
+User profile avatar image upload
+Expected:
+PNG and JPG formats up to 5MB should upload and crop successfully.`;
 
 export const TestFilesView = ({ 
   files, 
@@ -15,10 +40,30 @@ export const TestFilesView = ({
   onAddTest,
   onDeleteTest,
   onUpdateTest,
+  onImportTests,
+  initialFileId,
 }) => {
-  const [activeFileId, setActiveFileId] = useState(null);
+  const [activeFileId, setActiveFileId] = useState(initialFileId || null);
   const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const [creationTab, setCreationTab] = useState('manual'); // 'manual' | 'bulk'
   const [newFile, setNewFile] = useState({ name: '', copyFromId: '' });
+
+  // Bulk Import state for new suite
+  const [bulkSuiteName, setBulkSuiteName] = useState('');
+  const [bulkRawText, setBulkRawText] = useState('');
+  const [bulkPreview, setBulkPreview] = useState([]);
+
+  // Bulk Import state for active suite
+  const [isBulkImportingInSuite, setIsBulkImportingInSuite] = useState(false);
+  const [suiteBulkRawText, setSuiteBulkRawText] = useState('');
+  const [suiteBulkPreview, setSuiteBulkPreview] = useState([]);
+
+  // Sync initialFileId when provided
+  useEffect(() => {
+    if (initialFileId) {
+      setActiveFileId(initialFileId);
+    }
+  }, [initialFileId]);
 
   const [isAddingTest, setIsAddingTest] = useState(false);
   const [newTest, setNewTest] = useState({ title: '', expectedResult: '', steps: '' });
@@ -41,9 +86,81 @@ export const TestFilesView = ({
   const handleCreateFile = (e) => {
     e.preventDefault();
     if (!newFile.name.trim()) return;
-    onAddFile(newFile.name, newFile.copyFromId);
+    const created = onAddFile(newFile.name, newFile.copyFromId);
     setIsCreatingFile(false);
     setNewFile({ name: '', copyFromId: '' });
+    if (created?.id) {
+      setActiveFileId(created.id);
+    }
+  };
+
+  // Bulk Import: Load sample text
+  const handleLoadSample = () => {
+    setBulkRawText(SAMPLE_BULK_TEXT);
+    setBulkPreview(parseBulkText(SAMPLE_BULK_TEXT, project?.id, 'preview'));
+  };
+
+  // Bulk Import: Parse text
+  const handleParseBulk = () => {
+    if (!bulkRawText.trim()) return;
+    setBulkPreview(parseBulkText(bulkRawText, project?.id, 'preview'));
+  };
+
+  // Bulk Import: Create Suite and save test cases
+  const handleCreateSuiteWithBulkImport = (e) => {
+    e?.preventDefault();
+    if (!bulkSuiteName.trim() || bulkPreview.length === 0) return;
+
+    const createdFile = onAddFile(bulkSuiteName.trim());
+    const fileId = createdFile?.id;
+
+    const testCasesToSave = bulkPreview.map((t) => ({
+      ...t,
+      fileId,
+      projectId: project?.id,
+    }));
+
+    if (onImportTests) {
+      onImportTests(testCasesToSave, false);
+    }
+
+    setBulkSuiteName('');
+    setBulkRawText('');
+    setBulkPreview([]);
+    setIsCreatingFile(false);
+    if (fileId) {
+      setActiveFileId(fileId);
+    }
+  };
+
+  // Bulk Import: Inside active suite
+  const handleLoadSampleForSuite = () => {
+    setSuiteBulkRawText(SAMPLE_BULK_TEXT);
+    setSuiteBulkPreview(parseBulkText(SAMPLE_BULK_TEXT, project?.id, activeFileId));
+  };
+
+  const handleParseBulkForSuite = () => {
+    if (!suiteBulkRawText.trim()) return;
+    setSuiteBulkPreview(parseBulkText(suiteBulkRawText, project?.id, activeFileId));
+  };
+
+  const handleImportIntoActiveSuite = (e) => {
+    e?.preventDefault();
+    if (!activeFileId || suiteBulkPreview.length === 0) return;
+
+    const testCasesToSave = suiteBulkPreview.map((t) => ({
+      ...t,
+      fileId: activeFileId,
+      projectId: project?.id,
+    }));
+
+    if (onImportTests) {
+      onImportTests(testCasesToSave, false);
+    }
+
+    setSuiteBulkRawText('');
+    setSuiteBulkPreview([]);
+    setIsBulkImportingInSuite(false);
   };
 
   const handleCreateTest = (e) => {
@@ -100,82 +217,263 @@ export const TestFilesView = ({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Test Suites & Files</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Test Suites &amp; Files</h1>
             <p className="text-slate-500 mt-1">
               Manage test collections for <span className="font-semibold text-slate-800">{project?.name}</span>
             </p>
           </div>
-          <button
-            onClick={() => setIsCreatingFile(!isCreatingFile)}
-            className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 self-start sm:self-auto"
-          >
-            <Plus size={16} /> New Test File
-          </button>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <button
+              onClick={() => {
+                setIsCreatingFile(true);
+                setCreationTab('manual');
+              }}
+              className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+            >
+              <Plus size={16} /> New Test File
+            </button>
+            <button
+              onClick={() => {
+                setIsCreatingFile(true);
+                setCreationTab('bulk');
+              }}
+              className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 cursor-pointer"
+            >
+              <Upload size={15} /> Bulk Import
+            </button>
+          </div>
         </div>
 
-        {/* Create File Form */}
+        {/* Create File / Bulk Import Form */}
         {isCreatingFile && (
-          <form onSubmit={handleCreateFile} className="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col gap-4 mb-6 animate-fadeIn">
-            <h3 className="text-base font-bold text-slate-900">Create Test Suite File</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                  File / Suite Name <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  autoFocus
-                  type="text"
-                  value={newFile.name}
-                  onChange={(e) => setNewFile({ ...newFile, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                  placeholder="e.g. Sprint 43 Regression Tests"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Clone Test Cases From (Optional)
-                </label>
-                <select
-                  value={newFile.copyFromId}
-                  onChange={(e) => setNewFile({ ...newFile, copyFromId: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white cursor-pointer font-medium"
-                >
-                  <option value="">-- Start Blank --</option>
-                  {files.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name} ({formatDate(f.date)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2.5 mt-2">
+          <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col gap-4 mb-6 animate-fadeIn">
+            {/* Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <button
                 type="button"
-                onClick={() => setIsCreatingFile(false)}
-                className="px-4 py-2 text-slate-600 text-sm font-semibold hover:bg-slate-100 rounded-xl"
+                onClick={() => setCreationTab('manual')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  creationTab === 'manual'
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
-                Cancel
+                <FileText size={14} /> Blank Suite / Clone
               </button>
               <button
-                type="submit"
-                disabled={!newFile.name.trim()}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 shadow-sm"
+                type="button"
+                onClick={() => setCreationTab('bulk')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  creationTab === 'bulk'
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
-                Create File
+                <Upload size={14} /> Bulk Import Test Cases
               </button>
             </div>
-          </form>
+
+            {/* Tab 1: Manual / Blank Suite */}
+            {creationTab === 'manual' && (
+              <form onSubmit={handleCreateFile} className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      File / Suite Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newFile.name}
+                      onChange={(e) => setNewFile({ ...newFile, name: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-medium"
+                      placeholder="e.g. Sprint 43 Regression Tests"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Clone Test Cases From (Optional)
+                    </label>
+                    <select
+                      value={newFile.copyFromId}
+                      onChange={(e) => setNewFile({ ...newFile, copyFromId: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white cursor-pointer font-medium"
+                    >
+                      <option value="">-- Start Blank --</option>
+                      {files.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name} ({formatDate(f.date)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingFile(false)}
+                    className="px-4 py-2 text-slate-600 text-sm font-semibold hover:bg-slate-100 rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newFile.name.trim()}
+                    className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 shadow-sm cursor-pointer"
+                  >
+                    Create File
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Tab 2: Bulk Import Suite */}
+            {creationTab === 'bulk' && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      New Suite / File Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={bulkSuiteName}
+                      onChange={(e) => setBulkSuiteName(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-medium"
+                      placeholder="e.g. Sprint 15 Bulk Import Suite"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={handleLoadSample}
+                      className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Sparkles size={14} className="text-indigo-600" /> Load Sample Text
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left: Raw Text */}
+                  <div className="flex flex-col border border-slate-200 rounded-xl overflow-hidden">
+                    <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase">
+                      <span>Paste Test Specifications</span>
+                      <button
+                        type="button"
+                        onClick={handleParseBulk}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded cursor-pointer"
+                      >
+                        Parse Text
+                      </button>
+                    </div>
+                    <textarea
+                      value={bulkRawText}
+                      onChange={(e) => {
+                        setBulkRawText(e.target.value);
+                        if (e.target.value.trim()) {
+                          setBulkPreview(parseBulkText(e.target.value, project?.id, 'preview'));
+                        } else {
+                          setBulkPreview([]);
+                        }
+                      }}
+                      rows={8}
+                      className="w-full p-3 font-mono text-xs outline-none resize-none text-slate-800 leading-relaxed placeholder:text-slate-400"
+                      placeholder={`TC001\nVerify User Login with valid credentials\nSteps:\n1. Open login page\n2. Enter valid email and password\n3. Click Login\nExpected:\nDashboard should load and auth token stored.\n\nTC002\nVerify Invalid password handling\nExpected:\nError message shown.`}
+                    />
+                  </div>
+
+                  {/* Right: Live Preview */}
+                  <div className="flex flex-col border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
+                    <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase">
+                      <span>Live Preview ({bulkPreview.length} Cases)</span>
+                      {bulkPreview.length > 0 && (
+                        <span className="text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold">
+                          Ready to import
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 overflow-y-auto max-h-[190px] p-2 bg-white">
+                      {bulkPreview.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center p-6 text-slate-400 text-xs text-center space-y-1">
+                          <FileText size={28} className="opacity-20" />
+                          <p className="font-semibold text-slate-600">No test cases parsed yet</p>
+                          <p className="text-[11px]">Type or paste test cases on the left, or click "Load Sample Text".</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {bulkPreview.map((tc, idx) => (
+                            <div key={idx} className="p-2 border border-slate-100 rounded-lg hover:bg-slate-50 text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-indigo-700 text-[11px]">{tc.externalId}</span>
+                                <span className="font-bold text-slate-800 truncate">{tc.title}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{tc.expectedResult}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCreatingFile(false);
+                      setBulkRawText('');
+                      setBulkPreview([]);
+                    }}
+                    className="px-4 py-2 text-slate-600 text-sm font-semibold hover:bg-slate-100 rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateSuiteWithBulkImport}
+                    disabled={!bulkSuiteName.trim() || bulkPreview.length === 0}
+                    className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <CheckCircle2 size={15} /> Create Suite &amp; Import {bulkPreview.length} Cases
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Files List */}
         <div className="grid gap-3.5">
           {files.length === 0 ? (
-            <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400">
-              <FileText size={40} className="mx-auto mb-3 opacity-20" />
-              <p className="font-semibold text-slate-700">No test files created yet</p>
-              <p className="text-xs mt-1">Create a test file or import test cases via Bulk Import.</p>
+            <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 space-y-3">
+              <FileText size={40} className="mx-auto opacity-20" />
+              <div>
+                <p className="font-semibold text-slate-700 text-base">No test files created yet</p>
+                <p className="text-xs mt-1">Create a test file or import test cases via Bulk Import.</p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsCreatingFile(true);
+                    setCreationTab('manual');
+                  }}
+                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus size={14} /> New Test File
+                </button>
+                <button
+                  onClick={() => {
+                    setIsCreatingFile(true);
+                    setCreationTab('bulk');
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Upload size={14} /> Bulk Import Cases
+                </button>
+              </div>
             </div>
           ) : (
             files.map((f) => {
@@ -276,13 +574,130 @@ export const TestFilesView = ({
                 {fileTests.length} test cases • Created {formatDate(activeFile.createdAt || activeFile.date)}
               </p>
             </div>
-            <button
-              onClick={() => setIsAddingTest(!isAddingTest)}
-              className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 self-start sm:self-auto shrink-0"
-            >
-              <Plus size={16} /> New Test Case
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <button
+                onClick={() => {
+                  setIsBulkImportingInSuite(!isBulkImportingInSuite);
+                  setIsAddingTest(false);
+                }}
+                className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Upload size={14} /> Bulk Import Cases
+              </button>
+              <button
+                onClick={() => {
+                  setIsAddingTest(!isAddingTest);
+                  setIsBulkImportingInSuite(false);
+                }}
+                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 cursor-pointer"
+              >
+                <Plus size={16} /> New Test Case
+              </button>
+            </div>
           </div>
+
+          {/* In-Suite Bulk Import Form */}
+          {isBulkImportingInSuite && (
+            <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col gap-4 animate-fadeIn">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Bulk Import into "{activeFile.name}"</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Paste plain text test cases to add directly to this suite.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLoadSampleForSuite}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Sparkles size={13} className="text-indigo-600" /> Load Sample
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Left: Raw Text */}
+                <div className="flex flex-col border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase">
+                    <span>Paste Test Cases</span>
+                    <button
+                      type="button"
+                      onClick={handleParseBulkForSuite}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded cursor-pointer"
+                    >
+                      Parse Text
+                    </button>
+                  </div>
+                  <textarea
+                    value={suiteBulkRawText}
+                    onChange={(e) => {
+                      setSuiteBulkRawText(e.target.value);
+                      if (e.target.value.trim()) {
+                        setSuiteBulkPreview(parseBulkText(e.target.value, project?.id, activeFileId));
+                      } else {
+                        setSuiteBulkPreview([]);
+                      }
+                    }}
+                    rows={7}
+                    className="w-full p-3 font-mono text-xs outline-none resize-none text-slate-800 leading-relaxed placeholder:text-slate-400"
+                    placeholder={`TC001\nTitle of test case\nSteps:\n1. Step 1\nExpected:\nExpected result`}
+                  />
+                </div>
+
+                {/* Right: Preview */}
+                <div className="flex flex-col border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
+                  <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase">
+                    <span>Preview ({suiteBulkPreview.length} Cases)</span>
+                    {suiteBulkPreview.length > 0 && (
+                      <span className="text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold">
+                        Ready to add
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-y-auto max-h-[170px] p-2 bg-white">
+                    {suiteBulkPreview.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center p-6 text-slate-400 text-xs text-center space-y-1">
+                        <FileText size={24} className="opacity-20" />
+                        <p className="font-semibold text-slate-600 text-xs">No cases parsed yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {suiteBulkPreview.map((tc, idx) => (
+                          <div key={idx} className="p-2 border border-slate-100 rounded-lg hover:bg-slate-50 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-indigo-700 text-[11px]">{tc.externalId}</span>
+                              <span className="font-bold text-slate-800 truncate">{tc.title}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">{tc.expectedResult}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBulkImportingInSuite(false);
+                    setSuiteBulkRawText('');
+                    setSuiteBulkPreview([]);
+                  }}
+                  className="px-4 py-2 text-slate-600 text-sm font-semibold hover:bg-slate-100 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportIntoActiveSuite}
+                  disabled={suiteBulkPreview.length === 0}
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 size={15} /> Add {suiteBulkPreview.length} Cases to Suite
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Manual Test Case Form */}
           {isAddingTest && (

@@ -29,7 +29,6 @@ export const Sidebar = ({
       disabled: !activeProjectId,
       badge: openBugsCount > 0 ? openBugsCount : null 
     },
-    { id: 'import', icon: Upload, label: 'Bulk Import', disabled: !activeProjectId },
     { id: 'files', icon: List, label: 'All Test Cases', disabled: !activeProjectId },
     { id: 'reports', icon: BookOpen, label: 'Reports', disabled: !activeProjectId },
   ];

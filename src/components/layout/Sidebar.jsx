@@ -2,7 +2,8 @@ import React, { useRef } from 'react';
 import { 
   Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List,
-  Download, UploadCloud, LogOut, DoorOpen, BookOpen
+  Download, UploadCloud, LogOut, DoorOpen, BookOpen,
+  FileText
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -10,6 +11,8 @@ export const Sidebar = ({
   setActiveTab, 
   activeProject, 
   activeProjectId,
+  activeFile,
+  onExitTestFile,
   openBugsCount = 0,
   currentUser,
   onLogout,
@@ -113,6 +116,32 @@ export const Sidebar = ({
               <DoorOpen size={17} className="text-rose-500" />
               <span>Exit Workspace</span>
             </button>
+
+            {/* Active Test Case / File Display Card + Exit TestCase Button */}
+            {activeFile && (
+              <div className="pt-2 space-y-2 animate-fadeIn border-t border-slate-100">
+                <div className="px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-1.5 bg-slate-800 rounded-lg text-white shrink-0 mt-0.5">
+                      <FileText size={13} />
+                    </div>
+                    <div className="overflow-hidden flex-1 min-w-0">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active TestCase File</p>
+                      <p className="text-xs font-bold text-slate-900 truncate" title={activeFile.name}>{activeFile.name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={onExitTestFile}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all cursor-pointer shadow-xs"
+                  title="Deselect active test case file"
+                >
+                  <DoorOpen size={14} className="text-amber-600" />
+                  <span>Exit TestCase</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 

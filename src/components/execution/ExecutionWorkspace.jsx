@@ -4,7 +4,7 @@ import {
   Search, ArrowLeft, ArrowRight, Save, Calendar, 
   Bug as BugIcon, Command, Keyboard, Check, 
   ListOrdered, CheckCircle2, Sparkles, Monitor, 
-  RefreshCw, Flag, Trophy
+  RefreshCw, Flag, Trophy, DoorOpen, Play, FileText
 } from 'lucide-react';
 import { formatDate, getStatusConfig } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
@@ -19,8 +19,10 @@ export const ExecutionWorkspace = ({
   onNavigateToBugs,
   onNavigateToFiles,
   onSubmitExecution,
+  activeFileId,
+  onSelectFile,
+  onExitTestFile,
 }) => {
-  const [selectedFileId, setSelectedFileId] = useState(files[0]?.id || '');
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,20 +31,13 @@ export const ExecutionWorkspace = ({
   const [bugForm, setBugForm] = useState(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
-  // Sync selected file when files prop changes (e.g. after project switch)
-  useEffect(() => {
-    if (files.length > 0) {
-      setSelectedFileId(files[0].id);
-      setCurrentIndex(0);
-    } else {
-      setSelectedFileId('');
-    }
-  }, [files.map(f => f.id).join(',')]);
+  const currentFile = files.find((f) => f.id === activeFileId);
 
-  // All tests in the currently selected suite (regardless of filter)
+  // All tests in the currently selected suite (strictly filtered to activeFileId)
   const suiteTests = useMemo(() => {
-    return tests.filter(t => selectedFileId ? t.fileId === selectedFileId : true);
-  }, [tests, selectedFileId]);
+    if (!activeFileId) return [];
+    return tests.filter((t) => t.fileId === activeFileId);
+  }, [tests, activeFileId]);
 
   // Filtered tests for navigation
   const filteredTests = useMemo(() => {
@@ -179,6 +174,89 @@ export const ExecutionWorkspace = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleStatusUpdate, filteredTests.length]);
 
+  // If NO test file is selected, render the Suite Selection screen
+  if (!activeFileId || !currentFile) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto space-y-8 animate-fadeIn">
+        <div className="text-center pt-8 pb-2">
+          <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100 shadow-sm">
+            <Play size={28} className="translate-x-0.5" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Select Test Suite to Execute</h1>
+          <p className="text-slate-500 text-sm mt-2 max-w-md mx-auto">
+            Choose a test suite file from <span className="font-semibold text-slate-800">{project?.name}</span> to begin executing test cases.
+          </p>
+        </div>
+
+        {files.length === 0 ? (
+          <div className="text-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400 space-y-3">
+            <FileText size={40} className="mx-auto opacity-20" />
+            <p className="font-semibold text-slate-700 text-base">No test files available</p>
+            <p className="text-xs text-slate-400">Create or import test files in All Test Cases first.</p>
+            <button
+              onClick={onNavigateToFiles}
+              className="mt-3 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all cursor-pointer shadow-sm shadow-indigo-200"
+            >
+              Go to All Test Cases
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {files.map((f) => {
+              const fileTests = tests.filter((t) => t.fileId === f.id);
+              const passed = fileTests.filter((t) => t.status === 'Pass').length;
+              const failed = fileTests.filter((t) => t.status === 'Fail').length;
+              const notRun = fileTests.filter((t) => t.status === 'Not Run').length;
+              const pct = fileTests.length > 0 ? Math.round(((fileTests.length - notRun) / fileTests.length) * 100) : 0;
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => {
+                    if (onSelectFile) onSelectFile(f.id);
+                    setCurrentIndex(0);
+                  }}
+                  className="bg-white border border-slate-200 hover:border-indigo-400 p-6 rounded-2xl shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <FileText size={22} />
+                      </div>
+                      <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full">
+                        {fileTests.length} Tests
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-base text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                      {f.name}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Created {formatDate(f.createdAt || f.date)}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-500">{pct}%</span>
+                    </div>
+                    <span className="text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                      Start Run →
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full bg-slate-50 overflow-hidden w-full">
       
@@ -191,15 +269,20 @@ export const ExecutionWorkspace = ({
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Test Suite
             </label>
-            <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-              {filteredTests.length} Tests
-            </span>
+            <button
+              onClick={onExitTestFile}
+              className="flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+              title="Exit this test case suite"
+            >
+              <DoorOpen size={12} className="text-amber-600" />
+              <span>Exit TestCase</span>
+            </button>
           </div>
 
           <select
-            value={selectedFileId}
+            value={activeFileId}
             onChange={(e) => {
-              setSelectedFileId(e.target.value);
+              if (onSelectFile) onSelectFile(e.target.value);
               setCurrentIndex(0);
             }}
             className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none hover:bg-slate-100/80 transition-colors cursor-pointer"
@@ -722,7 +805,7 @@ export const ExecutionWorkspace = ({
                   setSearch('');
                   setCurrentIndex(0);
                   if (onSubmitExecution) {
-                    onSubmitExecution(selectedFileId);
+                    onSubmitExecution(activeFileId);
                   } else if (onNavigateToFiles) {
                     onNavigateToFiles();
                   }

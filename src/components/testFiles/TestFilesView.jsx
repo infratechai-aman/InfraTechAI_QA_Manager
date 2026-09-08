@@ -3,7 +3,7 @@ import {
   FileText, Plus, Search, ArrowLeft, ChevronRight, 
   Trash2, Calendar, CheckCircle, XCircle, AlertTriangle, 
   Circle, X, Edit3, Save, ListOrdered, CheckCircle2, Eye,
-  Upload, Sparkles
+  Upload, Sparkles, Play, DoorOpen
 } from 'lucide-react';
 import { formatDate, getStatusConfig } from '../../utils/formatters';
 import { parseBulkText } from '../../services/parser';
@@ -41,9 +41,20 @@ export const TestFilesView = ({
   onDeleteTest,
   onUpdateTest,
   onImportTests,
-  initialFileId,
+  activeFileId: propActiveFileId,
+  onSelectFile,
+  onExitTestFile,
+  onNavigateToExecute,
 }) => {
-  const [activeFileId, setActiveFileId] = useState(initialFileId || null);
+  const [internalFileId, setInternalFileId] = useState(null);
+  const activeFileId = propActiveFileId !== undefined ? propActiveFileId : internalFileId;
+
+  const setActiveFileId = (id) => {
+    setInternalFileId(id);
+    if (id && onSelectFile) onSelectFile(id);
+    if (!id && onExitTestFile) onExitTestFile();
+  };
+
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [creationTab, setCreationTab] = useState('manual'); // 'manual' | 'bulk'
   const [newFile, setNewFile] = useState({ name: '', copyFromId: '' });
@@ -57,13 +68,6 @@ export const TestFilesView = ({
   const [isBulkImportingInSuite, setIsBulkImportingInSuite] = useState(false);
   const [suiteBulkRawText, setSuiteBulkRawText] = useState('');
   const [suiteBulkPreview, setSuiteBulkPreview] = useState([]);
-
-  // Sync initialFileId when provided
-  useEffect(() => {
-    if (initialFileId) {
-      setActiveFileId(initialFileId);
-    }
-  }, [initialFileId]);
 
   const [isAddingTest, setIsAddingTest] = useState(false);
   const [newTest, setNewTest] = useState({ title: '', expectedResult: '', steps: '' });
@@ -558,13 +562,28 @@ export const TestFilesView = ({
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
 
           {/* Navigation & Header */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <button
-              onClick={() => { setActiveFileId(null); setSelectedTestId(null); }}
-              className="text-slate-500 hover:text-slate-900 flex items-center gap-1.5 text-xs font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs hover:border-slate-300 transition-all"
+              onClick={() => {
+                setActiveFileId(null);
+                setSelectedTestId(null);
+              }}
+              className="text-slate-500 hover:text-slate-900 flex items-center gap-1.5 text-xs font-bold bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-xs hover:border-slate-300 transition-all cursor-pointer"
             >
               <ArrowLeft size={14} /> Back to All Suites
             </button>
+
+            {onNavigateToExecute && (
+              <button
+                onClick={() => {
+                  setActiveFileId(activeFile.id);
+                  onNavigateToExecute();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <Play size={13} /> Run in Test Execution
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

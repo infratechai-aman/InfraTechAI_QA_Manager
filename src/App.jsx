@@ -29,7 +29,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [reports, setReports] = useState([]);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
-  const [activeFileToOpen, setActiveFileToOpen] = useState(null);
+  const [activeFileId, setActiveFileId] = useState(null);
+
+  const activeFile = files.find((f) => f.id === activeFileId && f.projectId === activeProjectId) || null;
 
   // Initialize and load data whenever authenticated user changes
   useEffect(() => {
@@ -94,7 +96,12 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // --- Exit Project (enforce isolation) ---
   const handleExitProject = () => {
     setActiveProjectId(null);
+    setActiveFileId(null);
     setActiveTab('projects');
+  };
+
+  const handleExitTestFile = () => {
+    setActiveFileId(null);
   };
 
   const handleDeleteProject = (projectId) => {
@@ -236,7 +243,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       }
 
       if (targetFileId) {
-        setActiveFileToOpen(targetFileId);
+        setActiveFileId(targetFileId);
       }
       setActiveTab('files');
     },
@@ -402,6 +409,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         setActiveTab={setActiveTab}
         activeProject={activeProject}
         activeProjectId={activeProjectId}
+        activeFile={activeFile}
+        onExitTestFile={handleExitTestFile}
         openBugsCount={openBugsCount}
         currentUser={currentUser}
         onLogout={logout}
@@ -422,6 +431,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             activeProjectId={activeProjectId}
             onSelectProject={(id) => {
               setActiveProjectId(id);
+              setActiveFileId(null);
               setActiveTab('dashboard');
             }}
           />
@@ -443,13 +453,13 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             updateTest={handleUpdateTest}
             project={activeProject}
             files={projectFiles}
+            activeFileId={activeFileId}
+            onSelectFile={(id) => setActiveFileId(id)}
+            onExitTestFile={handleExitTestFile}
             onAddBug={handleAddBug}
             bugs={projectBugs}
             onNavigateToBugs={() => setActiveTab('bugs')}
-            onNavigateToFiles={() => {
-              setActiveFileToOpen(projectFiles[0]?.id || null);
-              setActiveTab('files');
-            }}
+            onNavigateToFiles={() => setActiveTab('files')}
             onSubmitExecution={handleSubmitExecution}
           />
         )}
@@ -471,12 +481,18 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             tests={projectTests}
             project={activeProject}
             onAddFile={handleAddFile}
-            onDeleteFile={handleDeleteFile}
+            onDeleteFile={(id) => {
+              if (activeFileId === id) setActiveFileId(null);
+              handleDeleteFile(id);
+            }}
             onAddTest={handleAddTestCase}
             onDeleteTest={handleDeleteTest}
             onUpdateTest={handleUpdateTest}
             onImportTests={handleImportTests}
-            initialFileId={activeFileToOpen}
+            activeFileId={activeFileId}
+            onSelectFile={(id) => setActiveFileId(id)}
+            onExitTestFile={handleExitTestFile}
+            onNavigateToExecute={() => setActiveTab('execute')}
           />
         )}
 

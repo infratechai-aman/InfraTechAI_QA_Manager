@@ -13,6 +13,7 @@ import { BulkImportView } from './components/import/BulkImportView';
 import { ReportsView } from './components/reports/ReportsView';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { InviteMemberModal } from './components/modals/InviteMemberModal';
+import { InviteAcceptModal } from './components/modals/InviteAcceptModal';
 import { InvitationBanner } from './components/layout/InvitationBanner';
 import { LoginView } from './components/auth/LoginView';
 
@@ -50,6 +51,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [activeUrlInvite, setActiveUrlInvite] = useState(null);
+  const [isInviteAcceptModalOpen, setIsInviteAcceptModalOpen] = useState(false);
   const [activeFileId, setActiveFileId] = useState(null);
 
   const activeFile = files.find((f) => f.id === activeFileId && f.projectId === activeProjectId) || null;
@@ -88,7 +91,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         console.warn('Cloud pull check completed:', err);
       }
 
-      // 3. Check for pending invitations for this user
+      // 3. Check for pending invitations for this user and URL invite parameters
       try {
         const invites = await db.getPendingInvitations(currentUser.email);
         setPendingInvitations(invites);
@@ -96,11 +99,45 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         // Check if URL has ?invite=... parameter
         const params = new URLSearchParams(window.location.search);
         const urlInviteId = params.get('invite');
+        const urlProjectId = params.get('project');
+
         if (urlInviteId) {
-          const matched = invites.find(i => i.id === urlInviteId);
-          if (matched) {
-            // Auto open acceptance or ensure it's in pendingInvitations
-            setPendingInvitations(invites);
+          // A. Check if already in pending invites list
+          let targetInvite = invites.find(i => i.id === urlInviteId);
+
+          // B. Fetch direct from Firestore / local storage by ID
+          if (!targetInvite) {
+            targetInvite = await db.getInvitationById(urlInviteId);
+          }
+
+          // C. If still not found, check shared workspace directly by projectId
+          if (!targetInvite && urlProjectId) {
+            const ws = await db.pullSharedWorkspace(urlProjectId);
+            targetInvite = {
+              id: urlInviteId,
+              projectId: urlProjectId,
+              projectName: ws?.project?.name || 'PersianDarbar RMS',
+              inviterEmail: ws?.project?.ownerEmail || 'Workspace Owner',
+              role: 'QA Tester',
+              status: 'pending'
+            };
+          }
+
+          if (targetInvite) {
+            // Check if user is already an active member of this project
+            const alreadyJoined = loadedProjects.some(p => p.id === targetInvite.projectId);
+            if (!alreadyJoined) {
+              setActiveUrlInvite(targetInvite);
+              setIsInviteAcceptModalOpen(true);
+              setPendingInvitations(prev => {
+                if (prev.some(i => i.id === targetInvite.id)) return prev;
+                return [targetInvite, ...prev];
+              });
+            } else {
+              // User is already a member, open the workspace directly
+              setActiveProjectId(targetInvite.projectId);
+              setActiveTab('dashboard');
+            }
           }
         }
       } catch (inviteErr) {
@@ -116,6 +153,21 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const projectTests = tests.filter((t) => t.projectId === activeProjectId);
   const projectBugs = bugs.filter((b) => b.projectId === activeProjectId);
   const openBugsCount = projectBugs.filter((b) => ['Open', 'In Progress', 'Reopened'].includes(b.status)).length;
+
+  // Auto sync shared workspace changes (tests, bugs, files) to Firestore if project is shared
+  useEffect(() => {
+    if (!activeProjectId || !activeProject || !currentUser) return;
+    const isShared = activeProject.members && activeProject.members.length > 1;
+    if (isShared) {
+      db.syncSharedWorkspace(activeProjectId, {
+        project: activeProject,
+        files: projectFiles,
+        tests: projectTests,
+        bugs: projectBugs,
+        reports: reports.filter(r => r.projectId === activeProjectId)
+      }, currentUser);
+    }
+  }, [activeProjectId, tests.length, bugs.length, files.length]);
 
   // --- Project Management ---
   const handleAddProject = (newProjData) => {
@@ -146,16 +198,59 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // --- Workspace Invitations Handlers ---
   const handleAcceptInvitation = async (inv) => {
     try {
-      await db.acceptInvitation(inv.id, currentUser);
+      const result = await db.acceptInvitation(inv.id, currentUser, inv.projectId);
       setPendingInvitations(prev => prev.filter(i => i.id !== inv.id));
+      setIsInviteAcceptModalOpen(false);
+      setActiveUrlInvite(null);
 
-      // Refresh cloud projects & shared workspaces
-      const cloudData = await db.pullFromFirestore(userId, currentUser.email);
-      if (cloudData && cloudData.projects) {
-        setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
-        if (cloudData.files) setFiles(cloudData.files);
-        if (cloudData.tests) setTests(cloudData.tests);
-        if (cloudData.bugs) setBugs(cloudData.bugs);
+      // Clean URL query parameters (?invite=...&project=...)
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+
+      // If workspace payload was returned, merge directly into local state
+      if (result?.workspace?.project) {
+        const joinedProject = result.workspace.project;
+        setProjects(prev => {
+          const filtered = prev.filter(p => p.id !== joinedProject.id);
+          const updated = [...filtered, joinedProject];
+          db.saveProjects(updated, userId);
+          return normalizeProjects(updated, userId, currentUser.email);
+        });
+        if (result.workspace.files) {
+          setFiles(prev => {
+            const filtered = prev.filter(f => f.projectId !== joinedProject.id);
+            const updated = [...filtered, ...result.workspace.files];
+            db.saveFiles(updated, userId);
+            return updated;
+          });
+        }
+        if (result.workspace.tests) {
+          setTests(prev => {
+            const filtered = prev.filter(t => t.projectId !== joinedProject.id);
+            const updated = [...filtered, ...result.workspace.tests];
+            db.saveTestCases(updated, userId);
+            return updated;
+          });
+        }
+        if (result.workspace.bugs) {
+          setBugs(prev => {
+            const filtered = prev.filter(b => b.projectId !== joinedProject.id);
+            const updated = [...filtered, ...result.workspace.bugs];
+            db.saveBugs(updated, userId);
+            return updated;
+          });
+        }
+      } else {
+        // Fallback: refresh from cloud
+        const cloudData = await db.pullFromFirestore(userId, currentUser.email);
+        if (cloudData && cloudData.projects) {
+          setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
+          if (cloudData.files) setFiles(cloudData.files);
+          if (cloudData.tests) setTests(cloudData.tests);
+          if (cloudData.bugs) setBugs(cloudData.bugs);
+        }
       }
 
       setActiveProjectId(inv.projectId);
@@ -169,6 +264,13 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     try {
       await db.declineInvitation(inviteId);
       setPendingInvitations(prev => prev.filter(i => i.id !== inviteId));
+      setIsInviteAcceptModalOpen(false);
+      setActiveUrlInvite(null);
+
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
     } catch (err) {
       console.warn('Failed to decline invitation:', err);
     }
@@ -541,6 +643,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
               setActiveFileId(null);
               setActiveTab('dashboard');
             }}
+            pendingInvitations={pendingInvitations}
+            onAcceptInvitation={handleAcceptInvitation}
+            onDeclineInvitation={handleDeclineInvitation}
           />
         )}
 
@@ -651,6 +756,15 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         project={activeProject}
         currentUser={currentUser}
         onMembersUpdated={handleMembersUpdated}
+      />
+
+      {/* Direct Workspace Invitation Acceptance Modal */}
+      <InviteAcceptModal
+        isOpen={isInviteAcceptModalOpen}
+        invite={activeUrlInvite}
+        onAccept={handleAcceptInvitation}
+        onDecline={handleDeclineInvitation}
+        onClose={() => setIsInviteAcceptModalOpen(false)}
       />
 
     </div>

@@ -307,10 +307,35 @@ export const db = {
   },
 
   /**
+   * Fetch a single invitation directly by ID (from local storage or Firestore)
+   */
+  getInvitationById: async (inviteId) => {
+    if (!inviteId) return null;
+
+    // 1. Check local storage
+    const localInvites = load('qa_workspace_invitations_v2', []);
+    const localMatch = localInvites.find(i => i.id === inviteId);
+    if (localMatch) return localMatch;
+
+    // 2. Query Firestore
+    if (isFirebaseConfigured && firestore) {
+      try {
+        const snap = await getDoc(doc(firestore, 'invitations', inviteId));
+        if (snap.exists()) {
+          return { ...snap.data(), id: snap.id };
+        }
+      } catch (err) {
+        console.warn('[Firebase] Error fetching invitation by id:', err.message);
+      }
+    }
+    return null;
+  },
+
+  /**
    * Accept an invitation and gain access to the workspace
    */
-  acceptInvitation: async (inviteId, currentUser) => {
-    if (!inviteId || !currentUser) return null;
+  acceptInvitation: async (inviteId, currentUser, fallbackProjectId) => {
+    if (!currentUser) return null;
 
     // 1. Update local invitations
     const localInvites = load('qa_workspace_invitations_v2', []);
@@ -319,12 +344,13 @@ export const db = {
       inv.status = 'accepted';
       inv.acceptedAt = new Date().toISOString();
       inv.acceptedByUid = currentUser.uid;
+      inv.acceptedByEmail = currentUser.email;
       save('qa_workspace_invitations_v2', localInvites);
     }
 
     // 2. Update Firestore
     let inviteData = inv;
-    if (isFirebaseConfigured && firestore) {
+    if (isFirebaseConfigured && firestore && inviteId) {
       try {
         const inviteRef = doc(firestore, 'invitations', inviteId);
         const snap = await getDoc(inviteRef);
@@ -342,11 +368,63 @@ export const db = {
       }
     }
 
-    if (!inviteData) return null;
+    const projectId = inviteData?.projectId || fallbackProjectId;
+    if (!projectId) return null;
 
-    // 3. Pull shared workspace data for this project
-    const sharedData = await db.pullSharedWorkspace(inviteData.projectId);
-    return { invite: inviteData, workspace: sharedData };
+    // 3. Ensure currentUser.email is added to shared_workspaces/{projectId}.members in Firestore
+    if (isFirebaseConfigured && firestore) {
+      try {
+        const wsRef = doc(firestore, 'shared_workspaces', projectId);
+        const wsSnap = await getDoc(wsRef);
+        if (wsSnap.exists()) {
+          const wsData = wsSnap.data();
+          const currentMembers = Array.isArray(wsData.members) ? [...wsData.members] : [];
+          const normalizedEmail = (currentUser.email || '').toLowerCase();
+          if (normalizedEmail && !currentMembers.includes(normalizedEmail)) {
+            currentMembers.push(normalizedEmail);
+          }
+
+          let parsedPayload = {};
+          try {
+            parsedPayload = wsData.payload ? JSON.parse(wsData.payload) : {};
+          } catch (e) {
+            console.warn('Error parsing payload:', e);
+          }
+
+          if (parsedPayload.project) {
+            const projMembers = Array.isArray(parsedPayload.project.members) ? [...parsedPayload.project.members] : [];
+            const existingMember = projMembers.find(m => m.email?.toLowerCase() === normalizedEmail);
+            if (existingMember) {
+              existingMember.status = 'active';
+            } else {
+              projMembers.push({
+                email: normalizedEmail,
+                role: inviteData?.role || 'QA Tester',
+                status: 'active',
+                addedAt: new Date().toISOString()
+              });
+            }
+            parsedPayload.project.members = projMembers;
+          }
+
+          await setDoc(wsRef, {
+            members: currentMembers,
+            payload: JSON.stringify(parsedPayload),
+            updatedAt: new Date().toISOString(),
+            lastModifiedBy: currentUser.email || 'User'
+          }, { merge: true });
+        }
+      } catch (wsErr) {
+        console.warn('[Firebase] Error updating shared workspace on accept:', wsErr.message);
+      }
+    }
+
+    // 4. Pull shared workspace data for this project
+    const sharedData = await db.pullSharedWorkspace(projectId);
+    return { 
+      invite: inviteData || { id: inviteId, projectId, status: 'accepted' }, 
+      workspace: sharedData 
+    };
   },
 
   /**

@@ -22,10 +22,19 @@ export const InviteMemberModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Load project's pending invites on open
+  // Load project's pending invites on open and ensure workspace is synced
   useEffect(() => {
     if (!isOpen || !project?.id) return;
     loadProjectInvites();
+    if (currentUser?.uid) {
+      db.syncSharedWorkspace(project.id, {
+        project,
+        files: db.getFiles(currentUser.uid).filter(f => f.projectId === project.id),
+        tests: db.getTestCases(currentUser.uid).filter(t => t.projectId === project.id),
+        bugs: db.getBugs(currentUser.uid).filter(b => b.projectId === project.id),
+        reports: db.getReports(currentUser.uid).filter(r => r.projectId === project.id)
+      }, currentUser);
+    }
   }, [isOpen, project?.id]);
 
   const loadProjectInvites = async () => {
@@ -93,6 +102,17 @@ export const InviteMemberModal = ({
 
       if (onMembersUpdated) {
         onMembersUpdated(updatedMembers);
+      }
+
+      // Explicitly sync shared workspace payload to Firestore
+      if (currentUser?.uid) {
+        await db.syncSharedWorkspace(project.id, {
+          project: { ...project, members: updatedMembers },
+          files: db.getFiles(currentUser.uid).filter(f => f.projectId === project.id),
+          tests: db.getTestCases(currentUser.uid).filter(t => t.projectId === project.id),
+          bugs: db.getBugs(currentUser.uid).filter(b => b.projectId === project.id),
+          reports: db.getReports(currentUser.uid).filter(r => r.projectId === project.id)
+        }, currentUser);
       }
 
       // 2. Generate direct invite link

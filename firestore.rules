@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Private User Data (isolated per user)
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. Workspace Invitations (for collaboration)
+    match /invitations/{inviteId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 3. Shared Workspaces (multi-user collaborative workspaces)
+    match /shared_workspaces/{projectId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

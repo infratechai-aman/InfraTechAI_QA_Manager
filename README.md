@@ -90,14 +90,24 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. The app wil
 To make the app persist in the cloud across all your devices:
 
 1. Visit the [Firebase Console](https://console.firebase.google.com/) and click **Add Project**.
-2. Go to **Build → Firestore Database** and click **Create Database**. Set your private user-scoped security rules:
+2. Go to **Build → Firestore Database** and click **Create Database**. Set your security rules under the **Rules** tab:
    ```javascript
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
-       // Only authenticated users can access their own private workspace data
+       // 1. Private User Data
        match /users/{userId}/{document=**} {
          allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+
+       // 2. Workspace Invitations
+       match /invitations/{inviteId} {
+         allow read, write: if request.auth != null;
+       }
+
+       // 3. Shared Workspaces
+       match /shared_workspaces/{projectId} {
+         allow read, write: if request.auth != null;
        }
      }
    }

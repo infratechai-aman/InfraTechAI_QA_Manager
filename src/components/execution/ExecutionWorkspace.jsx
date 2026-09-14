@@ -576,32 +576,52 @@ export const ExecutionWorkspace = ({
 
                     {/* Tester & Author Attribution Bar */}
                     <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                      {currentTest.executedBy ? (
-                        <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-                          <div className={`w-5 h-5 rounded-md ${getUserColor(currentTest.executedBy).badge} flex items-center justify-center text-[9px] font-bold`}>
-                            {getUserInitial(currentTest.executedBy)}
+                      {currentTest.executedBy ? (() => {
+                        const isTesterOwner = (project?.ownerEmail?.toLowerCase() === currentTest.executedBy?.toLowerCase()) || (currentTest.executedByRole === 'Owner');
+                        const isMe = currentTest.executedBy === currentUser?.email;
+                        return (
+                          <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
+                            <div className={`w-5 h-5 rounded-md ${getUserColor(currentTest.executedBy).badge} flex items-center justify-center text-[9px] font-bold`}>
+                              {getUserInitial(currentTest.executedBy)}
+                            </div>
+                            <div className="text-xs flex items-center gap-1.5 flex-wrap">
+                              <span className="text-slate-500">Executed by</span>
+                              <strong className={isMe ? 'text-indigo-600' : 'text-violet-600'}>
+                                {isMe ? 'You' : currentTest.executedBy}
+                              </strong>
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider ${
+                                isTesterOwner 
+                                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                                  : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              }`}>
+                                {isTesterOwner ? 'OWNER' : 'QA TESTER'}
+                              </span>
+                              {currentTest.executedAt && (
+                                <span className="text-slate-400 text-[11px] ml-0.5">({formatDate(currentTest.executedAt)})</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-xs">
-                            <span className="text-slate-500">Executed by </span>
-                            <strong className={currentTest.executedBy === currentUser?.email ? 'text-indigo-600' : 'text-violet-600'}>
-                              {currentTest.executedBy === currentUser?.email ? 'You' : currentTest.executedBy}
-                            </strong>
-                            {currentTest.executedAt && (
-                              <span className="text-slate-400 text-[11px] ml-1">({formatDate(currentTest.executedAt)})</span>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
+                        );
+                      })() : (
                         <div className="text-xs text-slate-400 italic bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100">
                           Status: Not Executed Yet
                         </div>
                       )}
 
-                      {currentTest.createdBy && (
-                        <span className="text-[11px] text-slate-400 font-medium">
-                          Created by {currentTest.createdBy === currentUser?.email ? 'You' : currentTest.createdBy.split('@')[0]}
-                        </span>
-                      )}
+                      {currentTest.createdBy && (() => {
+                        const isCreatorOwner = (project?.ownerEmail?.toLowerCase() === currentTest.createdBy?.toLowerCase()) || (currentTest.creatorRole === 'Owner');
+                        const isMe = currentTest.createdBy === currentUser?.email;
+                        return (
+                          <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                            <span>Created by {isMe ? 'You' : currentTest.createdBy.split('@')[0]}</span>
+                            <span className={`px-1 py-0.2 rounded text-[8px] font-black uppercase ${
+                              isCreatorOwner ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'
+                            }`}>
+                              {isCreatorOwner ? 'OWNER' : 'QA TESTER'}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

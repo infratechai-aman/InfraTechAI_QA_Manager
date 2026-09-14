@@ -3,9 +3,9 @@ import {
   FileText, Plus, Search, ArrowLeft, ChevronRight, 
   Trash2, Calendar, CheckCircle, XCircle, AlertTriangle, 
   Circle, X, Edit3, Save, ListOrdered, CheckCircle2, Eye,
-  Upload, Sparkles, Play, DoorOpen
+  Upload, Sparkles, Play, DoorOpen, Shield, User, Filter
 } from 'lucide-react';
-import { formatDate, getStatusConfig } from '../../utils/formatters';
+import { formatDate, getStatusConfig, getUserColor, getUserInitial } from '../../utils/formatters';
 import { parseBulkText } from '../../services/parser';
 
 const SAMPLE_BULK_TEXT = `TC001
@@ -73,6 +73,7 @@ export const TestFilesView = ({
   const [isAddingTest, setIsAddingTest] = useState(false);
   const [newTest, setNewTest] = useState({ title: '', expectedResult: '', steps: '' });
   const [search, setSearch] = useState('');
+  const [testerFilter, setTesterFilter] = useState('ALL'); // 'ALL' | 'MINE' | 'TEAM' | 'UNEXECUTED'
 
   // Selected test for detail panel
   const [selectedTestId, setSelectedTestId] = useState(null);
@@ -83,10 +84,25 @@ export const TestFilesView = ({
   const fileTests = tests.filter((t) => t.fileId === activeFileId);
   const selectedTest = fileTests.find(t => t.id === selectedTestId);
 
-  const filteredTests = fileTests.filter((t) =>
-    t.title.toLowerCase().includes(search.toLowerCase()) ||
-    t.externalId.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTests = fileTests.filter((t) => {
+    const matchesSearch = 
+      t.title.toLowerCase().includes(search.toLowerCase()) ||
+      t.externalId.toLowerCase().includes(search.toLowerCase()) ||
+      (t.executedBy && t.executedBy.toLowerCase().includes(search.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (testerFilter === 'MINE') {
+      return t.executedBy && t.executedBy.toLowerCase() === currentUser?.email?.toLowerCase();
+    }
+    if (testerFilter === 'TEAM') {
+      return t.executedBy && t.executedBy.toLowerCase() !== currentUser?.email?.toLowerCase();
+    }
+    if (testerFilter === 'UNEXECUTED') {
+      return !t.executedBy || t.status === 'Not Run';
+    }
+    return true;
+  });
 
   const handleCreateFile = (e) => {
     e.preventDefault();
@@ -508,21 +524,87 @@ export const TestFilesView = ({
                         <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
                           {f.name}
                         </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          Created {formatDate(f.createdAt || f.date)}
-                        </p>
-                        {/* Mini progress bar */}
+
+                        {/* Suite Creator & Role Attribution */}
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-xs text-slate-400">
+                            Created {formatDate(f.createdAt || f.date)}
+                          </span>
+                          {f.createdBy && (() => {
+                            const isAuthorOwner = project?.ownerEmail?.toLowerCase() === f.createdBy?.toLowerCase() || f.creatorRole === 'Owner';
+                            const isMe = f.createdBy?.toLowerCase() === currentUser?.email?.toLowerCase();
+                            const authorColor = getUserColor(f.createdBy);
+                            const authorInitial = getUserInitial(f.createdBy);
+                            return (
+                              <span className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded-md text-[11px]">
+                                <span className={`w-3.5 h-3.5 rounded-full ${authorColor.badge} flex items-center justify-center text-[8px] font-black`}>
+                                  {authorInitial}
+                                </span>
+                                <span className="text-slate-600">
+                                  By <strong className={isMe ? 'text-indigo-600 font-bold' : 'text-slate-800'}>{isMe ? 'You' : f.createdBy}</strong>
+                                </span>
+                                <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5 ${
+                                  isAuthorOwner
+                                    ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                    : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                }`}>
+                                  <Shield size={9} />
+                                  {isAuthorOwner ? 'OWNER' : 'QA TESTER'}
+                                </span>
+                              </span>
+                            );
+                          })()}
+                        </div>
+
+                        {/* Mini progress bar & Tester summary */}
                         {fileTestCount > 0 && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[120px]">
-                              <div
-                                className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-400'}`}
-                                style={{ width: `${pct}%` }}
-                              />
+                          <div className="space-y-1.5 mt-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden max-w-[140px]">
+                                <div
+                                  className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-400'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-500">{pct}%</span>
+                              {filePassed > 0 && <span className="text-[10px] font-bold text-emerald-600">{filePassed}P</span>}
+                              {fileFailed > 0 && <span className="text-[10px] font-bold text-rose-600">{fileFailed}F</span>}
                             </div>
-                            <span className="text-[10px] font-bold text-slate-500">{pct}%</span>
-                            {filePassed > 0 && <span className="text-[10px] font-bold text-emerald-600">{filePassed}P</span>}
-                            {fileFailed > 0 && <span className="text-[10px] font-bold text-rose-600">{fileFailed}F</span>}
+
+                            {/* Who tested this suite */}
+                            {(() => {
+                              const suiteTests = tests.filter(t => t.fileId === f.id && t.executedBy);
+                              if (suiteTests.length === 0) return null;
+                              const testerCounts = {};
+                              suiteTests.forEach(t => {
+                                testerCounts[t.executedBy] = (testerCounts[t.executedBy] || 0) + 1;
+                              });
+                              const entries = Object.entries(testerCounts);
+                              return (
+                                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100/80">
+                                  <span className="text-[10px] text-slate-400 font-semibold">Tested by:</span>
+                                  {entries.map(([email, count]) => {
+                                    const isTesterOwner = project?.ownerEmail?.toLowerCase() === email?.toLowerCase();
+                                    const isMe = email?.toLowerCase() === currentUser?.email?.toLowerCase();
+                                    const color = getUserColor(email);
+                                    return (
+                                      <span key={email} className="inline-flex items-center gap-1 text-[10px] bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded-md">
+                                        <span className={`w-3 h-3 rounded-full ${color.badge} flex items-center justify-center text-[7px] font-black`}>
+                                          {getUserInitial(email)}
+                                        </span>
+                                        <span className="font-semibold text-slate-700">{isMe ? 'You' : email.split('@')[0]}</span>
+                                        <span className="text-slate-400">({count})</span>
+                                        <span className={`px-1 py-0.2 rounded text-[8px] font-black uppercase ${
+                                          isTesterOwner ? 'text-indigo-700 bg-indigo-50' : 'text-emerald-700 bg-emerald-50'
+                                        }`}>
+                                          {isTesterOwner ? 'OWNER' : 'QA TESTER'}
+                                        </span>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -794,17 +876,36 @@ export const TestFilesView = ({
 
           {/* Tests Table */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3">
-              <div className="relative flex-1 max-w-md">
-                <Search size={15} className="absolute left-3.5 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search by ID or title..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                />
+            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 max-w-xl">
+                <div className="relative flex-1">
+                  <Search size={15} className="absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by ID, title, or tester..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                  />
+                </div>
+
+                {/* Tester Filter Dropdown */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Filter size={14} className="text-slate-400" />
+                  <select
+                    value={testerFilter}
+                    onChange={(e) => setTesterFilter(e.target.value)}
+                    className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20"
+                    title="Filter test cases by tester"
+                  >
+                    <option value="ALL">All Testers</option>
+                    <option value="MINE">Tested by Me</option>
+                    <option value="TEAM">Tested by Team</option>
+                    <option value="UNEXECUTED">Unexecuted</option>
+                  </select>
+                </div>
               </div>
+
               <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">
                 {filteredTests.length} of {fileTests.length} tests
               </span>
@@ -814,7 +915,7 @@ export const TestFilesView = ({
               <div className="flex flex-col items-center justify-center p-16 text-slate-400">
                 <FileText size={44} className="opacity-20 mb-3" />
                 <p className="font-semibold text-slate-700">No test cases found</p>
-                <p className="text-xs text-slate-400 mt-1">Try another search or click New Test Case.</p>
+                <p className="text-xs text-slate-400 mt-1">Try another search or filter, or click New Test Case.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -823,6 +924,7 @@ export const TestFilesView = ({
                     <tr>
                       <th className="p-4 w-24">ID</th>
                       <th className="p-4">Title</th>
+                      <th className="p-4 w-60">Tested By</th>
                       <th className="p-4 w-32 text-center">Status</th>
                       <th className="p-4 w-12 text-center"></th>
                     </tr>
@@ -832,6 +934,12 @@ export const TestFilesView = ({
                       const statusConf = getStatusConfig(tc.status);
                       const StatusIcon = statusConf.icon;
                       const isSelected = tc.id === selectedTestId;
+
+                      const isTesterOwner = (project?.ownerEmail?.toLowerCase() === tc.executedBy?.toLowerCase()) || (tc.executedByRole === 'Owner');
+                      const isMe = tc.executedBy?.toLowerCase() === currentUser?.email?.toLowerCase();
+                      const testerColor = tc.executedBy ? getUserColor(tc.executedBy) : null;
+                      const testerInitial = tc.executedBy ? getUserInitial(tc.executedBy) : null;
+
                       return (
                         <tr
                           key={tc.id}
@@ -842,11 +950,11 @@ export const TestFilesView = ({
                               : 'hover:bg-slate-50/70'
                           }`}
                         >
-                          <td className="p-4 font-mono font-bold text-indigo-700 text-xs">
+                          <td className="p-4 font-mono font-bold text-indigo-700 text-xs align-top">
                             {tc.externalId}
                           </td>
                           <td className="p-4 align-top">
-                            <span className={`font-bold text-sm ${isSelected ? 'text-indigo-700' : 'text-slate-900'}`}>
+                            <span className={`font-bold text-sm block ${isSelected ? 'text-indigo-700' : 'text-slate-900'}`}>
                               {tc.title}
                             </span>
                             {tc.steps && (
@@ -854,7 +962,53 @@ export const TestFilesView = ({
                                 Steps: {tc.steps.substring(0, 60)}{tc.steps.length > 60 ? '...' : ''}
                               </p>
                             )}
+                            {tc.createdBy && (
+                              <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400">
+                                <span>Created by {tc.createdBy === currentUser?.email ? 'You' : tc.createdBy.split('@')[0]}</span>
+                                <span className={`px-1 py-0.2 rounded text-[8px] font-bold uppercase ${
+                                  (project?.ownerEmail?.toLowerCase() === tc.createdBy?.toLowerCase() || tc.creatorRole === 'Owner')
+                                    ? 'bg-indigo-50 text-indigo-700'
+                                    : 'bg-emerald-50 text-emerald-700'
+                                }`}>
+                                  {(project?.ownerEmail?.toLowerCase() === tc.createdBy?.toLowerCase() || tc.creatorRole === 'Owner') ? 'Owner' : 'QA Tester'}
+                                </span>
+                              </div>
+                            )}
                           </td>
+                          
+                          {/* Tested By Column (Who executed this TC: Owner vs QA Tester) */}
+                          <td className="p-4 align-top">
+                            {tc.executedBy ? (
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <div className={`w-4 h-4 rounded-full ${testerColor?.badge} flex items-center justify-center text-[8px] font-black shrink-0 shadow-2xs`}>
+                                    {testerInitial}
+                                  </div>
+                                  <span className={`text-xs font-bold truncate max-w-[130px] ${isMe ? 'text-indigo-600' : 'text-slate-800'}`}>
+                                    {isMe ? 'You' : tc.executedBy}
+                                  </span>
+                                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5 ${
+                                    isTesterOwner 
+                                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                                      : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                  }`}>
+                                    <Shield size={9} />
+                                    {isTesterOwner ? 'OWNER' : 'QA TESTER'}
+                                  </span>
+                                </div>
+                                {tc.executedAt && (
+                                  <span className="text-[10px] text-slate-400 pl-5.5">
+                                    {formatDate(tc.executedAt)}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium italic">
+                                Not Executed
+                              </span>
+                            )}
+                          </td>
+
                           <td className="p-4 text-center align-top">
                             <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border ${statusConf.bg} ${statusConf.color} ${statusConf.border}`}>
                               <StatusIcon size={12} /> {tc.status}
@@ -1079,6 +1233,66 @@ export const TestFilesView = ({
                   {selectedTest.testerNotes || 'No remarks added.'}
                 </div>
               )}
+            </div>
+
+            {/* Tester & Creator Attribution Card */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Execution Attribution</span>
+                {selectedTest.executedBy ? (() => {
+                  const isTesterOwner = (project?.ownerEmail?.toLowerCase() === selectedTest.executedBy?.toLowerCase()) || (selectedTest.executedByRole === 'Owner');
+                  return (
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                      isTesterOwner
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                        : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      <Shield size={10} />
+                      {isTesterOwner ? 'OWNER' : 'QA TESTER'}
+                    </span>
+                  );
+                })() : null}
+              </div>
+
+              {selectedTest.executedBy ? (() => {
+                const color = getUserColor(selectedTest.executedBy);
+                const initial = getUserInitial(selectedTest.executedBy);
+                const isMe = selectedTest.executedBy?.toLowerCase() === currentUser?.email?.toLowerCase();
+                return (
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-7 h-7 rounded-full ${color.badge} flex items-center justify-center text-xs font-black shadow-2xs`}>
+                      {initial}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Tested by <span className={isMe ? 'text-indigo-600' : 'text-slate-900'}>{isMe ? 'You' : selectedTest.executedBy}</span>
+                      </p>
+                      {selectedTest.executedAt && (
+                        <p className="text-[10px] text-slate-400">{formatDate(selectedTest.executedAt)}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })() : (
+                <p className="text-xs text-slate-400 italic">This test case has not been executed yet.</p>
+              )}
+
+              {selectedTest.createdBy && (() => {
+                const isCreatorOwner = (project?.ownerEmail?.toLowerCase() === selectedTest.createdBy?.toLowerCase()) || (selectedTest.creatorRole === 'Owner');
+                const isMe = selectedTest.createdBy?.toLowerCase() === currentUser?.email?.toLowerCase();
+                return (
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Created by: <strong className="text-slate-700">{isMe ? 'You' : selectedTest.createdBy}</strong></span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                      isCreatorOwner 
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      {isCreatorOwner ? 'Owner' : 'QA Tester'}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Metadata */}

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Bug as BugIcon, Plus, Search, Filter, Trash2, 
   ChevronDown, ChevronUp, RefreshCw, RotateCcw,
-  History, Calendar, AlertTriangle, X, User
+  History, Calendar, AlertTriangle, X, User, Shield
 } from 'lucide-react';
 import { 
   formatDate, formatTime,
@@ -242,16 +242,25 @@ export const BugsView = ({
                       )}
 
                       {/* Reporter Attribution Badge */}
-                      {bug.reportedBy && (
-                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                          <span className={`w-3.5 h-3.5 rounded-full ${reporterPalette?.badge} flex items-center justify-center text-[8px] font-bold`}>
-                            {getUserInitial(bug.reportedBy)}
+                      {bug.reportedBy && (() => {
+                        const isReporterOwner = (project?.ownerEmail?.toLowerCase() === bug.reportedBy?.toLowerCase()) || (bug.reportedByRole === 'Owner');
+                        return (
+                          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                            <span className={`w-3.5 h-3.5 rounded-full ${reporterPalette?.badge} flex items-center justify-center text-[8px] font-bold`}>
+                              {getUserInitial(bug.reportedBy)}
+                            </span>
+                            <span className={isReportedByMe ? 'text-indigo-600 font-bold' : 'text-slate-600'}>
+                              {isReportedByMe ? 'Reported by You' : `Reported by ${bug.reportedBy.split('@')[0]}`}
+                            </span>
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5 ${
+                              isReporterOwner ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            }`}>
+                              <Shield size={9} />
+                              {isReporterOwner ? 'OWNER' : 'QA TESTER'}
+                            </span>
                           </span>
-                          <span className={isReportedByMe ? 'text-indigo-600 font-bold' : 'text-slate-600'}>
-                            {isReportedByMe ? 'Reported by You' : `Reported by ${bug.reportedBy.split('@')[0]}`}
-                          </span>
-                        </span>
-                      )}
+                        );
+                      })()}
 
                       <span className="text-slate-400 text-xs font-medium">
                         {formatDate(bug.createdAt)}

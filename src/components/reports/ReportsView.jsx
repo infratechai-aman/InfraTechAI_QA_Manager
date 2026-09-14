@@ -6,10 +6,9 @@ import {
   Plus, FileText, Trash2, Save, X,
   Eye, Edit3, Calendar, ChevronRight, BookOpen,
   ArrowLeft, Copy, Check, Table2, GitBranch,
-  Network, BarChart3, AlignLeft, ChevronDown
+  Network, BarChart3, AlignLeft, ChevronDown, Shield, User, Filter
 } from 'lucide-react';
-import { formatDate } from '../../utils/formatters';
-import { generateId, getTimestamp } from '../../utils/formatters';
+import { formatDate, generateId, getTimestamp, getUserColor, getUserInitial } from '../../utils/formatters';
 
 mermaid.initialize({
   startOnLoad: false,
@@ -131,13 +130,14 @@ const SNIPPETS = [
 ];
 
 // ─── MAIN REPORTS VIEW ────────────────────────────────────────────────────────
-export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteReport, project }) => {
+export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteReport, project, currentUser }) => {
   const [activeReportId, setActiveReportId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [isDirty, setIsDirty] = useState(false);
   const [viewMode, setViewMode] = useState('write'); // 'write' | 'preview'
   const [showSnippets, setShowSnippets] = useState(false);
+  const [authorFilter, setAuthorFilter] = useState('ALL'); // 'ALL' | 'MINE' | 'TEAM'
   const textareaRef = useRef(null);
   const snippetBtnRef = useRef(null);
 
@@ -154,6 +154,8 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const isOwner = project?.ownerEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
+
   const handleNewReport = () => {
     const id = `r${generateId()}`;
     const report = {
@@ -163,6 +165,9 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
       content: '',
       createdAt: getTimestamp(),
       updatedAt: getTimestamp(),
+      createdBy: currentUser?.email || 'Unknown',
+      createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+      creatorRole: isOwner ? 'Owner' : 'QA Tester',
     };
     onAddReport(report);
     setActiveReportId(id);
@@ -185,7 +190,14 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
 
   const handleSave = () => {
     if (!activeReportId) return;
-    onUpdateReport(activeReportId, { title: editTitle, content: editContent });
+    onUpdateReport(activeReportId, { 
+      title: editTitle, 
+      content: editContent,
+      updatedBy: currentUser?.email || 'Unknown',
+      updatedByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+      updatedByRole: isOwner ? 'Owner' : 'QA Tester',
+      updatedAt: getTimestamp()
+    });
     setIsDirty(false);
   };
 
@@ -219,70 +231,151 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
     }, 0);
   };
 
+  // Filter logic
+  const myReports = reports.filter(r => r.createdBy?.toLowerCase() === currentUser?.email?.toLowerCase());
+  const teamReports = reports.filter(r => r.createdBy && r.createdBy?.toLowerCase() !== currentUser?.email?.toLowerCase());
+
+  const displayedReports = reports.filter(r => {
+    if (authorFilter === 'MINE') return r.createdBy?.toLowerCase() === currentUser?.email?.toLowerCase();
+    if (authorFilter === 'TEAM') return r.createdBy && r.createdBy?.toLowerCase() !== currentUser?.email?.toLowerCase();
+    return true;
+  });
+
   // ── Report List ─────────────────────────────────────────────────────────────
   if (!activeReportId) {
     return (
-      <div className="p-8 max-w-4xl mx-auto space-y-6 animate-fadeIn">
+      <div className="p-8 max-w-5xl mx-auto space-y-6 animate-fadeIn">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Reports</h1>
             <p className="text-slate-500 mt-1">
-              Write reports with text, tables, ER diagrams & flowcharts for{' '}
+              Write reports with text, tables, ER diagrams &amp; flowcharts for{' '}
               <span className="font-semibold text-slate-800">{project?.name}</span>
             </p>
           </div>
           <button
             onClick={handleNewReport}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 self-start sm:self-auto"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200 self-start sm:self-auto cursor-pointer"
           >
             <Plus size={16} /> New Report
           </button>
         </div>
 
-        <div className="space-y-3">
-          {reports.length === 0 ? (
+        {/* Author Filter Pills */}
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+          <button
+            onClick={() => setAuthorFilter('ALL')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              authorFilter === 'ALL'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            All Reports ({reports.length})
+          </button>
+          <button
+            onClick={() => setAuthorFilter('MINE')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              authorFilter === 'MINE'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            My Reports ({myReports.length})
+          </button>
+          <button
+            onClick={() => setAuthorFilter('TEAM')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              authorFilter === 'TEAM'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            Team Reports ({teamReports.length})
+          </button>
+        </div>
+
+        <div className="space-y-3.5">
+          {displayedReports.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl bg-white text-slate-400">
               <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
-              <p className="font-semibold text-slate-700 text-base">No reports yet</p>
+              <p className="font-semibold text-slate-700 text-base">No reports match filter</p>
               <p className="text-sm mt-1">Create a report — add text, tables, ER diagrams, and flowcharts.</p>
               <button
                 onClick={handleNewReport}
-                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700"
+                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 cursor-pointer"
               >
                 <Plus size={15} /> Create Report
               </button>
             </div>
           ) : (
-            reports.map(r => (
-              <div
-                key={r.id}
-                className="group bg-white border border-slate-200 p-5 rounded-2xl hover:shadow-md hover:border-indigo-200 cursor-pointer transition-all flex items-center justify-between"
-                onClick={() => handleOpen(r)}
-              >
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
-                    <FileText size={20} />
+            displayedReports.map(r => {
+              const authorEmail = r.createdBy || project?.ownerEmail || 'Unknown';
+              const isMe = authorEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
+              const isAuthorOwner = project?.ownerEmail?.toLowerCase() === authorEmail?.toLowerCase() || r.creatorRole === 'Owner';
+              const authorColor = getUserColor(authorEmail);
+              const authorInitial = getUserInitial(authorEmail);
+
+              return (
+                <div
+                  key={r.id}
+                  className="group bg-white border border-slate-200 p-5 rounded-2xl hover:shadow-md hover:border-indigo-200 cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  onClick={() => handleOpen(r)}
+                >
+                  <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0 mt-0.5 sm:mt-0">
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                        {r.title}
+                      </h3>
+                      
+                      {/* Author Attribution & Date Bar */}
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-0.5 rounded-lg">
+                          <div className={`w-4 h-4 rounded-full ${authorColor.badge} flex items-center justify-center text-[8px] font-black shrink-0`}>
+                            {authorInitial}
+                          </div>
+                          <span className="text-[11px] text-slate-600">
+                            Created by <strong className={isMe ? 'text-indigo-600 font-bold' : 'text-slate-800'}>{isMe ? 'You' : authorEmail}</strong>
+                          </span>
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5 ${
+                            isAuthorOwner
+                              ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                              : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                          }`}>
+                            <Shield size={9} />
+                            {isAuthorOwner ? 'OWNER' : 'QA TESTER'}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-400 flex items-center gap-1">
+                          <Calendar size={11} /> {formatDate(r.updatedAt || r.createdAt)}
+                        </p>
+
+                        {r.updatedBy && r.updatedBy !== r.createdBy && (
+                          <span className="text-[11px] text-slate-400">
+                            (Updated by {r.updatedBy === currentUser?.email ? 'You' : r.updatedBy})
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
-                      {r.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                      <Calendar size={11} /> {formatDate(r.updatedAt || r.createdAt)}
-                    </p>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDelete(r.id); }}
+                      className="p-2 text-slate-300 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                      title="Delete Report"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                    <ChevronRight size={18} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={e => { e.stopPropagation(); handleDelete(r.id); }}
-                    className="p-2 text-slate-300 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                  <ChevronRight size={18} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -324,6 +417,21 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
             <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full shrink-0 animate-pulse">
               Unsaved changes
             </span>
+          )}
+
+          {/* Author Badge in Editor */}
+          {activeReport && (
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs shrink-0">
+              <span className="text-slate-400">Author:</span>
+              <strong className="text-slate-800">{activeReport.createdBy || 'Workspace Owner'}</strong>
+              <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider ${
+                (project?.ownerEmail?.toLowerCase() === activeReport.createdBy?.toLowerCase() || activeReport.creatorRole === 'Owner')
+                  ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                  : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+              }`}>
+                {(project?.ownerEmail?.toLowerCase() === activeReport.createdBy?.toLowerCase() || activeReport.creatorRole === 'Owner') ? 'OWNER' : 'QA TESTER'}
+              </span>
+            </div>
           )}
         </div>
 

@@ -330,12 +330,16 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // --- Test Suites / Files Management ---
   const handleAddFile = (name, copyFromId) => {
     const newFileId = `f${generateId()}`;
+    const isOwner = activeProject?.ownerEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
     const newFile = {
       id: newFileId,
       projectId: activeProjectId,
       name,
       date: getTimestamp(),
       createdAt: getTimestamp(),
+      createdBy: currentUser?.email || 'Unknown',
+      createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+      creatorRole: isOwner ? 'Owner' : 'QA Tester',
     };
 
     setFiles((prev) => {
@@ -465,15 +469,19 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // --- Test Case Management ---
   const handleAddTestCase = useCallback(
     (newTestData) => {
+      const isOwner = activeProject?.ownerEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
       const newTest = {
         ...newTestData,
         id: generateId(),
-        externalId: `TC-${generateId().substring(0, 4).toUpperCase()}`,
-        status: 'Not Run',
-        actualResult: '',
-        testerNotes: '',
+        externalId: newTestData.externalId || `TC-${generateId().substring(0, 4).toUpperCase()}`,
+        status: newTestData.status || 'Not Run',
+        actualResult: newTestData.actualResult || '',
+        testerNotes: newTestData.testerNotes || '',
         createdAt: getTimestamp(),
         updatedAt: getTimestamp(),
+        createdBy: newTestData.createdBy || currentUser?.email || 'Unknown',
+        createdByName: newTestData.createdByName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+        creatorRole: newTestData.creatorRole || (isOwner ? 'Owner' : 'QA Tester'),
       };
       setTests((prev) => {
         const updated = [...prev, newTest];
@@ -481,18 +489,31 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         return updated;
       });
     },
-    [userId]
+    [userId, activeProject, currentUser]
   );
 
   const handleUpdateTest = useCallback(
     (id, updates) => {
       setTests((prev) => {
-        const updated = prev.map((t) => (t.id === id ? { ...t, ...updates, updatedAt: getTimestamp() } : t));
+        const isOwner = activeProject?.ownerEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
+        const updated = prev.map((t) => {
+          if (t.id === id) {
+            const isStatusChange = updates.status && ['Pass', 'Fail', 'Blocked'].includes(updates.status);
+            const executionMeta = isStatusChange ? {
+              executedBy: updates.executedBy || currentUser?.email || 'Unknown',
+              executedByName: updates.executedByName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+              executedByRole: updates.executedByRole || (isOwner ? 'Owner' : 'QA Tester'),
+              executedAt: updates.executedAt || getTimestamp(),
+            } : {};
+            return { ...t, ...updates, ...executionMeta, updatedAt: getTimestamp() };
+          }
+          return t;
+        });
         db.saveTestCases(updated, userId);
         return updated;
       });
     },
-    [userId]
+    [userId, activeProject, currentUser]
   );
 
   const handleDeleteTest = (testId) => {
@@ -717,6 +738,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           <ReportsView
             reports={reports.filter(r => r.projectId === activeProjectId)}
             project={activeProject}
+            currentUser={currentUser}
             onAddReport={(report) => {
               setReports(prev => {
                 const updated = [report, ...prev];

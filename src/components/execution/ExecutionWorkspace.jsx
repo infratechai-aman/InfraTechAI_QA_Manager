@@ -6,7 +6,7 @@ import {
   ListOrdered, CheckCircle2, Sparkles, Monitor, 
   RefreshCw, Flag, Trophy, DoorOpen, Play, FileText
 } from 'lucide-react';
-import { formatDate, getStatusConfig } from '../../utils/formatters';
+import { formatDate, getStatusConfig, getUserColor, getUserInitial } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
 
 export const ExecutionWorkspace = ({ 
@@ -22,8 +22,10 @@ export const ExecutionWorkspace = ({
   activeFileId,
   onSelectFile,
   onExitTestFile,
+  currentUser,
 }) => {
   const [filter, setFilter] = useState('All');
+  const [testerFilter, setTesterFilter] = useState('All'); // 'All' | 'Mine' | 'Team' | 'Unexecuted'
   const [search, setSearch] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [saveStatus, setSaveStatus] = useState('Saved');
@@ -46,9 +48,20 @@ export const ExecutionWorkspace = ({
       const matchSearch =
         t.externalId.toLowerCase().includes(search.toLowerCase()) ||
         t.title.toLowerCase().includes(search.toLowerCase());
-      return matchFilter && matchSearch;
+
+      let matchTester = true;
+      if (testerFilter === 'Mine') {
+        matchTester = t.executedBy === currentUser?.email;
+      } else if (testerFilter === 'Team') {
+        matchTester = t.executedBy && t.executedBy !== currentUser?.email;
+      } else if (testerFilter === 'Unexecuted') {
+        matchTester = !t.executedBy || t.status === 'Not Run';
+      }
+
+      return matchFilter && matchSearch && matchTester;
     });
-  }, [suiteTests, filter, search]);
+  }, [suiteTests, filter, search, testerFilter, currentUser?.email]);
+
 
   // Progress computation
   const progressStats = useMemo(() => {
@@ -75,18 +88,28 @@ export const ExecutionWorkspace = ({
   const handleUpdate = useCallback(
     (id, updates) => {
       setSaveStatus('Saving...');
-      updateTest(id, updates);
+      const enriched = {
+        ...updates,
+        lastUpdatedBy: currentUser?.email || 'Unknown',
+        lastUpdatedAt: new Date().toISOString(),
+      };
+      updateTest(id, enriched);
       const timer = setTimeout(() => setSaveStatus('Saved'), 300);
       return () => clearTimeout(timer);
     },
-    [updateTest]
+    [updateTest, currentUser?.email]
   );
 
   // Status updates (Pass / Fail / Blocked)
   const handleStatusUpdate = useCallback(
     (status) => {
       if (!currentTest) return;
-      handleUpdate(currentTest.id, { status });
+      handleUpdate(currentTest.id, { 
+        status,
+        executedBy: currentUser?.email || 'Unknown',
+        executedByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+        executedAt: new Date().toISOString(),
+      });
 
       if (status === 'Pass' && currentIndex < filteredTests.length - 1) {
         setCurrentIndex((prev) => prev + 1);
@@ -100,16 +123,23 @@ export const ExecutionWorkspace = ({
           reproductionSteps: currentTest.steps || currentTest.testerNotes || `Test case ${currentTest.externalId} failed during execution.`,
           testCaseId: currentTest.id,
           projectId: project?.id,
+          reportedBy: currentUser?.email || 'Unknown',
+          reportedByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
         });
         setIsBugModalOpen(true);
       }
     },
-    [currentTest, currentIndex, filteredTests.length, handleUpdate, project]
+    [currentTest, currentIndex, filteredTests.length, handleUpdate, project, currentUser]
   );
 
   // Submit bug from modal — always records in Bugs & Issues
   const handleSaveBug = (formData) => {
-    onAddBug({ ...formData, projectId: project?.id });
+    onAddBug({ 
+      ...formData, 
+      projectId: project?.id,
+      reportedBy: currentUser?.email || 'Unknown',
+      reportedByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+    });
     setIsBugModalOpen(false);
     setBugForm(null);
     // Advance to next test after logging bug
@@ -333,21 +363,37 @@ export const ExecutionWorkspace = ({
             />
           </div>
 
-          {/* Filter Status */}
-          <select
-            value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value);
-              setCurrentIndex(0);
-            }}
-            className="w-full p-2 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 font-semibold outline-none cursor-pointer"
-          >
-            <option value="All">All Statuses ({suiteTests.length})</option>
-            <option value="Not Run">Not Run</option>
-            <option value="Pass">Pass</option>
-            <option value="Fail">Fail</option>
-            <option value="Blocked">Blocked</option>
-          </select>
+          {/* Filters: Status & Tester */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <select
+              value={filter}
+              onChange={(e) => {
+                setFilter(e.target.value);
+                setCurrentIndex(0);
+              }}
+              className="w-full p-2 border border-slate-200 rounded-xl text-[11px] bg-slate-50 text-slate-700 font-semibold outline-none cursor-pointer"
+            >
+              <option value="All">Status: All</option>
+              <option value="Not Run">Not Run</option>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+
+            <select
+              value={testerFilter}
+              onChange={(e) => {
+                setTesterFilter(e.target.value);
+                setCurrentIndex(0);
+              }}
+              className="w-full p-2 border border-slate-200 rounded-xl text-[11px] bg-slate-50 text-slate-700 font-semibold outline-none cursor-pointer"
+            >
+              <option value="All">Tester: All</option>
+              <option value="Mine">Tested by Me</option>
+              <option value="Team">Tested by Team</option>
+              <option value="Unexecuted">Unexecuted</option>
+            </select>
+          </div>
         </div>
 
         {/* Test Cases List */}
@@ -361,6 +407,8 @@ export const ExecutionWorkspace = ({
               const statusConf = getStatusConfig(tc.status);
               const StatusIcon = statusConf.icon;
               const isActive = idx === currentIndex;
+              const isTestedByMe = tc.executedBy === currentUser?.email;
+              const testerPalette = tc.executedBy ? getUserColor(tc.executedBy) : null;
 
               return (
                 <div
@@ -384,6 +432,18 @@ export const ExecutionWorkspace = ({
                   <div className={`text-xs font-semibold line-clamp-2 leading-relaxed ${isActive ? 'text-slate-900 font-bold' : 'text-slate-600'}`}>
                     {tc.title}
                   </div>
+
+                  {/* Tester Attribution Tag */}
+                  {tc.executedBy && (
+                    <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-slate-100 text-[10px]">
+                      <div className={`w-3.5 h-3.5 rounded-full ${testerPalette?.badge} flex items-center justify-center text-[8px] font-bold shrink-0`}>
+                        {getUserInitial(tc.executedBy)}
+                      </div>
+                      <span className={`truncate font-semibold ${isTestedByMe ? 'text-indigo-600' : 'text-slate-500'}`}>
+                        {isTestedByMe ? 'You' : tc.executedBy.split('@')[0]}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -513,6 +573,36 @@ export const ExecutionWorkspace = ({
                     <h1 className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-tight">
                       {currentTest.title}
                     </h1>
+
+                    {/* Tester & Author Attribution Bar */}
+                    <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                      {currentTest.executedBy ? (
+                        <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
+                          <div className={`w-5 h-5 rounded-md ${getUserColor(currentTest.executedBy).badge} flex items-center justify-center text-[9px] font-bold`}>
+                            {getUserInitial(currentTest.executedBy)}
+                          </div>
+                          <div className="text-xs">
+                            <span className="text-slate-500">Executed by </span>
+                            <strong className={currentTest.executedBy === currentUser?.email ? 'text-indigo-600' : 'text-violet-600'}>
+                              {currentTest.executedBy === currentUser?.email ? 'You' : currentTest.executedBy}
+                            </strong>
+                            {currentTest.executedAt && (
+                              <span className="text-slate-400 text-[11px] ml-1">({formatDate(currentTest.executedAt)})</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-400 italic bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-100">
+                          Status: Not Executed Yet
+                        </div>
+                      )}
+
+                      {currentTest.createdBy && (
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Created by {currentTest.createdBy === currentUser?.email ? 'You' : currentTest.createdBy.split('@')[0]}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Card: Execution Steps */}

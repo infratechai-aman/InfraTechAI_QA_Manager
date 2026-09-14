@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Bug as BugIcon, Plus, Search, Filter, Trash2, 
   ChevronDown, ChevronUp, RefreshCw, RotateCcw,
-  History, Calendar, AlertTriangle, X
+  History, Calendar, AlertTriangle, X, User
 } from 'lucide-react';
 import { 
   formatDate, formatTime,
@@ -10,6 +10,8 @@ import {
   getSeverityConfig, 
   getPriorityConfig,
   getTimestamp,
+  getUserColor,
+  getUserInitial,
 } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
 
@@ -21,11 +23,13 @@ export const BugsView = ({
   onUpdateBug, 
   onDeleteBug, 
   project, 
-  tests 
+  tests,
+  currentUser,
 }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
+  const [reporterFilter, setReporterFilter] = useState('All'); // 'All' | 'Mine' | 'Team'
   const [expandedBugId, setExpandedBugId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -47,14 +51,25 @@ export const BugsView = ({
     return bugs.filter((bug) => {
       const matchesStatus = statusFilter === 'All' || bug.status === statusFilter;
       const matchesSeverity = severityFilter === 'All' || bug.severity === severityFilter;
+      
+      let matchesReporter = true;
+      if (reporterFilter === 'Mine') {
+        matchesReporter = bug.reportedBy === currentUser?.email;
+      } else if (reporterFilter === 'Team') {
+        matchesReporter = bug.reportedBy && bug.reportedBy !== currentUser?.email;
+      }
+
       const q = search.toLowerCase();
       const matchesSearch =
         bug.title.toLowerCase().includes(q) ||
         bug.bugId?.toLowerCase().includes(q) ||
-        bug.actualBehavior?.toLowerCase().includes(q);
-      return matchesStatus && matchesSeverity && matchesSearch;
+        bug.actualBehavior?.toLowerCase().includes(q) ||
+        (bug.reportedBy && bug.reportedBy.toLowerCase().includes(q));
+
+      return matchesStatus && matchesSeverity && matchesReporter && matchesSearch;
     });
-  }, [bugs, statusFilter, severityFilter, search]);
+  }, [bugs, statusFilter, severityFilter, reporterFilter, search, currentUser?.email]);
+
 
   const handleStatusChange = (bugId, newStatus) => {
     const bug = bugs.find(b => b.id === bugId);
@@ -143,7 +158,7 @@ export const BugsView = ({
             className="w-full pl-10 pr-3.5 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none"
           />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
             <Filter size={14} />
             <span>Severity:</span>
@@ -158,6 +173,20 @@ export const BugsView = ({
             <option value="High">High</option>
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
+          </select>
+
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <User size={14} />
+            <span>Reporter:</span>
+          </div>
+          <select
+            value={reporterFilter}
+            onChange={(e) => setReporterFilter(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium bg-white text-slate-700 outline-none cursor-pointer"
+          >
+            <option value="All">All Reporters</option>
+            <option value="Mine">Reported by Me</option>
+            <option value="Team">Reported by Team</option>
           </select>
         </div>
       </div>
@@ -179,6 +208,8 @@ export const BugsView = ({
             const linkedTest = tests.find((t) => t.id === bug.testCaseId);
             const isClosed = bug.status === 'Closed' || bug.status === 'Resolved';
             const regressionCount = bug.regressionCount || 0;
+            const isReportedByMe = bug.reportedBy === currentUser?.email;
+            const reporterPalette = bug.reportedBy ? getUserColor(bug.reportedBy) : null;
 
             return (
               <div
@@ -209,6 +240,19 @@ export const BugsView = ({
                           <RotateCcw size={10} /> Regressed ×{regressionCount}
                         </span>
                       )}
+
+                      {/* Reporter Attribution Badge */}
+                      {bug.reportedBy && (
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                          <span className={`w-3.5 h-3.5 rounded-full ${reporterPalette?.badge} flex items-center justify-center text-[8px] font-bold`}>
+                            {getUserInitial(bug.reportedBy)}
+                          </span>
+                          <span className={isReportedByMe ? 'text-indigo-600 font-bold' : 'text-slate-600'}>
+                            {isReportedByMe ? 'Reported by You' : `Reported by ${bug.reportedBy.split('@')[0]}`}
+                          </span>
+                        </span>
+                      )}
+
                       <span className="text-slate-400 text-xs font-medium">
                         {formatDate(bug.createdAt)}
                       </span>
@@ -332,9 +376,15 @@ export const BugsView = ({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={(data) => {
-          onAddBug({ ...data, projectId: project?.id });
+          onAddBug({
+            ...data,
+            projectId: project?.id,
+            reportedBy: currentUser?.email || 'Unknown',
+            reportedByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+          });
         }}
         initialData={{ projectId: project?.id }}
+        currentUser={currentUser}
       />
 
       {/* Reopen Confirmation Modal */}

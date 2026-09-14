@@ -45,6 +45,7 @@ export const TestFilesView = ({
   onSelectFile,
   onExitTestFile,
   onNavigateToExecute,
+  currentUser,
 }) => {
   const [internalFileId, setInternalFileId] = useState(null);
   const activeFileId = propActiveFileId !== undefined ? propActiveFileId : internalFileId;
@@ -122,6 +123,8 @@ export const TestFilesView = ({
       ...t,
       fileId,
       projectId: project?.id,
+      createdBy: currentUser?.email || 'Unknown',
+      createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
     }));
 
     if (onImportTests) {
@@ -156,6 +159,8 @@ export const TestFilesView = ({
       ...t,
       fileId: activeFileId,
       projectId: project?.id,
+      createdBy: currentUser?.email || 'Unknown',
+      createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
     }));
 
     if (onImportTests) {
@@ -176,6 +181,8 @@ export const TestFilesView = ({
       steps: newTest.steps,
       projectId: project.id,
       fileId: activeFileId,
+      createdBy: currentUser?.email || 'Unknown',
+      createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
     });
     setNewTest({ title: '', expectedResult: '', steps: '' });
     setIsAddingTest(false);

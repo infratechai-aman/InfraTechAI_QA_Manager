@@ -12,7 +12,26 @@ import { BugsView } from './components/bugs/BugsView';
 import { BulkImportView } from './components/import/BulkImportView';
 import { ReportsView } from './components/reports/ReportsView';
 import { FirebaseModal } from './components/modals/FirebaseModal';
+import { InviteMemberModal } from './components/modals/InviteMemberModal';
+import { InvitationBanner } from './components/layout/InvitationBanner';
 import { LoginView } from './components/auth/LoginView';
+
+// Helper to ensure projects have owner and member lists
+const normalizeProjects = (projs, userId, userEmail) => {
+  return projs.map(p => ({
+    ...p,
+    ownerId: p.ownerId || userId,
+    ownerEmail: p.ownerEmail || userEmail,
+    members: p.members && p.members.length > 0 ? p.members : [
+      {
+        email: p.ownerEmail || userEmail,
+        role: 'Owner',
+        status: 'active',
+        addedAt: p.createdAt || getTimestamp()
+      }
+    ]
+  }));
+};
 
 /**
  * AuthenticatedWorkspace is only rendered when currentUser is valid.
@@ -29,6 +48,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [reports, setReports] = useState([]);
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [activeFileId, setActiveFileId] = useState(null);
 
   const activeFile = files.find((f) => f.id === activeFileId && f.projectId === activeProjectId) || null;
@@ -39,7 +60,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
     const initUserData = async () => {
       // 1. Load user's private local cache
-      const loadedProjects = db.getProjects(userId);
+      const loadedProjects = normalizeProjects(db.getProjects(userId), userId, currentUser.email);
       const loadedFiles = db.getFiles(userId);
       const loadedTests = db.getTestCases(userId);
       const loadedBugs = db.getBugs(userId);
@@ -54,22 +75,41 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       setActiveProjectId(null);
       setActiveTab('projects');
 
-      // 2. Check for latest cloud updates from user's private Firestore collection
+      // 2. Check for latest cloud updates from user's Firestore collection & shared workspaces
       try {
-        const cloudData = await db.pullFromFirestore(userId);
+        const cloudData = await db.pullFromFirestore(userId, currentUser.email);
         if (cloudData) {
-          if (cloudData.projects) setProjects(cloudData.projects);
+          if (cloudData.projects) setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
           if (cloudData.files) setFiles(cloudData.files);
           if (cloudData.tests) setTests(cloudData.tests);
           if (cloudData.bugs) setBugs(cloudData.bugs);
         }
       } catch (err) {
-        console.warn('Private cloud pull check completed:', err);
+        console.warn('Cloud pull check completed:', err);
+      }
+
+      // 3. Check for pending invitations for this user
+      try {
+        const invites = await db.getPendingInvitations(currentUser.email);
+        setPendingInvitations(invites);
+
+        // Check if URL has ?invite=... parameter
+        const params = new URLSearchParams(window.location.search);
+        const urlInviteId = params.get('invite');
+        if (urlInviteId) {
+          const matched = invites.find(i => i.id === urlInviteId);
+          if (matched) {
+            // Auto open acceptance or ensure it's in pendingInvitations
+            setPendingInvitations(invites);
+          }
+        }
+      } catch (inviteErr) {
+        console.warn('Invitations check error:', inviteErr);
       }
     };
 
     initUserData();
-  }, [userId]);
+  }, [userId, currentUser.email]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const projectFiles = files.filter((f) => f.projectId === activeProjectId);
@@ -83,6 +123,16 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       ...newProjData,
       id: `p${generateId()}`,
       createdAt: getTimestamp(),
+      ownerId: userId,
+      ownerEmail: currentUser.email,
+      members: [
+        {
+          email: currentUser.email,
+          role: 'Owner',
+          status: 'active',
+          addedAt: getTimestamp()
+        }
+      ]
     };
     setProjects((prev) => {
       const updated = [...prev, newProject];
@@ -92,6 +142,55 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     setActiveProjectId(newProject.id);
     setActiveTab('dashboard');
   };
+
+  // --- Workspace Invitations Handlers ---
+  const handleAcceptInvitation = async (inv) => {
+    try {
+      await db.acceptInvitation(inv.id, currentUser);
+      setPendingInvitations(prev => prev.filter(i => i.id !== inv.id));
+
+      // Refresh cloud projects & shared workspaces
+      const cloudData = await db.pullFromFirestore(userId, currentUser.email);
+      if (cloudData && cloudData.projects) {
+        setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
+        if (cloudData.files) setFiles(cloudData.files);
+        if (cloudData.tests) setTests(cloudData.tests);
+        if (cloudData.bugs) setBugs(cloudData.bugs);
+      }
+
+      setActiveProjectId(inv.projectId);
+      setActiveTab('dashboard');
+    } catch (err) {
+      console.warn('Failed to accept invitation:', err);
+    }
+  };
+
+  const handleDeclineInvitation = async (inviteId) => {
+    try {
+      await db.declineInvitation(inviteId);
+      setPendingInvitations(prev => prev.filter(i => i.id !== inviteId));
+    } catch (err) {
+      console.warn('Failed to decline invitation:', err);
+    }
+  };
+
+  const handleMembersUpdated = (updatedMembers) => {
+    setProjects(prev => {
+      const updated = prev.map(p => p.id === activeProjectId ? { ...p, members: updatedMembers } : p);
+      db.saveProjects(updated, userId);
+      if (activeProject) {
+        db.syncSharedWorkspace(activeProjectId, {
+          project: { ...activeProject, members: updatedMembers },
+          files: projectFiles,
+          tests: projectTests,
+          bugs: projectBugs,
+          reports: reports.filter(r => r.projectId === activeProjectId)
+        }, currentUser);
+      }
+      return updated;
+    });
+  };
+
 
   // --- Exit Project (enforce isolation) ---
   const handleExitProject = () => {
@@ -389,9 +488,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   const handlePullSync = async () => {
-    const cloudData = await db.pullFromFirestore(userId);
+    const cloudData = await db.pullFromFirestore(userId, currentUser.email);
     if (cloudData) {
-      if (cloudData.projects) setProjects(cloudData.projects);
+      if (cloudData.projects) setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
       if (cloudData.files) setFiles(cloudData.files);
       if (cloudData.tests) setTests(cloudData.tests);
       if (cloudData.bugs) setBugs(cloudData.bugs);
@@ -417,10 +516,18 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
         onExitProject={handleExitProject}
+        onOpenInviteModal={() => setIsInviteModalOpen(true)}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 relative bg-white overflow-y-auto">
+      <main className="flex-1 relative bg-white overflow-y-auto flex flex-col">
+        {/* Workspace Invitation Banner */}
+        <InvitationBanner
+          invitations={pendingInvitations}
+          onAccept={handleAcceptInvitation}
+          onDecline={handleDeclineInvitation}
+        />
+
         {activeTab === 'projects' && (
           <ProjectsView
             projects={projects}
@@ -444,6 +551,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             project={activeProject}
             files={projectFiles}
             onNavigateToTab={(tab) => setActiveTab(tab)}
+            currentUser={currentUser}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
           />
         )}
 
@@ -461,6 +570,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onNavigateToBugs={() => setActiveTab('bugs')}
             onNavigateToFiles={() => setActiveTab('files')}
             onSubmitExecution={handleSubmitExecution}
+            currentUser={currentUser}
           />
         )}
 
@@ -472,6 +582,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onDeleteBug={handleDeleteBug}
             project={activeProject}
             tests={projectTests}
+            currentUser={currentUser}
           />
         )}
 
@@ -493,6 +604,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             onSelectFile={(id) => setActiveFileId(id)}
             onExitTestFile={handleExitTestFile}
             onNavigateToExecute={() => setActiveTab('execute')}
+            currentUser={currentUser}
           />
         )}
 
@@ -530,6 +642,15 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         isOpen={isFirebaseModalOpen}
         onClose={() => setIsFirebaseModalOpen(false)}
         onPullSync={handlePullSync}
+      />
+
+      {/* Invite Team Member Modal */}
+      <InviteMemberModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        project={activeProject}
+        currentUser={currentUser}
+        onMembersUpdated={handleMembersUpdated}
       />
 
     </div>

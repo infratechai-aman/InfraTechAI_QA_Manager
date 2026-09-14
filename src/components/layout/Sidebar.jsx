@@ -3,7 +3,7 @@ import {
   Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List,
   Download, UploadCloud, LogOut, DoorOpen, BookOpen,
-  FileText
+  FileText, UserPlus, Users
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -19,6 +19,7 @@ export const Sidebar = ({
   onExportBackup,
   onImportBackup,
   onExitProject,
+  onOpenInviteModal,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -107,6 +108,25 @@ export const Sidebar = ({
                 </div>
               </div>
             </div>
+
+            {/* Invite Collaborator Button */}
+            {onOpenInviteModal && (
+              <button
+                onClick={onOpenInviteModal}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs"
+                title="Invite friend or team member to collaborate"
+              >
+                <div className="flex items-center gap-2">
+                  <UserPlus size={14} className="text-indigo-600" />
+                  <span>Invite Member</span>
+                </div>
+                {activeProject?.members && activeProject.members.length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-200/80 text-indigo-800 font-extrabold">
+                    {activeProject.members.length}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Exit Workspace Button */}
             <button

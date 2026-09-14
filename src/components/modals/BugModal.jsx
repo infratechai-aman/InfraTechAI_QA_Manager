@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bug as BugIcon, XCircle, AlertCircle } from 'lucide-react';
 
-export const BugModal = ({ isOpen, onClose, onSubmit, initialData = null }) => {
+export const BugModal = ({ isOpen, onClose, onSubmit, initialData = null, currentUser = null }) => {
   if (!isOpen) return null;
 
   const [formData, setFormData] = useState({
@@ -13,12 +13,18 @@ export const BugModal = ({ isOpen, onClose, onSubmit, initialData = null }) => {
     reproductionSteps: initialData?.reproductionSteps || '',
     testCaseId: initialData?.testCaseId || null,
     projectId: initialData?.projectId || null,
+    reportedBy: initialData?.reportedBy || currentUser?.email || 'Unknown',
+    reportedByName: initialData?.reportedByName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      reportedBy: formData.reportedBy || currentUser?.email || 'Unknown',
+      reportedByName: formData.reportedByName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+    });
     onClose();
   };
 

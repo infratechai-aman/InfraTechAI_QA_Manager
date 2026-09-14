@@ -135,3 +135,36 @@ export const getPriorityConfig = (priority) => {
       return 'bg-slate-100 text-slate-700 font-mono';
   }
 };
+
+const USER_PALETTES = [
+  { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', badge: 'bg-indigo-600 text-white', ring: 'ring-indigo-500' },
+  { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', badge: 'bg-violet-600 text-white', ring: 'ring-violet-500' },
+  { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', badge: 'bg-emerald-600 text-white', ring: 'ring-emerald-500' },
+  { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', badge: 'bg-amber-600 text-white', ring: 'ring-amber-500' },
+  { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200', badge: 'bg-cyan-600 text-white', ring: 'ring-cyan-500' },
+  { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', badge: 'bg-rose-600 text-white', ring: 'ring-rose-500' },
+  { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', badge: 'bg-teal-600 text-white', ring: 'ring-teal-500' },
+];
+
+export const getUserColor = (email = '') => {
+  if (!email) return USER_PALETTES[0];
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = email.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % USER_PALETTES.length;
+  return USER_PALETTES[index];
+};
+
+export const getUserInitial = (email = '') => {
+  if (!email) return '?';
+  return email.charAt(0).toUpperCase();
+};
+
+export const getUserDisplayName = (email = '', isCurrent = false) => {
+  if (isCurrent) return 'You';
+  if (!email) return 'Unassigned';
+  const namePart = email.split('@')[0];
+  return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+};
+

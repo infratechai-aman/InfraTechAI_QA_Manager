@@ -1,11 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Bug as BugIcon, CheckCircle, XCircle, 
-  AlertTriangle, Circle, TrendingUp, ShieldAlert, FileText 
+  AlertTriangle, Circle, TrendingUp, ShieldAlert, FileText,
+  Users, UserPlus
 } from 'lucide-react';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, getUserColor, getUserInitial } from '../../utils/formatters';
 
-export const DashboardView = ({ tests, bugs, project, files, onNavigateToTab }) => {
+export const DashboardView = ({ 
+  tests, 
+  bugs, 
+  project, 
+  files, 
+  onNavigateToTab, 
+  currentUser,
+  onOpenInviteModal 
+}) => {
   const [selectedFileId, setSelectedFileId] = useState('all');
 
   // Filter tests based on selected File/Date
@@ -28,6 +37,52 @@ export const DashboardView = ({ tests, bugs, project, files, onNavigateToTab }) 
 
   const openBugs = bugs.filter((b) => ['Open', 'In Progress', 'Reopened'].includes(b.status));
   const criticalBugs = openBugs.filter((b) => b.severity === 'Critical' || b.priority === 'P0');
+
+  // Individual Work Attribution & Contribution Metrics
+  const memberContributions = useMemo(() => {
+    const memberSet = new Set();
+    if (project?.members) {
+      project.members.forEach(m => m.email && memberSet.add(m.email.toLowerCase()));
+    }
+    if (project?.ownerEmail) memberSet.add(project.ownerEmail.toLowerCase());
+    if (currentUser?.email) memberSet.add(currentUser.email.toLowerCase());
+
+    tests.forEach(t => {
+      if (t.executedBy) memberSet.add(t.executedBy.toLowerCase());
+    });
+    bugs.forEach(b => {
+      if (b.reportedBy) memberSet.add(b.reportedBy.toLowerCase());
+    });
+
+    const members = Array.from(memberSet);
+    return members.map(email => {
+      const isCurrent = email === currentUser?.email?.toLowerCase();
+      const memberTests = tests.filter(t => t.executedBy?.toLowerCase() === email);
+      const passed = memberTests.filter(t => t.status === 'Pass').length;
+      const failed = memberTests.filter(t => t.status === 'Fail').length;
+      const blocked = memberTests.filter(t => t.status === 'Blocked').length;
+      const totalExec = memberTests.length;
+      const mPassRate = totalExec > 0 ? Math.round((passed / totalExec) * 100) : 0;
+      const reportedBugs = bugs.filter(b => b.reportedBy?.toLowerCase() === email).length;
+      const projectShare = tests.length > 0 ? Math.round((totalExec / tests.length) * 100) : 0;
+
+      const projectMember = project?.members?.find(m => m.email?.toLowerCase() === email);
+      const role = projectMember?.role || (email === project?.ownerEmail?.toLowerCase() ? 'Owner' : 'QA Tester');
+
+      return {
+        email,
+        isCurrent,
+        role,
+        totalExec,
+        passed,
+        failed,
+        blocked,
+        passRate: mPassRate,
+        reportedBugs,
+        projectShare,
+      };
+    }).sort((a, b) => b.totalExec - a.totalExec);
+  }, [tests, bugs, project, currentUser]);
 
   const StatCard = ({ title, value, color, subtitle, icon: Icon, bg = 'bg-white' }) => (
     <div className={`p-5 rounded-2xl ${bg} border border-slate-200/80 shadow-xs flex flex-col justify-between`}>
@@ -54,24 +109,43 @@ export const DashboardView = ({ tests, bugs, project, files, onNavigateToTab }) 
           </p>
         </div>
 
-        {/* Filter by File / Date */}
-        <div className="flex items-center gap-2 bg-white border border-slate-200 p-2 rounded-xl shadow-xs">
-          <Calendar size={15} className="text-slate-400 ml-1" />
-          <select
-            value={selectedFileId}
-            onChange={(e) => setSelectedFileId(e.target.value)}
-            className="bg-transparent border-none text-xs font-semibold text-slate-700 focus:ring-0 outline-none pr-3 cursor-pointer"
-          >
-            <option value="all">All Test Suites ({tests.length} tests)</option>
-            {files.map((f) => {
-              const count = tests.filter((t) => t.fileId === f.id).length;
-              return (
-                <option key={f.id} value={f.id}>
-                  {f.name} ({count} tests)
-                </option>
-              );
-            })}
-          </select>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Invite Team Member Button */}
+          {onOpenInviteModal && (
+            <button
+              onClick={onOpenInviteModal}
+              className="flex items-center gap-2 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Invite friend or collaborator to this workspace"
+            >
+              <UserPlus size={15} />
+              <span>Invite Team</span>
+              {project?.members && project.members.length > 1 && (
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-bold">
+                  {project.members.length}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Filter by File / Date */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 p-2 rounded-xl shadow-xs">
+            <Calendar size={15} className="text-slate-400 ml-1" />
+            <select
+              value={selectedFileId}
+              onChange={(e) => setSelectedFileId(e.target.value)}
+              className="bg-transparent border-none text-xs font-semibold text-slate-700 focus:ring-0 outline-none pr-3 cursor-pointer"
+            >
+              <option value="all">All Test Suites ({tests.length} tests)</option>
+              {files.map((f) => {
+                const count = tests.filter((t) => t.fileId === f.id).length;
+                return (
+                  <option key={f.id} value={f.id}>
+                    {f.name} ({count} tests)
+                  </option>
+                );
+              })}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -138,6 +212,116 @@ export const DashboardView = ({ tests, bugs, project, files, onNavigateToTab }) 
             <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
             <span>Not Run ({stats.notRun})</span>
           </div>
+        </div>
+      </div>
+
+      {/* Team Contributions & Work Attribution Breakdown */}
+      <div className="p-6 border border-slate-200/80 rounded-2xl bg-white shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+              <Users size={18} />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                Team Contributions & Work Split
+              </h2>
+              <p className="text-xs text-slate-400">
+                Individual test executions and defect attribution for {project?.name || 'Workspace'}
+              </p>
+            </div>
+          </div>
+          {onOpenInviteModal && (
+            <button
+              onClick={onOpenInviteModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-colors cursor-pointer self-start sm:self-auto"
+            >
+              <UserPlus size={14} />
+              <span>Invite Collaborator</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {memberContributions.length === 0 ? (
+            <div className="col-span-full py-8 text-center text-slate-400 text-xs">
+              No team activity recorded yet. Run a test case or invite a member to begin.
+            </div>
+          ) : (
+            memberContributions.map((member) => {
+              const palette = getUserColor(member.email);
+              return (
+                <div
+                  key={member.email}
+                  className={`p-4 rounded-2xl border transition-all ${
+                    member.isCurrent 
+                      ? 'bg-indigo-50/40 border-indigo-200 shadow-xs ring-1 ring-indigo-500/10' 
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-9 h-9 rounded-xl ${palette.badge} font-bold text-xs flex items-center justify-center shrink-0 shadow-xs`}>
+                        {getUserInitial(member.email)}
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-slate-900 truncate" title={member.email}>
+                            {member.email}
+                          </p>
+                          {member.isCurrent && (
+                            <span className="text-[9px] font-extrabold text-indigo-700 bg-indigo-100 px-1.5 py-0.2 rounded-md shrink-0">
+                              YOU
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                          {member.role}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg shrink-0">
+                      {member.projectShare}% share
+                    </span>
+                  </div>
+
+                  {/* Metrics grid */}
+                  <div className="grid grid-cols-3 gap-2 py-2 border-t border-slate-100/80 text-center">
+                    <div className="bg-slate-50 p-2 rounded-xl">
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">Executed</p>
+                      <p className="text-sm font-extrabold text-slate-800">{member.totalExec}</p>
+                    </div>
+                    <div className="bg-emerald-50/60 p-2 rounded-xl">
+                      <p className="text-[9px] text-emerald-700 font-bold uppercase">Pass Rate</p>
+                      <p className="text-sm font-extrabold text-emerald-700">{member.passRate}%</p>
+                    </div>
+                    <div className="bg-rose-50/60 p-2 rounded-xl">
+                      <p className="text-[9px] text-rose-700 font-bold uppercase">Defects</p>
+                      <p className="text-sm font-extrabold text-rose-700">{member.reportedBugs}</p>
+                    </div>
+                  </div>
+
+                  {/* Status distribution bar */}
+                  {member.totalExec > 0 ? (
+                    <div className="mt-3 pt-2 border-t border-slate-100/60 space-y-1">
+                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                        <div style={{ width: `${(member.passed / member.totalExec) * 100}%` }} className="bg-emerald-500 h-full" title={`Passed: ${member.passed}`} />
+                        <div style={{ width: `${(member.failed / member.totalExec) * 100}%` }} className="bg-rose-500 h-full" title={`Failed: ${member.failed}`} />
+                        <div style={{ width: `${(member.blocked / member.totalExec) * 100}%` }} className="bg-amber-500 h-full" title={`Blocked: ${member.blocked}`} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                        <span>{member.passed} Passed</span>
+                        <span>{member.failed} Failed</span>
+                        <span>{member.blocked} Blocked</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[10px] text-slate-400 italic text-center">No test executions yet</p>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

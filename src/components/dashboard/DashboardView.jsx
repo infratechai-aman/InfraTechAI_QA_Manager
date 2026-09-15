@@ -48,6 +48,8 @@ export const DashboardView = ({
     if (project?.ownerEmail) memberSet.add(project.ownerEmail.toLowerCase());
     if (currentUser?.email) memberSet.add(currentUser.email.toLowerCase());
 
+    const ownerEmail = project?.ownerEmail?.toLowerCase() || '';
+
     tests.forEach(t => {
       if (t.executedBy) memberSet.add(t.executedBy.toLowerCase());
       if (t.createdBy) memberSet.add(t.createdBy.toLowerCase());
@@ -62,19 +64,46 @@ export const DashboardView = ({
     const members = Array.from(memberSet);
     return members.map(email => {
       const isCurrent = email === currentUser?.email?.toLowerCase();
-      const memberTests = tests.filter(t => t.executedBy?.toLowerCase() === email);
-      const createdTests = tests.filter(t => t.createdBy?.toLowerCase() === email).length;
-      const createdReports = reports.filter(r => r.createdBy?.toLowerCase() === email).length;
+
+      // For tests that have a status (executed) but NO executedBy field, attribute to project owner
+      const memberTests = tests.filter(t => {
+        if (t.executedBy) return t.executedBy.toLowerCase() === email;
+        // Legacy data: test was executed (has a status other than 'Not Run') but no executedBy
+        if (!t.executedBy && t.status && t.status !== 'Not Run') return email === ownerEmail;
+        return false;
+      });
+
+      // For test creation: if no createdBy field, attribute to owner
+      const createdTests = tests.filter(t => {
+        if (t.createdBy) return t.createdBy.toLowerCase() === email;
+        if (!t.createdBy) return email === ownerEmail;
+        return false;
+      }).length;
+
+      // For reports: if no createdBy field, attribute to owner
+      const createdReports = reports.filter(r => {
+        if (r.createdBy) return r.createdBy.toLowerCase() === email;
+        if (!r.createdBy) return email === ownerEmail;
+        return false;
+      }).length;
+
       const passed = memberTests.filter(t => t.status === 'Pass').length;
       const failed = memberTests.filter(t => t.status === 'Fail').length;
       const blocked = memberTests.filter(t => t.status === 'Blocked').length;
       const totalExec = memberTests.length;
       const mPassRate = totalExec > 0 ? Math.round((passed / totalExec) * 100) : 0;
-      const reportedBugs = bugs.filter(b => b.reportedBy?.toLowerCase() === email).length;
+
+      // For bugs: if no reportedBy field, attribute to owner
+      const reportedBugs = bugs.filter(b => {
+        if (b.reportedBy) return b.reportedBy.toLowerCase() === email;
+        if (!b.reportedBy) return email === ownerEmail;
+        return false;
+      }).length;
+
       const projectShare = tests.length > 0 ? Math.round((totalExec / tests.length) * 100) : 0;
 
       const projectMember = project?.members?.find(m => m.email?.toLowerCase() === email);
-      const role = projectMember?.role || (email === project?.ownerEmail?.toLowerCase() ? 'Owner' : 'QA Tester');
+      const role = projectMember?.role || (email === ownerEmail ? 'Owner' : 'QA Tester');
 
       return {
         email,

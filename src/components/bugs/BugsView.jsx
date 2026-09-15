@@ -47,6 +47,21 @@ export const BugsView = ({
     closed: bugs.filter((b) => b.status === 'Closed').length,
   }), [bugs]);
 
+  // Build list of unique reporters from bugs + project members
+  const allReporters = useMemo(() => {
+    const emailSet = new Set();
+    // Add all workspace members
+    if (project?.members) {
+      project.members.forEach(m => m.email && emailSet.add(m.email.toLowerCase()));
+    }
+    if (project?.ownerEmail) emailSet.add(project.ownerEmail.toLowerCase());
+    // Add reporters from bugs
+    bugs.forEach(b => {
+      if (b.reportedBy) emailSet.add(b.reportedBy.toLowerCase());
+    });
+    return Array.from(emailSet).sort();
+  }, [bugs, project]);
+
   const filteredBugs = useMemo(() => {
     return bugs.filter((bug) => {
       const matchesStatus = statusFilter === 'All' || bug.status === statusFilter;
@@ -54,9 +69,13 @@ export const BugsView = ({
       
       let matchesReporter = true;
       if (reporterFilter === 'Mine') {
-        matchesReporter = bug.reportedBy === currentUser?.email;
+        matchesReporter = (bug.reportedBy || project?.ownerEmail) === currentUser?.email;
       } else if (reporterFilter === 'Team') {
-        matchesReporter = bug.reportedBy && bug.reportedBy !== currentUser?.email;
+        matchesReporter = (bug.reportedBy || project?.ownerEmail) && (bug.reportedBy || project?.ownerEmail) !== currentUser?.email;
+      } else if (reporterFilter !== 'All') {
+        // Filter by specific email
+        const bugReporter = (bug.reportedBy || project?.ownerEmail || '').toLowerCase();
+        matchesReporter = bugReporter === reporterFilter.toLowerCase();
       }
 
       const q = search.toLowerCase();
@@ -68,7 +87,7 @@ export const BugsView = ({
 
       return matchesStatus && matchesSeverity && matchesReporter && matchesSearch;
     });
-  }, [bugs, statusFilter, severityFilter, reporterFilter, search, currentUser?.email]);
+  }, [bugs, statusFilter, severityFilter, reporterFilter, search, currentUser?.email, project?.ownerEmail]);
 
 
   const handleStatusChange = (bugId, newStatus) => {
@@ -182,11 +201,22 @@ export const BugsView = ({
           <select
             value={reporterFilter}
             onChange={(e) => setReporterFilter(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium bg-white text-slate-700 outline-none cursor-pointer"
+            className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium bg-white text-slate-700 outline-none cursor-pointer max-w-[200px]"
           >
             <option value="All">All Reporters</option>
             <option value="Mine">Reported by Me</option>
             <option value="Team">Reported by Team</option>
+            {allReporters.length > 0 && (
+              <option disabled>──────────</option>
+            )}
+            {allReporters.map(email => {
+              const isMe = email === currentUser?.email?.toLowerCase();
+              const isOwner = email === project?.ownerEmail?.toLowerCase();
+              const label = `${email.split('@')[0]} ${isOwner ? '(Owner)' : '(QA Tester)'}${isMe ? ' — You' : ''}`;
+              return (
+                <option key={email} value={email}>{label}</option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -208,8 +238,9 @@ export const BugsView = ({
             const linkedTest = tests.find((t) => t.id === bug.testCaseId);
             const isClosed = bug.status === 'Closed' || bug.status === 'Resolved';
             const regressionCount = bug.regressionCount || 0;
-            const isReportedByMe = bug.reportedBy === currentUser?.email;
-            const reporterPalette = bug.reportedBy ? getUserColor(bug.reportedBy) : null;
+            const reporterEmail = bug.reportedBy || project?.ownerEmail || 'Unknown';
+            const isReportedByMe = reporterEmail === currentUser?.email;
+            const reporterPalette = getUserColor(reporterEmail);
 
             return (
               <div
@@ -242,15 +273,15 @@ export const BugsView = ({
                       )}
 
                       {/* Reporter Attribution Badge */}
-                      {bug.reportedBy && (() => {
-                        const isReporterOwner = (project?.ownerEmail?.toLowerCase() === bug.reportedBy?.toLowerCase()) || (bug.reportedByRole === 'Owner');
+                      {(() => {
+                        const isReporterOwner = (project?.ownerEmail?.toLowerCase() === reporterEmail?.toLowerCase()) || (bug.reportedByRole === 'Owner');
                         return (
                           <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
                             <span className={`w-3.5 h-3.5 rounded-full ${reporterPalette?.badge} flex items-center justify-center text-[8px] font-bold`}>
-                              {getUserInitial(bug.reportedBy)}
+                              {getUserInitial(reporterEmail)}
                             </span>
                             <span className={isReportedByMe ? 'text-indigo-600 font-bold' : 'text-slate-600'}>
-                              {isReportedByMe ? 'Reported by You' : `Reported by ${bug.reportedBy.split('@')[0]}`}
+                              {isReportedByMe ? 'Reported by You' : `Reported by ${reporterEmail.split('@')[0]}`}
                             </span>
                             <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5 ${
                               isReporterOwner ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'

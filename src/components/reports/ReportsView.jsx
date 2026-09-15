@@ -433,6 +433,31 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
               </span>
             </div>
           )}
+
+          {/* Date Picker */}
+          {activeReport && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs shrink-0">
+              <Calendar size={12} className="text-slate-400" />
+              <span className="text-slate-400">Date:</span>
+              <input
+                type="date"
+                value={(activeReport.createdAt || '').substring(0, 10)}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  if (newDate) {
+                    // Keep the time portion from existing date, change only the date part
+                    const existingTime = (activeReport.createdAt || new Date().toISOString()).substring(10);
+                    const newDatetime = newDate + existingTime;
+                    onUpdateReport(activeReport.id, { 
+                      createdAt: newDatetime,
+                      updatedAt: getTimestamp()
+                    });
+                  }
+                }}
+                className="bg-transparent border-none outline-none text-xs font-semibold text-slate-700 cursor-pointer"
+              />
+            </div>
+          )}
         </div>
 
         {/* Right actions */}

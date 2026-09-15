@@ -238,6 +238,22 @@ export const ExecutionWorkspace = ({
               const failed = fileTests.filter((t) => t.status === 'Fail').length;
               const notRun = fileTests.filter((t) => t.status === 'Not Run').length;
               const pct = fileTests.length > 0 ? Math.round(((fileTests.length - notRun) / fileTests.length) * 100) : 0;
+
+              // Per-tester breakdown for this file
+              const ownerEmail = project?.ownerEmail?.toLowerCase() || '';
+              const testerMap = {};
+              fileTests.forEach(t => {
+                if (t.status && t.status !== 'Not Run') {
+                  const executor = (t.executedBy || project?.ownerEmail || 'Unknown').toLowerCase();
+                  if (!testerMap[executor]) testerMap[executor] = { passed: 0, failed: 0, blocked: 0, total: 0 };
+                  testerMap[executor].total++;
+                  if (t.status === 'Pass') testerMap[executor].passed++;
+                  else if (t.status === 'Fail') testerMap[executor].failed++;
+                  else if (t.status === 'Blocked') testerMap[executor].blocked++;
+                }
+              });
+              const testerEntries = Object.entries(testerMap);
+
               return (
                 <div
                   key={f.id}
@@ -264,7 +280,36 @@ export const ExecutionWorkspace = ({
                     </p>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  {/* Per-tester attribution */}
+                  {testerEntries.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Executed By</p>
+                      {testerEntries.map(([email, stats]) => {
+                        const palette = getUserColor(email);
+                        const initial = getUserInitial(email);
+                        const isMe = email === currentUser?.email?.toLowerCase();
+                        const isOwner = email === ownerEmail;
+                        return (
+                          <div key={email} className="flex items-center gap-2 text-[11px]">
+                            <div className={`w-5 h-5 rounded-full ${palette.badge} flex items-center justify-center text-[8px] font-bold shrink-0`}>
+                              {initial}
+                            </div>
+                            <span className={`truncate font-semibold ${isMe ? 'text-indigo-600' : 'text-slate-700'}`}>
+                              {isMe ? 'You' : email.split('@')[0]}
+                            </span>
+                            <span className={`text-[9px] font-black uppercase px-1 py-0.5 rounded ${isOwner ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                              {isOwner ? 'OWNER' : 'QA'}
+                            </span>
+                            <span className="ml-auto font-bold text-slate-600">{stats.total} TCs</span>
+                            <span className="text-emerald-600 font-bold">{stats.passed}P</span>
+                            <span className="text-rose-600 font-bold">{stats.failed}F</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div

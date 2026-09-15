@@ -168,7 +168,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         reports: reports.filter(r => r.projectId === activeProjectId)
       }, currentUser);
     }
-  }, [activeProjectId, tests.length, bugs.length, files.length]);
+  }, [activeProjectId, tests.length, bugs.length, files.length, reports.length]);
 
   // --- Project Management ---
   const handleAddProject = (newProjData) => {
@@ -627,6 +627,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       if (cloudData.files) setFiles(cloudData.files);
       if (cloudData.tests) setTests(cloudData.tests);
       if (cloudData.bugs) setBugs(cloudData.bugs);
+      if (cloudData.reports) setReports(cloudData.reports);
       return true;
     }
     return false;

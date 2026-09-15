@@ -127,11 +127,12 @@ export const db = {
   pullFromFirestore: async (userId, userEmail) => {
     if (!isFirebaseConfigured || !firestore || !userId) return null;
     try {
-      const [projSnap, filesSnap, testsSnap, bugsSnap] = await Promise.all([
+      const [projSnap, filesSnap, testsSnap, bugsSnap, reportsSnap] = await Promise.all([
         getDoc(doc(firestore, 'users', userId, 'qa_manager', 'projects')),
         getDoc(doc(firestore, 'users', userId, 'qa_manager', 'files')),
         getDoc(doc(firestore, 'users', userId, 'qa_manager', 'tests')),
         getDoc(doc(firestore, 'users', userId, 'qa_manager', 'bugs')),
+        getDoc(doc(firestore, 'users', userId, 'qa_manager', 'reports')),
       ]);
 
       const result = {};
@@ -151,6 +152,10 @@ export const db = {
         result.bugs = JSON.parse(bugsSnap.data().payload);
         save(getStorageKey('bugs', userId), result.bugs);
       }
+      if (reportsSnap.exists() && reportsSnap.data().payload) {
+        result.reports = JSON.parse(reportsSnap.data().payload);
+        save(getStorageKey('reports', userId), result.reports);
+      }
 
       // Check shared workspaces where this user is an active member
       if (userEmail) {
@@ -161,28 +166,33 @@ export const db = {
             const currentFiles = result.files || db.getFiles(userId);
             const currentTests = result.tests || db.getTestCases(userId);
             const currentBugs = result.bugs || db.getBugs(userId);
+            const currentReports = result.reports || db.getReports(userId);
 
             const projectMap = new Map(currentProjects.map(p => [p.id, p]));
             const fileMap = new Map(currentFiles.map(f => [f.id, f]));
             const testMap = new Map(currentTests.map(t => [t.id, t]));
             const bugMap = new Map(currentBugs.map(b => [b.id, b]));
+            const reportMap = new Map(currentReports.map(r => [r.id, r]));
 
-            sharedWorkspaces.forEach(({ project, files, tests, bugs }) => {
+            sharedWorkspaces.forEach(({ project, files, tests, bugs, reports }) => {
               if (project) projectMap.set(project.id, project);
               if (files) files.forEach(f => fileMap.set(f.id, f));
               if (tests) tests.forEach(t => testMap.set(t.id, t));
               if (bugs) bugs.forEach(b => bugMap.set(b.id, b));
+              if (reports) reports.forEach(r => reportMap.set(r.id, r));
             });
 
             result.projects = Array.from(projectMap.values());
             result.files = Array.from(fileMap.values());
             result.tests = Array.from(testMap.values());
             result.bugs = Array.from(bugMap.values());
+            result.reports = Array.from(reportMap.values());
 
             save(getStorageKey('projects', userId), result.projects);
             save(getStorageKey('files', userId), result.files);
             save(getStorageKey('tests', userId), result.tests);
             save(getStorageKey('bugs', userId), result.bugs);
+            save(getStorageKey('reports', userId), result.reports);
           }
         } catch (sharedErr) {
           console.warn('[Firebase] Error fetching shared workspaces for user:', sharedErr);

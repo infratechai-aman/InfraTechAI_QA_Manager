@@ -11,6 +11,7 @@ export const DashboardView = ({
   bugs, 
   project, 
   files, 
+  reports = [],
   onNavigateToTab, 
   currentUser,
   onOpenInviteModal 
@@ -49,15 +50,21 @@ export const DashboardView = ({
 
     tests.forEach(t => {
       if (t.executedBy) memberSet.add(t.executedBy.toLowerCase());
+      if (t.createdBy) memberSet.add(t.createdBy.toLowerCase());
     });
     bugs.forEach(b => {
       if (b.reportedBy) memberSet.add(b.reportedBy.toLowerCase());
+    });
+    reports.forEach(r => {
+      if (r.createdBy) memberSet.add(r.createdBy.toLowerCase());
     });
 
     const members = Array.from(memberSet);
     return members.map(email => {
       const isCurrent = email === currentUser?.email?.toLowerCase();
       const memberTests = tests.filter(t => t.executedBy?.toLowerCase() === email);
+      const createdTests = tests.filter(t => t.createdBy?.toLowerCase() === email).length;
+      const createdReports = reports.filter(r => r.createdBy?.toLowerCase() === email).length;
       const passed = memberTests.filter(t => t.status === 'Pass').length;
       const failed = memberTests.filter(t => t.status === 'Fail').length;
       const blocked = memberTests.filter(t => t.status === 'Blocked').length;
@@ -80,9 +87,11 @@ export const DashboardView = ({
         passRate: mPassRate,
         reportedBugs,
         projectShare,
+        createdTests,
+        createdReports,
       };
-    }).sort((a, b) => b.totalExec - a.totalExec);
-  }, [tests, bugs, project, currentUser]);
+    }).sort((a, b) => b.totalExec - a.totalExec || (b.createdTests + b.createdReports) - (a.createdTests + a.createdReports));
+  }, [tests, bugs, reports, project, currentUser]);
 
   const StatCard = ({ title, value, color, subtitle, icon: Icon, bg = 'bg-white' }) => (
     <div className={`p-5 rounded-2xl ${bg} border border-slate-200/80 shadow-xs flex flex-col justify-between`}>
@@ -286,7 +295,13 @@ export const DashboardView = ({
                   </div>
 
                   {/* Metrics grid */}
-                  <div className="grid grid-cols-3 gap-2 py-2 border-t border-slate-100/80 text-center">
+                  <div className="grid grid-cols-4 gap-2 py-2 border-t border-slate-100/80 text-center">
+                    <div className="bg-indigo-50/60 p-2 rounded-xl">
+                      <p className="text-[9px] text-indigo-700 font-bold uppercase">Authored</p>
+                      <p className="text-sm font-extrabold text-indigo-800" title={`${member.createdTests} Tests, ${member.createdReports} Reports`}>
+                        {member.createdTests + member.createdReports}
+                      </p>
+                    </div>
                     <div className="bg-slate-50 p-2 rounded-xl">
                       <p className="text-[9px] text-slate-400 font-bold uppercase">Executed</p>
                       <p className="text-sm font-extrabold text-slate-800">{member.totalExec}</p>

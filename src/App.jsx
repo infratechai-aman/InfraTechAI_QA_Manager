@@ -86,6 +86,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           if (cloudData.files) setFiles(cloudData.files);
           if (cloudData.tests) setTests(cloudData.tests);
           if (cloudData.bugs) setBugs(cloudData.bugs);
+          if (cloudData.reports) setReports(cloudData.reports);
         }
       } catch (err) {
         console.warn('Cloud pull check completed:', err);
@@ -242,6 +243,14 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             return updated;
           });
         }
+        if (result.workspace.reports) {
+          setReports(prev => {
+            const filtered = prev.filter(r => r.projectId !== joinedProject.id);
+            const updated = [...filtered, ...result.workspace.reports];
+            db.saveReports(updated, userId);
+            return updated;
+          });
+        }
       } else {
         // Fallback: refresh from cloud
         const cloudData = await db.pullFromFirestore(userId, currentUser.email);
@@ -250,6 +259,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           if (cloudData.files) setFiles(cloudData.files);
           if (cloudData.tests) setTests(cloudData.tests);
           if (cloudData.bugs) setBugs(cloudData.bugs);
+          if (cloudData.reports) setReports(cloudData.reports);
         }
       }
 
@@ -676,6 +686,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             bugs={projectBugs}
             project={activeProject}
             files={projectFiles}
+            reports={reports.filter(r => r.projectId === activeProjectId)}
             onNavigateToTab={(tab) => setActiveTab(tab)}
             currentUser={currentUser}
             onOpenInviteModal={() => setIsInviteModalOpen(true)}

@@ -1,4 +1,4 @@
-﻿import React, { useRef } from 'react';
+import React, { useRef } from 'react';
 import { 
   Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List,
@@ -56,7 +56,7 @@ export const Sidebar = ({
   const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A';
 
   return (
-    <aside className="w-64 border-r border-slate-200 flex flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
+    <aside className="hidden md:flex w-64 border-r border-slate-200 flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
       
       {/* Brand Header with Logo */}
       <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">

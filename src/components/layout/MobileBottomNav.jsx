@@ -11,6 +11,8 @@ export const MobileBottomNav = ({
   setActiveTab,
   activeProjectId,
   activeProject,
+  projects = [],
+  onSelectProject,
   openBugsCount = 0,
   isOptionsOpen,
   setIsOptionsOpen,
@@ -43,6 +45,13 @@ export const MobileBottomNav = ({
     e.target.value = '';
   };
 
+  const ensureProjectThen = (tabName) => {
+    if (!activeProjectId && projects && projects.length > 0 && onSelectProject) {
+      onSelectProject(projects[0].id);
+    }
+    setActiveTab(tabName);
+  };
+
   const navItems = [
     {
       id: 'projects',
@@ -58,43 +67,35 @@ export const MobileBottomNav = ({
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-      onClick: () => {
-        if (activeProjectId) setActiveTab('dashboard');
-      },
+      onClick: () => ensureProjectThen('dashboard'),
       isActive: activeTab === 'dashboard',
-      disabled: !activeProjectId,
+      disabled: false,
     },
     // Center Button (Options FAB) is handled separately
     {
       id: 'execute',
       label: 'Execute',
       icon: Play,
-      onClick: () => {
-        if (activeProjectId) setActiveTab('execute');
-      },
+      onClick: () => ensureProjectThen('execute'),
       isActive: activeTab === 'execute',
-      disabled: !activeProjectId,
+      disabled: false,
     },
     {
       id: 'bugs',
       label: 'Bugs',
       icon: BugIcon,
       badge: openBugsCount > 0 ? openBugsCount : null,
-      onClick: () => {
-        if (activeProjectId) setActiveTab('bugs');
-      },
+      onClick: () => ensureProjectThen('bugs'),
       isActive: activeTab === 'bugs',
-      disabled: !activeProjectId,
+      disabled: false,
     },
     {
       id: 'files',
       label: 'Suites',
       icon: List,
-      onClick: () => {
-        if (activeProjectId) setActiveTab('files');
-      },
+      onClick: () => ensureProjectThen('files'),
       isActive: activeTab === 'files' || activeTab === 'import',
-      disabled: !activeProjectId,
+      disabled: false,
     },
   ];
 
@@ -111,7 +112,7 @@ export const MobileBottomNav = ({
 
       {/* Floating iOS Glassmorphic Dock (Visible on mobile/tablet screens: md:hidden) */}
       <nav 
-        className="fixed bottom-3 inset-x-3 max-w-lg mx-auto z-40 md:hidden glass-dock rounded-3xl p-1.5 flex items-center justify-between"
+        className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] inset-x-3 max-w-lg mx-auto z-40 md:hidden glass-dock rounded-3xl p-1.5 flex items-center justify-between"
         aria-label="Mobile Navigation Dock"
       >
         {/* First 2 items (Projects, Dashboard) */}

@@ -888,8 +888,8 @@ export const ExecutionWorkspace = ({
               </div>
             </div>
 
-            {/* Floating Action Dock (Bottom Center) */}
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
+            {/* Floating Action Dock (Bottom Center - lifted on mobile to clear bottom dock) */}
+            <div className="absolute bottom-24 md:bottom-6 left-0 right-0 flex justify-center z-30 pointer-events-none px-4">
               <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 p-2 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex gap-2 pointer-events-auto items-center">
                 <button
                   onClick={() => handleStatusUpdate('Pass')}

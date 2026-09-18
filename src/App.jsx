@@ -679,7 +679,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#0b0f19] font-sans text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200 overflow-hidden relative">
+    <div className="flex h-screen h-[100dvh] w-full bg-[#0b0f19] font-sans text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200 overflow-hidden relative">
       
       {/* Desktop Sidebar Navigation (hidden on mobile/tablet screens) */}
       <Sidebar
@@ -847,6 +847,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         setActiveTab={setActiveTab}
         activeProjectId={activeProjectId}
         activeProject={activeProject}
+        projects={projects}
+        onSelectProject={(id) => {
+          setActiveProjectId(id);
+          setActiveFileId(null);
+        }}
         openBugsCount={openBugsCount}
         isOptionsOpen={isMobileOptionsOpen}
         setIsOptionsOpen={setIsMobileOptionsOpen}

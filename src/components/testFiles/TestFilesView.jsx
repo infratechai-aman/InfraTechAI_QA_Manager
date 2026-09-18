@@ -753,10 +753,10 @@ export const TestFilesView = ({
 
   // ─── 2. FILE DETAIL VIEW ─────────────────────────────────────────────────────
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-full overflow-hidden relative">
       
       {/* Left: Test Case Table */}
-      <div className={`flex flex-col ${selectedTest ? 'w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-200' : 'w-full'} overflow-hidden transition-all duration-300`}>
+      <div className={`flex flex-col ${selectedTest ? 'hidden lg:flex lg:w-1/2 border-r border-slate-200' : 'w-full'} overflow-hidden transition-all duration-300`}>
         <div className="p-4 sm:p-6 pb-28 sm:pb-6 space-y-5 overflow-y-auto flex-1">
 
           {/* Navigation & Header */}
@@ -1103,18 +1103,85 @@ export const TestFilesView = ({
                 <p className="text-xs text-slate-400 mt-1">Try another search or filter, or click New Test Case.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
-                  <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    <tr>
-                      <th className="p-4 w-24">ID</th>
-                      <th className="p-4">Title</th>
-                      <th className="p-4 w-44">Assigned To</th>
-                      <th className="p-4 w-52">Tested By</th>
-                      <th className="p-4 w-32 text-center">Status</th>
-                      <th className="p-4 w-12 text-center"></th>
-                    </tr>
-                  </thead>
+              <>
+                {/* Mobile Test Cards View (Visible on mobile/tablet screens: md:hidden) */}
+                <div className="md:hidden divide-y divide-slate-100 bg-white">
+                  {filteredTests.map((tc) => {
+                    const statusConf = getStatusConfig(tc.status);
+                    const StatusIcon = statusConf.icon;
+                    const isSelected = tc.id === selectedTestId;
+                    const isTesterOwner = (project?.ownerEmail?.toLowerCase() === tc.executedBy?.toLowerCase()) || (tc.executedByRole === 'Owner');
+                    const isMe = tc.executedBy?.toLowerCase() === currentUser?.email?.toLowerCase();
+                    const testerInitial = tc.executedBy ? getUserInitial(tc.executedBy) : null;
+                    const isAssignedMe = tc.assignedTo?.toLowerCase() === currentUser?.email?.toLowerCase();
+
+                    return (
+                      <div
+                        key={tc.id}
+                        onClick={() => handleOpenTest(tc)}
+                        className={`p-4 flex flex-col gap-2 transition-all cursor-pointer ${
+                          isSelected ? 'bg-indigo-50/80 border-l-4 border-indigo-600' : 'active:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono font-bold text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                            {tc.externalId}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusConf.bg} ${statusConf.color} ${statusConf.border}`}>
+                            <StatusIcon size={12} /> {tc.status}
+                          </span>
+                        </div>
+
+                        <p className="font-bold text-sm text-slate-900 leading-snug">
+                          {tc.title}
+                        </p>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                          {/* Assigned To */}
+                          <div className="flex items-center gap-1.5 text-slate-500">
+                            {tc.assignedTo ? (
+                              <span className={`font-semibold flex items-center gap-1 ${isAssignedMe ? 'text-indigo-600' : 'text-slate-700'}`}>
+                                <UserCheck size={13} className="text-indigo-600" />
+                                {isAssignedMe ? 'Assigned to You' : `Assigned: ${tc.assignedToName || tc.assignedTo.split('@')[0]}`}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">Unassigned</span>
+                            )}
+                          </div>
+
+                          {/* Tested By */}
+                          {tc.executedBy ? (
+                            <div className="flex items-center gap-1 text-[11px] text-slate-600">
+                              <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-800 font-bold flex items-center justify-center text-[8px]">
+                                {testerInitial}
+                              </span>
+                              <span>{isMe ? 'You' : tc.executedBy.split('@')[0]}</span>
+                              <span className={`px-1 rounded text-[8px] font-black uppercase ${isTesterOwner ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                {isTesterOwner ? 'OWNER' : 'TESTER'}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">Not tested</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Table View (hidden md:block) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <tr>
+                        <th className="p-4 w-24">ID</th>
+                        <th className="p-4">Title</th>
+                        <th className="p-4 w-44">Assigned To</th>
+                        <th className="p-4 w-52">Tested By</th>
+                        <th className="p-4 w-32 text-center">Status</th>
+                        <th className="p-4 w-12 text-center"></th>
+                      </tr>
+                    </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredTests.map((tc) => {
                       const statusConf = getStatusConfig(tc.status);
@@ -1260,17 +1327,25 @@ export const TestFilesView = ({
                   </tbody>
                 </table>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       </div>
 
       {/* Right: Test Case Detail Panel */}
       {selectedTest && (
-        <div className="w-1/2 flex flex-col bg-white overflow-hidden">
+        <div className="w-full lg:w-1/2 flex flex-col bg-white overflow-hidden z-20 h-full">
           {/* Panel Header */}
-          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={handleClosePanel}
+                className="lg:hidden p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 mr-0.5 cursor-pointer"
+                title="Back to test list"
+              >
+                <ArrowLeft size={16} />
+              </button>
               <span className="font-mono text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg shrink-0">
                 {selectedTest.externalId}
               </span>

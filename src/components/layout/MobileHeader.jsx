@@ -66,7 +66,7 @@ export const MobileHeader = ({
 
         <button
           onClick={onOpenOptionsSheet}
-          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm ring-1 ring-white/20 active-spring ${userColor}`}
+          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-white/20 active-spring ${userColor?.badge || 'bg-indigo-600 text-white'}`}
           title="User menu & options"
         >
           {userInitial}

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  CheckCircle, XCircle, AlertTriangle, Circle, 
+  CheckCircle, XCircle, AlertTriangle, 
   Search, ArrowLeft, ArrowRight, Save, Calendar, 
   Bug as BugIcon, Command, Keyboard, Check, 
   ListOrdered, CheckCircle2, Sparkles, Monitor, 
-  RefreshCw, Flag, Trophy, DoorOpen, Play, FileText
+  Flag, Trophy, DoorOpen, Play, FileText
 } from 'lucide-react';
 import { formatDate, getStatusConfig, getUserColor, getUserInitial } from '../../utils/formatters';
+import { getFileSharingMeta } from '../../utils/visibility';
 import { BugModal } from '../modals/BugModal';
 
 export const ExecutionWorkspace = ({ 
@@ -32,6 +33,7 @@ export const ExecutionWorkspace = ({
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [bugForm, setBugForm] = useState(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [isMobileListOpen, setIsMobileListOpen] = useState(false);
 
   const currentFile = files.find((f) => f.id === activeFileId);
 
@@ -56,6 +58,8 @@ export const ExecutionWorkspace = ({
         matchTester = t.executedBy && t.executedBy !== currentUser?.email;
       } else if (testerFilter === 'Unexecuted') {
         matchTester = !t.executedBy || t.status === 'Not Run';
+      } else if (testerFilter === 'AssignedToMe') {
+        matchTester = t.assignedTo?.toLowerCase() === currentUser?.email?.toLowerCase();
       }
 
       return matchFilter && matchSearch && matchTester;
@@ -207,7 +211,7 @@ export const ExecutionWorkspace = ({
   // If NO test file is selected, render the Suite Selection screen
   if (!activeFileId || !currentFile) {
     return (
-      <div className="p-8 max-w-4xl mx-auto space-y-8 animate-fadeIn">
+      <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-4xl mx-auto space-y-8 animate-fadeIn">
         <div className="text-center pt-8 pb-2">
           <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100 shadow-sm">
             <Play size={28} className="translate-x-0.5" />
@@ -234,8 +238,6 @@ export const ExecutionWorkspace = ({
           <div className="grid gap-4 sm:grid-cols-2">
             {files.map((f) => {
               const fileTests = tests.filter((t) => t.fileId === f.id);
-              const passed = fileTests.filter((t) => t.status === 'Pass').length;
-              const failed = fileTests.filter((t) => t.status === 'Fail').length;
               const notRun = fileTests.filter((t) => t.status === 'Not Run').length;
               const pct = fileTests.length > 0 ? Math.round(((fileTests.length - notRun) / fileTests.length) * 100) : 0;
 
@@ -333,10 +335,10 @@ export const ExecutionWorkspace = ({
   }
 
   return (
-    <div className="flex h-full bg-slate-50 overflow-hidden w-full">
+    <div className="flex h-full bg-slate-50 overflow-hidden w-full relative">
       
-      {/* Left Sidebar - Test Case List */}
-      <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10 shadow-xs">
+      {/* Left Sidebar - Test Case List (Desktop) */}
+      <div className="hidden md:flex w-80 bg-white border-r border-slate-200 flex-col shrink-0 z-10 shadow-xs">
         
         {/* Controls Header */}
         <div className="p-4 space-y-2.5 border-b border-slate-100 bg-white">
@@ -434,6 +436,7 @@ export const ExecutionWorkspace = ({
               className="w-full p-2 border border-slate-200 rounded-xl text-[11px] bg-slate-50 text-slate-700 font-semibold outline-none cursor-pointer"
             >
               <option value="All">Tester: All</option>
+              <option value="AssignedToMe">Assigned to Me</option>
               <option value="Mine">Tested by Me</option>
               <option value="Team">Tested by Team</option>
               <option value="Unexecuted">Unexecuted</option>
@@ -489,6 +492,14 @@ export const ExecutionWorkspace = ({
                       </span>
                     </div>
                   )}
+
+                  {/* Task Assignee Tag */}
+                  {tc.assignedTo && (
+                    <div className="flex items-center gap-1 mt-1 text-[10px] text-indigo-600 font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                      <span className="truncate">Assigned: {tc.assignedTo?.toLowerCase() === currentUser?.email?.toLowerCase() ? 'You' : (tc.assignedToName || tc.assignedTo.split('@')[0])}</span>
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -537,8 +548,17 @@ export const ExecutionWorkspace = ({
         ) : (
           <>
             {/* Top Navigation & Status Bar */}
-            <div className="flex items-center justify-between px-6 lg:px-8 py-3.5 border-b border-slate-200/80 bg-white z-10 shrink-0">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 border-b border-slate-200/80 bg-white z-10 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <button
+                  onClick={() => setIsMobileListOpen(true)}
+                  className="md:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200 active-spring cursor-pointer"
+                  title="View test cases list"
+                >
+                  <ListOrdered size={14} />
+                  <span>Cases</span>
+                </button>
+
                 <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
                   <button
                     onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
@@ -585,14 +605,35 @@ export const ExecutionWorkspace = ({
             </div>
 
             {/* Balanced Two-Column Execution Workspace */}
-            <div className="flex-1 overflow-y-auto w-full p-6 lg:p-8 pb-32">
+            <div className="flex-1 overflow-y-auto w-full p-3.5 sm:p-6 lg:p-8 pb-36">
               <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
                 {/* LEFT COLUMN: Test Specification (Steps + Expected) - 7 Columns */}
-                <div className="lg:col-span-7 space-y-6">
+                <div className="lg:col-span-7 space-y-5">
                   
+                  {/* Private Suite Creator Notice */}
+                  {(() => {
+                    const meta = getFileSharingMeta(currentFile, suiteTests, currentUser);
+                    if (meta.isCreator && !meta.isSharedWithTeam) {
+                      return (
+                        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-200 animate-fadeIn">
+                          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 shrink-0 mt-0.5">
+                            <Sparkles size={16} />
+                          </div>
+                          <div className="text-xs">
+                            <p className="font-bold text-amber-300">Draft Suite (Private to you)</p>
+                            <p className="text-amber-200/80 mt-0.5">
+                              This suite is currently invisible to Account B. Pass or Fail this test case to automatically share this entire suite with your team.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   {/* Card: Test Header */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-3">
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-xs font-bold tracking-tight">
                         {currentTest.externalId}
@@ -600,6 +641,28 @@ export const ExecutionWorkspace = ({
                       <span className="text-slate-400 text-xs font-medium flex items-center gap-1">
                         <Calendar size={12} /> {formatDate(currentTest.createdAt)}
                       </span>
+
+                      {/* Task Assignee Badge */}
+                      {currentTest.assignedTo ? (() => {
+                        const color = getUserColor(currentTest.assignedTo);
+                        const initial = getUserInitial(currentTest.assignedToName || currentTest.assignedTo);
+                        const isMe = currentTest.assignedTo?.toLowerCase() === currentUser?.email?.toLowerCase();
+                        return (
+                          <span 
+                            className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-lg border bg-indigo-50/70 text-indigo-800 border-indigo-200/80 shadow-2xs"
+                            title={`Assigned to ${currentTest.assignedTo}`}
+                          >
+                            <span className={`w-4 h-4 rounded-full ${color.badge} flex items-center justify-center text-[8px] font-black`}>
+                              {initial}
+                            </span>
+                            <span>Assigned: {isMe ? 'You' : (currentTest.assignedToName || currentTest.assignedTo.split('@')[0])}</span>
+                          </span>
+                        );
+                      })() : (
+                        <span className="flex items-center gap-1 text-xs text-slate-400 font-medium px-2 py-0.5 bg-slate-100 rounded-lg">
+                          Unassigned
+                        </span>
+                      )}
 
                       {/* Linked Bugs */}
                       {bugs
@@ -859,6 +922,7 @@ export const ExecutionWorkspace = ({
               onClose={() => setIsBugModalOpen(false)}
               onSubmit={handleSaveBug}
               initialData={bugForm}
+              project={project}
             />
           </>
         )}
@@ -969,6 +1033,68 @@ export const ExecutionWorkspace = ({
               >
                 <CheckCircle2 size={16} /> Submit &amp; View All Test Cases
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Test Case Picker Drawer */}
+      {isMobileListOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+          <div 
+            onClick={() => setIsMobileListOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
+          />
+          <div className="relative z-10 w-full max-w-lg mx-auto glass-sheet rounded-t-[2.5rem] p-5 pb-safe animate-slideUp max-h-[75vh] flex flex-col shadow-2xl">
+            <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 shrink-0"></div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+              <div>
+                <h3 className="text-sm font-bold text-white">Select Test Case</h3>
+                <p className="text-[11px] text-slate-400">{filteredTests.length} available in this suite</p>
+              </div>
+              <button 
+                onClick={() => setIsMobileListOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors active-spring"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto divide-y divide-white/5 flex-1 pt-2 space-y-1">
+              {filteredTests.map((tc, idx) => {
+                const conf = getStatusConfig(tc.status);
+                const Icon = conf.icon;
+                const isSelected = currentIndex === idx;
+                return (
+                  <button
+                    key={tc.id}
+                    onClick={() => {
+                      setCurrentIndex(idx);
+                      setIsMobileListOpen(false);
+                    }}
+                    className={`w-full p-3 rounded-2xl text-left flex items-center justify-between transition-all active-spring ${
+                      isSelected 
+                        ? 'bg-indigo-600 text-white font-bold shadow-md' 
+                        : 'text-slate-300 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1 pr-2">
+                      <span className={`text-[10px] font-mono block ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
+                        {tc.externalId}
+                      </span>
+                      <span className="text-xs truncate block font-medium">
+                        {tc.title}
+                      </span>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                      isSelected 
+                        ? 'bg-white/20 text-white' 
+                        : `${conf.bg} ${conf.color} ${conf.border} border`
+                    }`}>
+                      <Icon size={11} /> {tc.status}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

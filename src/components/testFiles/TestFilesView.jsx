@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FileText, Plus, Search, ArrowLeft, ChevronRight, 
-  Trash2, Calendar, CheckCircle, XCircle, AlertTriangle, 
-  Circle, X, Edit3, Save, ListOrdered, CheckCircle2, Eye,
-  Upload, Sparkles, Play, DoorOpen, Shield, User, Filter
+  Trash2, Calendar, CheckCircle,
+  X, Edit3, Save, ListOrdered, CheckCircle2, Eye,
+  Upload, Sparkles, Play, Shield, User, Filter,
+  UserCheck
 } from 'lucide-react';
 import { formatDate, getStatusConfig, getUserColor, getUserInitial } from '../../utils/formatters';
 import { parseBulkText } from '../../services/parser';
+import { getFileSharingMeta } from '../../utils/visibility';
 
 const SAMPLE_BULK_TEXT = `TC001
 User Authentication via Email OTP
@@ -34,18 +36,21 @@ PNG and JPG formats up to 5MB should upload and crop successfully.`;
 export const TestFilesView = ({ 
   files, 
   tests, 
+  allTests,
   project, 
   onAddFile, 
   onDeleteFile,
   onAddTest,
   onDeleteTest,
   onUpdateTest,
+  onBulkAssignSuite,
   onImportTests,
   activeFileId: propActiveFileId,
   onSelectFile,
   onExitTestFile,
   onNavigateToExecute,
   currentUser,
+  triggerNewFileModal,
 }) => {
   const [internalFileId, setInternalFileId] = useState(null);
   const activeFileId = propActiveFileId !== undefined ? propActiveFileId : internalFileId;
@@ -60,6 +65,13 @@ export const TestFilesView = ({
   const [creationTab, setCreationTab] = useState('manual'); // 'manual' | 'bulk'
   const [newFile, setNewFile] = useState({ name: '', copyFromId: '' });
 
+  useEffect(() => {
+    if (triggerNewFileModal) {
+      setIsCreatingFile(true);
+      setCreationTab('manual');
+    }
+  }, [triggerNewFileModal]);
+
   // Bulk Import state for new suite
   const [bulkSuiteName, setBulkSuiteName] = useState('');
   const [bulkRawText, setBulkRawText] = useState('');
@@ -70,10 +82,46 @@ export const TestFilesView = ({
   const [suiteBulkRawText, setSuiteBulkRawText] = useState('');
   const [suiteBulkPreview, setSuiteBulkPreview] = useState([]);
 
+  // Task Assignment states
+  const [assigneeFilter, setAssigneeFilter] = useState('ALL'); // 'ALL' | 'MINE' | 'UNASSIGNED' | email
+  const [isAssignSuiteModalOpen, setIsAssignSuiteModalOpen] = useState(false);
+  const [selectedSuiteAssignee, setSelectedSuiteAssignee] = useState('');
+
   const [isAddingTest, setIsAddingTest] = useState(false);
-  const [newTest, setNewTest] = useState({ title: '', expectedResult: '', steps: '' });
+  const [newTest, setNewTest] = useState({ title: '', expectedResult: '', steps: '', assignedTo: '' });
   const [search, setSearch] = useState('');
   const [testerFilter, setTesterFilter] = useState('ALL'); // 'ALL' | 'MINE' | 'TEAM' | 'UNEXECUTED'
+
+  // Extract crewmates from project
+  const crewmates = useMemo(() => {
+    const list = [];
+    if (project?.ownerEmail) {
+      list.push({
+        email: project.ownerEmail.toLowerCase(),
+        name: project.ownerEmail.split('@')[0],
+        role: 'Owner'
+      });
+    }
+    if (project?.members) {
+      project.members.forEach(m => {
+        if (m.email && !list.some(x => x.email === m.email.toLowerCase())) {
+          list.push({
+            email: m.email.toLowerCase(),
+            name: m.name || m.email.split('@')[0],
+            role: m.role || 'QA Tester'
+          });
+        }
+      });
+    }
+    if (currentUser?.email && !list.some(x => x.email === currentUser.email.toLowerCase())) {
+      list.push({
+        email: currentUser.email.toLowerCase(),
+        name: currentUser.displayName || currentUser.email.split('@')[0],
+        role: 'Member'
+      });
+    }
+    return list;
+  }, [project, currentUser]);
 
   // Selected test for detail panel
   const [selectedTestId, setSelectedTestId] = useState(null);
@@ -88,19 +136,28 @@ export const TestFilesView = ({
     const matchesSearch = 
       t.title.toLowerCase().includes(search.toLowerCase()) ||
       t.externalId.toLowerCase().includes(search.toLowerCase()) ||
-      (t.executedBy && t.executedBy.toLowerCase().includes(search.toLowerCase()));
+      (t.executedBy && t.executedBy.toLowerCase().includes(search.toLowerCase())) ||
+      (t.assignedTo && t.assignedTo.toLowerCase().includes(search.toLowerCase())) ||
+      (t.assignedToName && t.assignedToName.toLowerCase().includes(search.toLowerCase()));
 
     if (!matchesSearch) return false;
 
     if (testerFilter === 'MINE') {
-      return t.executedBy && t.executedBy.toLowerCase() === currentUser?.email?.toLowerCase();
+      if (!t.executedBy || t.executedBy.toLowerCase() !== currentUser?.email?.toLowerCase()) return false;
+    } else if (testerFilter === 'TEAM') {
+      if (!t.executedBy || t.executedBy.toLowerCase() === currentUser?.email?.toLowerCase()) return false;
+    } else if (testerFilter === 'UNEXECUTED') {
+      if (t.executedBy && t.status !== 'Not Run') return false;
     }
-    if (testerFilter === 'TEAM') {
-      return t.executedBy && t.executedBy.toLowerCase() !== currentUser?.email?.toLowerCase();
+
+    if (assigneeFilter === 'MINE') {
+      if (!t.assignedTo || t.assignedTo.toLowerCase() !== currentUser?.email?.toLowerCase()) return false;
+    } else if (assigneeFilter === 'UNASSIGNED') {
+      if (t.assignedTo) return false;
+    } else if (assigneeFilter !== 'ALL') {
+      if (!t.assignedTo || t.assignedTo.toLowerCase() !== assigneeFilter.toLowerCase()) return false;
     }
-    if (testerFilter === 'UNEXECUTED') {
-      return !t.executedBy || t.status === 'Not Run';
-    }
+
     return true;
   });
 
@@ -191,6 +248,7 @@ export const TestFilesView = ({
   const handleCreateTest = (e) => {
     e.preventDefault();
     if (!newTest.title.trim()) return;
+    const matchedCrewmate = crewmates.find(c => c.email === newTest.assignedTo?.toLowerCase());
     onAddTest({
       title: newTest.title,
       expectedResult: newTest.expectedResult,
@@ -199,8 +257,10 @@ export const TestFilesView = ({
       fileId: activeFileId,
       createdBy: currentUser?.email || 'Unknown',
       createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+      assignedTo: newTest.assignedTo || null,
+      assignedToName: matchedCrewmate ? matchedCrewmate.name : (newTest.assignedTo ? newTest.assignedTo.split('@')[0] : null),
     });
-    setNewTest({ title: '', expectedResult: '', steps: '' });
+    setNewTest({ title: '', expectedResult: '', steps: '', assignedTo: '' });
     setIsAddingTest(false);
   };
 
@@ -218,15 +278,43 @@ export const TestFilesView = ({
       actualResult: selectedTest.actualResult || '',
       testerNotes: selectedTest.testerNotes || '',
       status: selectedTest.status || 'Not Run',
+      assignedTo: selectedTest.assignedTo || '',
+      assignedToName: selectedTest.assignedToName || '',
     });
     setEditMode(true);
   };
 
   const handleSaveEdit = () => {
     if (onUpdateTest && selectedTest) {
-      onUpdateTest(selectedTest.id, editForm);
+      const matched = crewmates.find(c => c.email === editForm.assignedTo?.toLowerCase());
+      onUpdateTest(selectedTest.id, {
+        ...editForm,
+        assignedTo: editForm.assignedTo || null,
+        assignedToName: matched ? matched.name : (editForm.assignedTo ? editForm.assignedTo.split('@')[0] : null)
+      });
     }
     setEditMode(false);
+  };
+
+  const handleQuickAssign = (assignedToEmail) => {
+    if (!onUpdateTest || !selectedTest) return;
+    const matched = crewmates.find(c => c.email === assignedToEmail?.toLowerCase());
+    onUpdateTest(selectedTest.id, {
+      ...selectedTest,
+      assignedTo: assignedToEmail || null,
+      assignedToName: matched ? matched.name : (assignedToEmail ? assignedToEmail.split('@')[0] : null)
+    });
+  };
+
+  const handleExecuteBulkAssignSuite = () => {
+    if (!onBulkAssignSuite || !activeFileId) return;
+    const matched = crewmates.find(c => c.email === selectedSuiteAssignee?.toLowerCase());
+    onBulkAssignSuite(
+      activeFileId,
+      selectedSuiteAssignee || null,
+      matched ? matched.name : (selectedSuiteAssignee ? selectedSuiteAssignee.split('@')[0] : null)
+    );
+    setIsAssignSuiteModalOpen(false);
   };
 
   const handleClosePanel = () => {
@@ -239,7 +327,7 @@ export const TestFilesView = ({
   // ─── 1. LIST OF ALL TEST SUITES / FILES ─────────────────────────────────────
   if (!activeFileId || !activeFile) {
     return (
-      <div className="p-8 max-w-5xl mx-auto space-y-6 animate-fadeIn">
+      <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-5xl mx-auto space-y-6 animate-fadeIn">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
@@ -554,6 +642,27 @@ export const TestFilesView = ({
                               </span>
                             );
                           })()}
+
+                          {/* Account A / Account B Visibility & Sharing Status Badge */}
+                          {(() => {
+                            const meta = getFileSharingMeta(f, allTests || tests, currentUser);
+                            if (meta.isCreator) {
+                              return meta.isSharedWithTeam ? (
+                                <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                  👥 Shared with Team ({meta.passedOrFailedCount} TC Run)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                  🔒 Private Draft (Execute 1 TC to share with team)
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center gap-1 bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                👥 Shared Suite
+                              </span>
+                            );
+                          })()}
                         </div>
 
                         {/* Mini progress bar & Tester summary */}
@@ -647,8 +756,8 @@ export const TestFilesView = ({
     <div className="flex h-full overflow-hidden">
       
       {/* Left: Test Case Table */}
-      <div className={`flex flex-col ${selectedTest ? 'w-1/2 border-r border-slate-200' : 'w-full'} overflow-hidden transition-all duration-300`}>
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+      <div className={`flex flex-col ${selectedTest ? 'w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-200' : 'w-full'} overflow-hidden transition-all duration-300`}>
+        <div className="p-4 sm:p-6 pb-28 sm:pb-6 space-y-5 overflow-y-auto flex-1">
 
           {/* Navigation & Header */}
           <div className="flex items-center justify-between gap-3">
@@ -682,15 +791,25 @@ export const TestFilesView = ({
                 {fileTests.length} test cases • Created {formatDate(activeFile.createdAt || activeFile.date)}
               </p>
             </div>
-            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+              <button
+                onClick={() => {
+                  setSelectedSuiteAssignee('');
+                  setIsAssignSuiteModalOpen(true);
+                }}
+                className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Assign all test cases in this suite to a crewmate"
+              >
+                <UserCheck size={14} /> Assign Suite
+              </button>
               <button
                 onClick={() => {
                   setIsBulkImportingInSuite(!isBulkImportingInSuite);
                   setIsAddingTest(false);
                 }}
-                className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <Upload size={14} /> Bulk Import Cases
+                <Upload size={14} /> Bulk Import
               </button>
               <button
                 onClick={() => {
@@ -703,6 +822,28 @@ export const TestFilesView = ({
               </button>
             </div>
           </div>
+
+          {/* Account A / Account B Private Draft Guidance Banner */}
+          {(() => {
+            const meta = getFileSharingMeta(activeFile, allTests || tests, currentUser);
+            if (meta.isCreator && !meta.isSharedWithTeam) {
+              return (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-200 animate-fadeIn">
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 shrink-0 mt-0.5">
+                    <Shield size={16} />
+                  </div>
+                  <div className="text-xs flex-1 min-w-0">
+                    <p className="font-bold text-amber-300">Private Draft Suite (Visible only to you)</p>
+                    <p className="text-amber-200/80 mt-0.5">
+                      This test file is currently invisible to Account B and other team members.
+                      As soon as you pass or fail <strong>1 single test case</strong>, this suite will automatically unlock and appear for everyone in this project.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           {/* In-Suite Bulk Import Form */}
           {isBulkImportingInSuite && (
@@ -843,6 +984,24 @@ export const TestFilesView = ({
                 />
               </div>
               <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <UserCheck size={13} className="text-indigo-600" />
+                  Assign To Crewmate (Optional)
+                </label>
+                <select
+                  value={newTest.assignedTo || ''}
+                  onChange={(e) => setNewTest({ ...newTest, assignedTo: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                >
+                  <option value="">Unassigned (Open for any tester)</option>
+                  {crewmates.map(c => (
+                    <option key={c.email} value={c.email}>
+                      {c.name} ({c.email}) • {c.role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                   Expected Result <span className="text-rose-500">*</span>
                 </label>
@@ -877,8 +1036,8 @@ export const TestFilesView = ({
           {/* Tests Table */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 max-w-xl">
-                <div className="relative flex-1">
+              <div className="flex flex-wrap items-center gap-3 flex-1 max-w-2xl">
+                <div className="relative flex-1 min-w-[200px]">
                   <Search size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
@@ -896,12 +1055,38 @@ export const TestFilesView = ({
                     value={testerFilter}
                     onChange={(e) => setTesterFilter(e.target.value)}
                     className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20"
-                    title="Filter test cases by tester"
+                    title="Filter test cases by tester execution"
                   >
-                    <option value="ALL">All Testers</option>
+                    <option value="ALL">All Executions</option>
                     <option value="MINE">Tested by Me</option>
                     <option value="TEAM">Tested by Team</option>
                     <option value="UNEXECUTED">Unexecuted</option>
+                  </select>
+                </div>
+
+                {/* Assignee Filter Dropdown */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <UserCheck size={14} className="text-indigo-600" />
+                  <select
+                    value={assigneeFilter}
+                    onChange={(e) => setAssigneeFilter(e.target.value)}
+                    className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 bg-white outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20"
+                    title="Filter test cases by assigned crewmate"
+                  >
+                    <option value="ALL">All Assignees</option>
+                    <option value="MINE">Assigned to Me</option>
+                    <option value="UNASSIGNED">Unassigned</option>
+                    {crewmates.length > 0 && (
+                      <option disabled>──────────</option>
+                    )}
+                    {crewmates.map(c => {
+                      const isMe = c.email === currentUser?.email?.toLowerCase();
+                      return (
+                        <option key={c.email} value={c.email}>
+                          {c.name} {isMe ? '(You)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
@@ -924,7 +1109,8 @@ export const TestFilesView = ({
                     <tr>
                       <th className="p-4 w-24">ID</th>
                       <th className="p-4">Title</th>
-                      <th className="p-4 w-60">Tested By</th>
+                      <th className="p-4 w-44">Assigned To</th>
+                      <th className="p-4 w-52">Tested By</th>
                       <th className="p-4 w-32 text-center">Status</th>
                       <th className="p-4 w-12 text-center"></th>
                     </tr>
@@ -976,6 +1162,34 @@ export const TestFilesView = ({
                             )}
                           </td>
                           
+                          {/* Assigned To Column */}
+                          <td className="p-4 align-top">
+                            {tc.assignedTo ? (() => {
+                              const color = getUserColor(tc.assignedTo);
+                              const initial = getUserInitial(tc.assignedToName || tc.assignedTo);
+                              const isMe = tc.assignedTo?.toLowerCase() === currentUser?.email?.toLowerCase();
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`w-5 h-5 rounded-full ${color.badge} flex items-center justify-center text-[9px] font-black shrink-0 shadow-2xs`}>
+                                    {initial}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className={`text-xs font-bold truncate max-w-[110px] ${isMe ? 'text-indigo-600' : 'text-slate-800'}`}>
+                                      {isMe ? 'You' : (tc.assignedToName || tc.assignedTo.split('@')[0])}
+                                    </span>
+                                    <span className="text-[9px] text-slate-400 truncate max-w-[110px]">
+                                      {tc.assignedTo}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })() : (
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium italic">
+                                <User size={11} className="opacity-40" /> Unassigned
+                              </span>
+                            )}
+                          </td>
+
                           {/* Tested By Column (Who executed this TC: Owner vs QA Tester) */}
                           <td className="p-4 align-top">
                             {tc.executedBy ? (
@@ -1235,6 +1449,78 @@ export const TestFilesView = ({
               )}
             </div>
 
+            {/* Task Assignment Section */}
+            <div className="p-4 bg-indigo-50/40 border border-indigo-100 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <UserCheck size={12} className="text-indigo-600" /> Assigned Crewmate
+                </span>
+                {selectedTest.assignedTo && (
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-full">
+                    Active Task
+                  </span>
+                )}
+              </div>
+
+              {editMode ? (
+                <div>
+                  <select
+                    value={editForm.assignedTo || ''}
+                    onChange={(e) => setEditForm({ ...editForm, assignedTo: e.target.value })}
+                    className="w-full border border-indigo-200 bg-white rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                  >
+                    <option value="">Unassigned</option>
+                    {crewmates.map(c => (
+                      <option key={c.email} value={c.email}>
+                        {c.name} ({c.email}) • {c.role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  {selectedTest.assignedTo ? (() => {
+                    const color = getUserColor(selectedTest.assignedTo);
+                    const initial = getUserInitial(selectedTest.assignedToName || selectedTest.assignedTo);
+                    const isMe = selectedTest.assignedTo?.toLowerCase() === currentUser?.email?.toLowerCase();
+                    return (
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-7 h-7 rounded-full ${color.badge} flex items-center justify-center text-xs font-black shadow-2xs shrink-0`}>
+                          {initial}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-800 truncate">
+                            {selectedTest.assignedToName || selectedTest.assignedTo.split('@')[0]} {isMe ? '(You)' : ''}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">{selectedTest.assignedTo}</p>
+                        </div>
+                      </div>
+                    );
+                  })() : (
+                    <div className="flex items-center gap-2 text-slate-400 text-xs italic">
+                      <User size={14} className="opacity-40" />
+                      <span>Not assigned to any crewmate</span>
+                    </div>
+                  )}
+
+                  {/* Inline Quick Assign Dropdown */}
+                  <select
+                    value={selectedTest.assignedTo || ''}
+                    onChange={(e) => handleQuickAssign(e.target.value)}
+                    className="text-[11px] font-bold border border-indigo-200 bg-white text-indigo-700 rounded-lg px-2 py-1 outline-none hover:border-indigo-400 cursor-pointer shadow-2xs shrink-0"
+                    title="Quick assign this test case"
+                  >
+                    <option value="">{selectedTest.assignedTo ? 'Remove' : 'Assign to...'}</option>
+                    {crewmates.map(c => (
+                      <option key={c.email} value={c.email}>
+                        {c.name} {c.email === currentUser?.email?.toLowerCase() ? '(You)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
             {/* Tester & Creator Attribution Card */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
               <div className="flex items-center justify-between">
@@ -1305,6 +1591,106 @@ export const TestFilesView = ({
                   Updated {formatDate(selectedTest.updatedAt)}
                 </span>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Suite Modal */}
+      {isAssignSuiteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <UserCheck size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">Assign Test Suite</h3>
+                  <p className="text-xs text-slate-400">Assign all test cases in this file to a crewmate</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsAssignSuiteModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-700 block">Select Assignee</label>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSuiteAssignee('')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    selectedSuiteAssignee === '' 
+                      ? 'border-indigo-500 bg-indigo-50/50 text-indigo-900 ring-2 ring-indigo-500/20' 
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">
+                      <User size={14} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold">Unassigned</p>
+                      <p className="text-[10px] text-slate-400">Clear all assignments in this suite</p>
+                    </div>
+                  </div>
+                  {selectedSuiteAssignee === '' && <CheckCircle size={16} className="text-indigo-600" />}
+                </button>
+
+                {crewmates.map(c => {
+                  const isSelected = selectedSuiteAssignee === c.email;
+                  const isMe = c.email === currentUser?.email?.toLowerCase();
+                  const color = getUserColor(c.email);
+                  const initial = getUserInitial(c.name || c.email);
+                  return (
+                    <button
+                      key={c.email}
+                      type="button"
+                      onClick={() => setSelectedSuiteAssignee(c.email)}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'border-indigo-500 bg-indigo-50/50 text-indigo-900 ring-2 ring-indigo-500/20' 
+                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-full ${color.badge} flex items-center justify-center text-xs font-black shadow-2xs`}>
+                          {initial}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800">
+                            {c.name} {isMe ? '(You)' : ''}
+                          </p>
+                          <p className="text-[10px] text-slate-400">{c.email} • {c.role}</p>
+                        </div>
+                      </div>
+                      {isSelected && <CheckCircle size={16} className="text-indigo-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsAssignSuiteModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteBulkAssignSuite}
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 rounded-xl transition-all cursor-pointer"
+              >
+                Apply to Suite
+              </button>
             </div>
           </div>
         </div>

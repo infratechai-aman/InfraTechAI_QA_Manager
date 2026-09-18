@@ -56,27 +56,27 @@ export const Sidebar = ({
   const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A';
 
   return (
-    <aside className="w-64 border-r border-slate-200 flex flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
+    <aside className="hidden md:flex w-64 border-r border-white/10 flex-col shrink-0 z-20 bg-slate-900/90 backdrop-blur-xl shadow-2xl h-screen text-slate-200">
       
       {/* Brand Header with Logo */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+      <div className="px-4 py-3.5 border-b border-white/10 flex items-center gap-3">
         <img 
           src="/qa-logo.png" 
           alt="QA Manager Logo" 
-          className="w-10 h-10 object-contain shrink-0"
+          className="w-9 h-9 object-contain shrink-0 rounded-xl"
         />
         <div>
-          <span className="font-extrabold text-slate-900 text-base tracking-tight block leading-tight">
+          <span className="font-extrabold text-white text-base tracking-tight block leading-tight">
             InfratechAI
           </span>
-          <span className="text-[11px] font-semibold text-indigo-600 tracking-wider uppercase">
+          <span className="text-[10px] font-bold text-indigo-400 tracking-wider uppercase">
             QA Manager
           </span>
         </div>
       </div>
 
       {/* Nav List */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         
         {/* === NOT INSIDE A PROJECT: Show "All Projects" button === */}
         {!activeProjectId && (
@@ -84,11 +84,11 @@ export const Sidebar = ({
             onClick={() => setActiveTab('projects')}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
               activeTab === 'projects'
-                ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30'
+                : 'text-slate-300 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <Briefcase size={18} className={activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-400'} />
+            <Briefcase size={18} className={activeTab === 'projects' ? 'text-white' : 'text-slate-400'} />
             <span>All Projects</span>
           </button>
         )}
@@ -97,14 +97,14 @@ export const Sidebar = ({
         {activeProjectId && (
           <div className="space-y-2">
             {/* Active Project Display Card */}
-            <div className="px-3.5 py-3 bg-indigo-50/80 rounded-xl border border-indigo-200/80">
+            <div className="px-3.5 py-3 bg-indigo-950/40 rounded-2xl border border-indigo-500/30">
               <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-indigo-600 rounded-lg text-white shrink-0 mt-0.5">
+                <div className="p-1.5 bg-indigo-600 rounded-xl text-white shrink-0 mt-0.5 shadow-sm">
                   <Briefcase size={13} />
                 </div>
                 <div className="overflow-hidden flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Active Project</p>
-                  <p className="text-xs font-extrabold text-indigo-900 truncate">{activeProject?.name || 'Project'}</p>
+                  <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Active Project</p>
+                  <p className="text-xs font-extrabold text-white truncate">{activeProject?.name || 'Project'}</p>
                 </div>
               </div>
             </div>
@@ -113,15 +113,15 @@ export const Sidebar = ({
             {onOpenInviteModal && (
               <button
                 onClick={onOpenInviteModal}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs"
-                title="Invite friend or team member to collaborate"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs"
+                title="Invite team member to collaborate"
               >
                 <div className="flex items-center gap-2">
-                  <UserPlus size={14} className="text-indigo-600" />
+                  <UserPlus size={14} className="text-indigo-400" />
                   <span>Invite Member</span>
                 </div>
                 {activeProject?.members && activeProject.members.length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-200/80 text-indigo-800 font-extrabold">
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-500/30 text-indigo-200 font-extrabold border border-indigo-400/30">
                     {activeProject.members.length}
                   </span>
                 )}
@@ -131,34 +131,34 @@ export const Sidebar = ({
             {/* Exit Workspace Button */}
             <button
               onClick={onExitProject}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-rose-100 hover:border-rose-200"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40"
             >
-              <DoorOpen size={17} className="text-rose-500" />
+              <DoorOpen size={15} className="text-rose-400" />
               <span>Exit Workspace</span>
             </button>
 
             {/* Active Test Case / File Display Card + Exit TestCase Button */}
             {activeFile && (
-              <div className="pt-2 space-y-2 animate-fadeIn border-t border-slate-100">
-                <div className="px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="pt-2 space-y-2 animate-fadeIn border-t border-white/10">
+                <div className="px-3.5 py-2.5 bg-white/5 rounded-xl border border-white/10">
                   <div className="flex items-start gap-2.5">
                     <div className="p-1.5 bg-slate-800 rounded-lg text-white shrink-0 mt-0.5">
                       <FileText size={13} />
                     </div>
                     <div className="overflow-hidden flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active TestCase File</p>
-                      <p className="text-xs font-bold text-slate-900 truncate" title={activeFile.name}>{activeFile.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active Suite</p>
+                      <p className="text-xs font-bold text-white truncate" title={activeFile.name}>{activeFile.name}</p>
                     </div>
                   </div>
                 </div>
 
                 <button
                   onClick={onExitTestFile}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all cursor-pointer shadow-xs"
+                  className="w-full flex items-center justify-center gap-2 py-1.5 px-3 text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl transition-all cursor-pointer shadow-xs"
                   title="Deselect active test case file"
                 >
-                  <DoorOpen size={14} className="text-amber-600" />
-                  <span>Exit TestCase</span>
+                  <DoorOpen size={13} className="text-amber-400" />
+                  <span>Exit Suite</span>
                 </button>
               </div>
             )}
@@ -182,10 +182,10 @@ export const Sidebar = ({
                 disabled={item.disabled}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
                   item.disabled
-                    ? 'opacity-40 cursor-not-allowed text-slate-400'
+                    ? 'opacity-30 cursor-not-allowed text-slate-500'
                     : isActive
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/30 font-bold'
+                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ export const Sidebar = ({
                 </div>
                 {item.badge !== null && item.badge !== undefined && (
                   <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
-                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-100 text-rose-700'
+                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                   }`}>
                     {item.badge}
                   </span>
@@ -207,24 +207,24 @@ export const Sidebar = ({
 
       {/* User Account Info Bar */}
       {currentUser && (
-        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
+        <div className="px-4 py-2.5 border-t border-white/10 bg-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
               {userInitial}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-800 truncate" title={currentUser.email}>
+              <p className="text-xs font-bold text-slate-200 truncate" title={currentUser.email}>
                 {currentUser.email}
               </p>
-              <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span>Protected</span>
+              <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Active</span>
               </div>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
             title="Sign Out"
           >
             <LogOut size={15} />
@@ -232,8 +232,8 @@ export const Sidebar = ({
         </div>
       )}
 
-      {/* Bottom Footer — Export/Import only */}
-      <div className="p-3 border-t border-slate-100 space-y-1">
+      {/* Bottom Footer — Export/Import */}
+      <div className="p-3 border-t border-white/10 space-y-1">
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -241,17 +241,17 @@ export const Sidebar = ({
           accept=".json" 
           className="hidden" 
         />
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           <button
             onClick={onExportBackup}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-400 hover:text-slate-200 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
             title="Download JSON Backup"
           >
             <Download size={13} /> Export
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-400 hover:text-slate-200 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
             title="Import JSON Backup"
           >
             <UploadCloud size={13} /> Import

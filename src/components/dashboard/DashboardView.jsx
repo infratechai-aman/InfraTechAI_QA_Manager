@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Calendar, Bug as BugIcon, CheckCircle, XCircle, 
   AlertTriangle, Circle, TrendingUp, ShieldAlert, FileText,
-  Users, UserPlus
+  Users, UserPlus, UserCheck
 } from 'lucide-react';
 import { formatDate, getUserColor, getUserInitial } from '../../utils/formatters';
 
@@ -61,17 +61,47 @@ export const DashboardView = ({
       if (r.createdBy) memberSet.add(r.createdBy.toLowerCase());
     });
 
+    // Helper to identify execution status
+    const isStatusExecuted = (status) => {
+      if (!status) return false;
+      const s = status.toLowerCase();
+      return s === 'pass' || s === 'passed' || s === 'fail' || s === 'failed' || s === 'blocked';
+    };
+
+    // Total executed tests across all members in the project
+    const allExecutedTests = tests.filter(t => isStatusExecuted(t.status));
+    const totalProjectExec = allExecutedTests.length;
+
     const members = Array.from(memberSet);
     return members.map(email => {
       const isCurrent = email === currentUser?.email?.toLowerCase();
 
-      // For tests that have a status (executed) but NO executedBy field, attribute to project owner
-      const memberTests = tests.filter(t => {
+      // Only tests that have actually been executed ('Pass', 'Fail', 'Blocked') count towards execution metrics
+      const memberExecutedTests = tests.filter(t => {
+        if (!isStatusExecuted(t.status)) return false;
         if (t.executedBy) return t.executedBy.toLowerCase() === email;
-        // Legacy data: test was executed (has a status other than 'Not Run') but no executedBy
-        if (!t.executedBy && t.status && t.status !== 'Not Run') return email === ownerEmail;
-        return false;
+        // Legacy fallback: test was executed but has no executedBy, attribute to owner
+        return email === ownerEmail;
       });
+
+      const passed = memberExecutedTests.filter(t => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'pass' || s === 'passed';
+      }).length;
+
+      const failed = memberExecutedTests.filter(t => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'fail' || s === 'failed';
+      }).length;
+
+      const blocked = memberExecutedTests.filter(t => {
+        const s = (t.status || '').toLowerCase();
+        return s === 'blocked';
+      }).length;
+
+      // Real executed count = Passed + Failed + Blocked
+      const totalExec = passed + failed + blocked;
+      const mPassRate = totalExec > 0 ? Math.round((passed / totalExec) * 100) : 0;
 
       // For test creation: if no createdBy field, attribute to owner
       const createdTests = tests.filter(t => {
@@ -87,12 +117,6 @@ export const DashboardView = ({
         return false;
       }).length;
 
-      const passed = memberTests.filter(t => t.status === 'Pass').length;
-      const failed = memberTests.filter(t => t.status === 'Fail').length;
-      const blocked = memberTests.filter(t => t.status === 'Blocked').length;
-      const totalExec = memberTests.length;
-      const mPassRate = totalExec > 0 ? Math.round((passed / totalExec) * 100) : 0;
-
       // For bugs: if no reportedBy field, attribute to owner
       const reportedBugs = bugs.filter(b => {
         if (b.reportedBy) return b.reportedBy.toLowerCase() === email;
@@ -100,10 +124,24 @@ export const DashboardView = ({
         return false;
       }).length;
 
-      const projectShare = tests.length > 0 ? Math.round((totalExec / tests.length) * 100) : 0;
+      // Share represents the proportion of executed work (or authored tests if no tests executed yet)
+      const projectShare = totalProjectExec > 0 
+        ? Math.round((totalExec / totalProjectExec) * 100) 
+        : (tests.length > 0 ? Math.round((createdTests / tests.length) * 100) : 0);
 
       const projectMember = project?.members?.find(m => m.email?.toLowerCase() === email);
       const role = projectMember?.role || (email === ownerEmail ? 'Owner' : 'QA Tester');
+
+      // Assigned workload
+      const assignedPendingTests = tests.filter(t => 
+        t.assignedTo?.toLowerCase() === email && 
+        (!t.status || t.status === 'Not Run')
+      ).length;
+
+      const assignedActiveBugs = bugs.filter(b => 
+        b.assignedTo?.toLowerCase() === email && 
+        ['Open', 'In Progress', 'Reopened'].includes(b.status)
+      ).length;
 
       return {
         email,
@@ -118,6 +156,8 @@ export const DashboardView = ({
         projectShare,
         createdTests,
         createdReports,
+        assignedPendingTests,
+        assignedActiveBugs,
       };
     }).sort((a, b) => b.totalExec - a.totalExec || (b.createdTests + b.createdReports) - (a.createdTests + a.createdReports));
   }, [tests, bugs, reports, project, currentUser]);
@@ -136,7 +176,7 @@ export const DashboardView = ({
   );
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-fadeIn">
+    <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-6xl mx-auto space-y-6 sm:space-y-8 animate-fadeIn">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -347,21 +387,56 @@ export const DashboardView = ({
 
                   {/* Status distribution bar */}
                   {member.totalExec > 0 ? (
-                    <div className="mt-3 pt-2 border-t border-slate-100/60 space-y-1">
-                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
-                        <div style={{ width: `${(member.passed / member.totalExec) * 100}%` }} className="bg-emerald-500 h-full" title={`Passed: ${member.passed}`} />
-                        <div style={{ width: `${(member.failed / member.totalExec) * 100}%` }} className="bg-rose-500 h-full" title={`Failed: ${member.failed}`} />
-                        <div style={{ width: `${(member.blocked / member.totalExec) * 100}%` }} className="bg-amber-500 h-full" title={`Blocked: ${member.blocked}`} />
+                    <div className="mt-3 pt-2 border-t border-slate-100/60 space-y-1.5">
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                        {member.passed > 0 && (
+                          <div 
+                            style={{ width: `${(member.passed / member.totalExec) * 100}%` }} 
+                            className="bg-emerald-500 h-full transition-all duration-300" 
+                            title={`Passed: ${member.passed} (${Math.round((member.passed / member.totalExec) * 100)}%)`} 
+                          />
+                        )}
+                        {member.failed > 0 && (
+                          <div 
+                            style={{ width: `${(member.failed / member.totalExec) * 100}%` }} 
+                            className="bg-rose-500 h-full transition-all duration-300" 
+                            title={`Failed: ${member.failed} (${Math.round((member.failed / member.totalExec) * 100)}%)`} 
+                          />
+                        )}
+                        {member.blocked > 0 && (
+                          <div 
+                            style={{ width: `${(member.blocked / member.totalExec) * 100}%` }} 
+                            className="bg-amber-500 h-full transition-all duration-300" 
+                            title={`Blocked: ${member.blocked} (${Math.round((member.blocked / member.totalExec) * 100)}%)`} 
+                          />
+                        )}
                       </div>
                       <div className="flex justify-between text-[10px] text-slate-400 font-medium">
-                        <span>{member.passed} Passed</span>
-                        <span>{member.failed} Failed</span>
-                        <span>{member.blocked} Blocked</span>
+                        <span className={member.passed > 0 ? 'text-emerald-600 font-semibold' : ''}>{member.passed} Passed</span>
+                        <span className={member.failed > 0 ? 'text-rose-600 font-semibold' : ''}>{member.failed} Failed</span>
+                        <span className={member.blocked > 0 ? 'text-amber-600 font-semibold' : ''}>{member.blocked} Blocked</span>
                       </div>
                     </div>
                   ) : (
                     <p className="mt-2 text-[10px] text-slate-400 italic text-center">No test executions yet</p>
                   )}
+
+                  {/* Assigned Workload Pill */}
+                  <div className="mt-2.5 pt-2 border-t border-slate-100/80 flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-slate-500 flex items-center gap-1">
+                      <UserCheck size={11} className="text-indigo-600" /> Assigned:
+                    </span>
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <span className={`px-2 py-0.5 rounded-md ${member.assignedPendingTests > 0 ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-slate-50 text-slate-400'}`}>
+                        {member.assignedPendingTests} test{member.assignedPendingTests === 1 ? '' : 's'} left
+                      </span>
+                      {member.assignedActiveBugs > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">
+                          {member.assignedActiveBugs} bug{member.assignedActiveBugs === 1 ? '' : 's'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })

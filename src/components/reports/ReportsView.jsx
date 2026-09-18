@@ -244,7 +244,7 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
   // ── Report List ─────────────────────────────────────────────────────────────
   if (!activeReportId) {
     return (
-      <div className="p-8 max-w-5xl mx-auto space-y-6 animate-fadeIn">
+      <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-5xl mx-auto space-y-6 animate-fadeIn">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Reports</h1>
@@ -384,7 +384,7 @@ export const ReportsView = ({ reports, onAddReport, onUpdateReport, onDeleteRepo
 
   // ── Editor / Preview View ────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
+    <div className="flex flex-col h-full overflow-hidden bg-white pb-28 sm:pb-0">
 
       {/* Top Bar */}
       <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shrink-0 gap-3">

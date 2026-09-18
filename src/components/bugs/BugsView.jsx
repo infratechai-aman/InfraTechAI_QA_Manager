@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
   Bug as BugIcon, Plus, Search, Filter, Trash2, 
   ChevronDown, ChevronUp, RefreshCw, RotateCcw,
-  History, Calendar, AlertTriangle, X, User, Shield
+  History, Calendar, AlertTriangle, X, User, Shield,
+  UserCheck, Paperclip, Image as ImageIcon, Eye, UploadCloud, Loader2
 } from 'lucide-react';
 import { 
   formatDate, formatTime,
@@ -14,6 +15,9 @@ import {
   getUserInitial,
 } from '../../utils/formatters';
 import { BugModal } from '../modals/BugModal';
+import { ImageLightboxModal } from '../modals/ImageLightboxModal';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { processImageFile, formatFileSize } from '../../utils/imageUtils';
 
 const ALL_STATUSES = ['Open', 'Reopened', 'In Progress', 'Resolved', 'Closed'];
 
@@ -25,16 +29,30 @@ export const BugsView = ({
   project, 
   tests,
   currentUser,
+  triggerNewBugModal,
 }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
-  const [reporterFilter, setReporterFilter] = useState('All'); // 'All' | 'Mine' | 'Team'
+  const [reporterFilter, setReporterFilter] = useState('All'); // 'All' | 'Mine' | 'Team' | email
+  const [assigneeFilter, setAssigneeFilter] = useState('All'); // 'All' | 'Mine' | 'Unassigned' | email
   const [expandedBugId, setExpandedBugId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploadingBugId, setUploadingBugId] = useState(null);
+  const [lightboxState, setLightboxState] = useState({ isOpen: false, images: [], index: 0 });
+
+  const existingFileInputRef = useRef(null);
+  const currentUploadBugIdRef = useRef(null);
+
+  useEffect(() => {
+    if (triggerNewBugModal) {
+      setIsModalOpen(true);
+    }
+  }, [triggerNewBugModal]);
 
   // Reopen modal state
   const [reopenBugId, setReopenBugId] = useState(null);
+  useBodyScrollLock(!!reopenBugId);
   const [reopenReason, setReopenReason] = useState('');
 
   // Status counts — Reopened is counted in "Open" bucket for sidebar badge
@@ -47,15 +65,44 @@ export const BugsView = ({
     closed: bugs.filter((b) => b.status === 'Closed').length,
   }), [bugs]);
 
+  // Extract crewmates from project
+  const crewmates = useMemo(() => {
+    const list = [];
+    if (project?.ownerEmail) {
+      list.push({
+        email: project.ownerEmail.toLowerCase(),
+        name: project.ownerEmail.split('@')[0],
+        role: 'Owner'
+      });
+    }
+    if (project?.members) {
+      project.members.forEach(m => {
+        if (m.email && !list.some(x => x.email === m.email.toLowerCase())) {
+          list.push({
+            email: m.email.toLowerCase(),
+            name: m.name || m.email.split('@')[0],
+            role: m.role || 'QA Tester'
+          });
+        }
+      });
+    }
+    if (currentUser?.email && !list.some(x => x.email === currentUser.email.toLowerCase())) {
+      list.push({
+        email: currentUser.email.toLowerCase(),
+        name: currentUser.displayName || currentUser.email.split('@')[0],
+        role: 'Member'
+      });
+    }
+    return list;
+  }, [project, currentUser]);
+
   // Build list of unique reporters from bugs + project members
   const allReporters = useMemo(() => {
     const emailSet = new Set();
-    // Add all workspace members
     if (project?.members) {
       project.members.forEach(m => m.email && emailSet.add(m.email.toLowerCase()));
     }
     if (project?.ownerEmail) emailSet.add(project.ownerEmail.toLowerCase());
-    // Add reporters from bugs
     bugs.forEach(b => {
       if (b.reportedBy) emailSet.add(b.reportedBy.toLowerCase());
     });
@@ -73,9 +120,19 @@ export const BugsView = ({
       } else if (reporterFilter === 'Team') {
         matchesReporter = (bug.reportedBy || project?.ownerEmail) && (bug.reportedBy || project?.ownerEmail) !== currentUser?.email;
       } else if (reporterFilter !== 'All') {
-        // Filter by specific email
         const bugReporter = (bug.reportedBy || project?.ownerEmail || '').toLowerCase();
         matchesReporter = bugReporter === reporterFilter.toLowerCase();
+      }
+
+      let matchesAssignee = true;
+      const bugAssignee = (bug.assignedTo || '').toLowerCase();
+      const myEmail = (currentUser?.email || '').toLowerCase();
+      if (assigneeFilter === 'Mine') {
+        matchesAssignee = bugAssignee === myEmail;
+      } else if (assigneeFilter === 'Unassigned') {
+        matchesAssignee = !bugAssignee;
+      } else if (assigneeFilter !== 'All') {
+        matchesAssignee = bugAssignee === assigneeFilter.toLowerCase();
       }
 
       const q = search.toLowerCase();
@@ -83,11 +140,13 @@ export const BugsView = ({
         bug.title.toLowerCase().includes(q) ||
         bug.bugId?.toLowerCase().includes(q) ||
         bug.actualBehavior?.toLowerCase().includes(q) ||
-        (bug.reportedBy && bug.reportedBy.toLowerCase().includes(q));
+        (bug.reportedBy && bug.reportedBy.toLowerCase().includes(q)) ||
+        (bug.assignedTo && bug.assignedTo.toLowerCase().includes(q)) ||
+        (bug.assignedToName && bug.assignedToName.toLowerCase().includes(q));
 
-      return matchesStatus && matchesSeverity && matchesReporter && matchesSearch;
+      return matchesStatus && matchesSeverity && matchesReporter && matchesAssignee && matchesSearch;
     });
-  }, [bugs, statusFilter, severityFilter, reporterFilter, search, currentUser?.email, project?.ownerEmail]);
+  }, [bugs, statusFilter, severityFilter, reporterFilter, assigneeFilter, search, currentUser?.email, project?.ownerEmail]);
 
 
   const handleStatusChange = (bugId, newStatus) => {
@@ -123,10 +182,46 @@ export const BugsView = ({
     setReopenReason('');
   };
 
+  const handleExistingImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    const bugId = currentUploadBugIdRef.current;
+    if (!file || !bugId) return;
+
+    setUploadingBugId(bugId);
+    try {
+      const processed = await processImageFile(file);
+      const bug = bugs.find(b => b.id === bugId);
+      if (bug) {
+        const existingImages = bug.images && bug.images.length > 0 
+          ? bug.images 
+          : (bug.imageUrl ? [{ id: 'img_legacy', url: bug.imageUrl, name: 'Screenshot', size: 0 }] : []);
+        const updatedImages = [...existingImages, processed];
+        onUpdateBug(bugId, {
+          images: updatedImages,
+          imageUrl: updatedImages[0]?.url || null,
+        });
+      }
+    } catch (err) {
+      alert('Failed to attach image: ' + err.message);
+    } finally {
+      setUploadingBugId(null);
+      currentUploadBugIdRef.current = null;
+      if (existingFileInputRef.current) existingFileInputRef.current.value = '';
+    }
+  };
+
+  const handleAssignBug = (bugId, newAssigneeEmail) => {
+    const matched = crewmates.find(c => c.email === newAssigneeEmail?.toLowerCase());
+    onUpdateBug(bugId, {
+      assignedTo: newAssigneeEmail || null,
+      assignedToName: matched ? matched.name : (newAssigneeEmail ? newAssigneeEmail.split('@')[0] : null)
+    });
+  };
+
   const reopenBug = bugs.find(b => b.id === reopenBugId);
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6 animate-fadeIn">
+    <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-6xl mx-auto space-y-6 animate-fadeIn">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -201,7 +296,7 @@ export const BugsView = ({
           <select
             value={reporterFilter}
             onChange={(e) => setReporterFilter(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium bg-white text-slate-700 outline-none cursor-pointer max-w-[200px]"
+            className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium bg-white text-slate-700 outline-none cursor-pointer max-w-[180px]"
           >
             <option value="All">All Reporters</option>
             <option value="Mine">Reported by Me</option>
@@ -212,14 +307,49 @@ export const BugsView = ({
             {allReporters.map(email => {
               const isMe = email === currentUser?.email?.toLowerCase();
               const isOwner = email === project?.ownerEmail?.toLowerCase();
-              const label = `${email.split('@')[0]} ${isOwner ? '(Owner)' : '(QA Tester)'}${isMe ? ' — You' : ''}`;
+              const label = `${email.split('@')[0]} ${isOwner ? '(Owner)' : '(QA)'}${isMe ? ' — You' : ''}`;
               return (
                 <option key={email} value={email}>{label}</option>
               );
             })}
           </select>
+
+          {/* Assignee Filter */}
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <UserCheck size={14} className="text-indigo-600" />
+            <span>Assignee:</span>
+          </div>
+          <select
+            value={assigneeFilter}
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium bg-white text-slate-700 outline-none cursor-pointer max-w-[180px]"
+          >
+            <option value="All">All Assignees</option>
+            <option value="Mine">Assigned to Me</option>
+            <option value="Unassigned">Unassigned Only</option>
+            {crewmates.length > 0 && (
+              <option disabled>──────────</option>
+            )}
+            {crewmates.map(c => {
+              const isMe = c.email === currentUser?.email?.toLowerCase();
+              return (
+                <option key={c.email} value={c.email}>
+                  {c.name} {isMe ? '(You)' : `(${c.role})`}
+                </option>
+              );
+            })}
+          </select>
         </div>
       </div>
+
+      {/* Hidden File Input for adding screenshots to existing bugs */}
+      <input
+        type="file"
+        ref={existingFileInputRef}
+        onChange={handleExistingImageSelect}
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="hidden"
+      />
 
       {/* Bugs List */}
       <div className="space-y-3">
@@ -241,6 +371,13 @@ export const BugsView = ({
             const reporterEmail = bug.reportedBy || project?.ownerEmail || 'Unknown';
             const isReportedByMe = reporterEmail === currentUser?.email;
             const reporterPalette = getUserColor(reporterEmail);
+
+            const bugImages = bug.images && bug.images.length > 0 
+              ? bug.images 
+              : (bug.imageUrl ? [{ id: 'legacy', url: bug.imageUrl, name: 'Screenshot', size: 0 }] : []);
+
+            const isAssignedToMe = bug.assignedTo && bug.assignedTo.toLowerCase() === currentUser?.email?.toLowerCase();
+            const assigneePalette = bug.assignedTo ? getUserColor(bug.assignedTo) : null;
 
             return (
               <div
@@ -270,6 +407,37 @@ export const BugsView = ({
                         <span className="flex items-center gap-1 text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-md" title={`This bug has regressed ${regressionCount} time(s)`}>
                           <RotateCcw size={10} /> Regressed ×{regressionCount}
                         </span>
+                      )}
+
+                      {/* Task Assignee Badge */}
+                      {bug.assignedTo ? (
+                        <span className={`flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
+                          isAssignedToMe ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-700'
+                        }`}>
+                          <span className={`w-3.5 h-3.5 rounded-full ${assigneePalette?.badge} flex items-center justify-center text-[8px] font-bold`}>
+                            {getUserInitial(bug.assignedTo)}
+                          </span>
+                          <span>
+                            Assigned: <strong>{isAssignedToMe ? 'You' : (bug.assignedToName || bug.assignedTo.split('@')[0])}</strong>
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium text-slate-400 bg-slate-100/80 px-2 py-0.5 rounded-md italic">
+                          Unassigned
+                        </span>
+                      )}
+
+                      {/* Image attachments thumbnail preview pill */}
+                      {bugImages.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setLightboxState({ isOpen: true, images: bugImages, index: 0 })}
+                          className="flex items-center gap-1.5 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer group"
+                          title="Click to view attached screenshots"
+                        >
+                          <ImageIcon size={12} className="text-rose-500" />
+                          <span>{bugImages.length} Image{bugImages.length > 1 ? 's' : ''}</span>
+                        </button>
                       )}
 
                       {/* Reporter Attribution Badge */}
@@ -352,6 +520,94 @@ export const BugsView = ({
                 {/* Collapsible Details */}
                 {isExpanded && (
                   <div className="px-5 pb-5 pt-3 border-t border-slate-100 bg-slate-50/50 space-y-4 text-xs animate-fadeIn">
+                    
+                    {/* Task Assignment Box inside expanded defect */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                          <UserCheck size={16} />
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-800 text-xs block">Task Assignee</span>
+                          <span className="text-[10px] text-slate-400">Assign this defect to a team member to fix or verify</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={bug.assignedTo || ''}
+                          onChange={(e) => handleAssignBug(bug.id, e.target.value)}
+                          className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold bg-slate-50 hover:bg-white text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                        >
+                          <option value="">Unassigned (Anyone can resolve)</option>
+                          {crewmates.map(c => (
+                            <option key={c.email} value={c.email}>
+                              {c.name} ({c.email}) • {c.role}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Screenshots & Evidence Gallery */}
+                    <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                          <Paperclip size={13} className="text-rose-500" />
+                          Screenshots &amp; Evidence ({bugImages.length})
+                        </span>
+                        <button
+                          type="button"
+                          disabled={uploadingBugId === bug.id}
+                          onClick={() => {
+                            currentUploadBugIdRef.current = bug.id;
+                            existingFileInputRef.current?.click();
+                          }}
+                          className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {uploadingBugId === bug.id ? (
+                            <>
+                              <Loader2 size={12} className="animate-spin" /> Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <UploadCloud size={12} /> Add Screenshot
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {bugImages.length === 0 ? (
+                        <p className="text-slate-400 text-xs italic py-1">No screenshots attached yet. Click "Add Screenshot" to upload evidence.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                          {bugImages.map((img, idx) => (
+                            <div 
+                              key={img.id || idx}
+                              onClick={() => setLightboxState({ isOpen: true, images: bugImages, index: idx })}
+                              className="group relative rounded-xl border border-slate-200 overflow-hidden bg-slate-900/5 cursor-pointer shadow-xs hover:border-indigo-400 transition-all"
+                            >
+                              <div className="h-24 w-full overflow-hidden relative">
+                                <img 
+                                  src={img.url} 
+                                  alt={img.name || `Screenshot ${idx + 1}`} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                                <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-colors flex items-center justify-center">
+                                  <div className="p-1.5 bg-white/90 text-slate-900 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Eye size={14} />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="p-1.5 bg-white border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                                <span className="truncate max-w-[80px]" title={img.name}>{img.name || `Image ${idx + 1}`}</span>
+                                <span className="font-mono text-slate-400 shrink-0">{img.size ? formatFileSize(img.size) : ''}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {bug.actualBehavior && (
                       <div>
                         <span className="font-bold text-slate-500 uppercase tracking-wider block mb-1">Actual Behavior</span>
@@ -425,12 +681,32 @@ export const BugsView = ({
         }}
         initialData={{ projectId: project?.id }}
         currentUser={currentUser}
+        project={project}
+      />
+
+      {/* Full-screen Lightbox viewer for screenshots */}
+      <ImageLightboxModal
+        isOpen={lightboxState.isOpen}
+        images={lightboxState.images}
+        initialIndex={lightboxState.index}
+        onClose={() => setLightboxState({ isOpen: false, images: [], index: 0 })}
       />
 
       {/* Reopen Confirmation Modal */}
       {reopenBugId && reopenBug && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fadeIn">
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 overscroll-none touch-none"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setReopenBugId(null);
+              setReopenReason('');
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fadeIn overscroll-contain select-text"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between mb-5">
               <div>
                 <div className="flex items-center gap-2 mb-1">

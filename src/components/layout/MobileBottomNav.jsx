@@ -58,7 +58,12 @@ export const MobileBottomNav = ({
       label: 'Projects',
       icon: Briefcase,
       onClick: () => {
-        setActiveTab('projects');
+        if (activeProjectId) {
+          // Must exit the workspace first — mirror desktop behavior
+          onExitProject();
+        } else {
+          setActiveTab('projects');
+        }
       },
       isActive: activeTab === 'projects',
       disabled: false,

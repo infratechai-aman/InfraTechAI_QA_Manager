@@ -726,8 +726,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         {activeTab === 'projects' && (
           <ProjectsView
             projects={projects}
-            files={visibleProjectFiles}
-            tests={visibleProjectTests}
+            files={files}
+            tests={tests}
             onAddProject={handleAddProject}
             onDeleteProject={handleDeleteProject}
             activeProjectId={activeProjectId}

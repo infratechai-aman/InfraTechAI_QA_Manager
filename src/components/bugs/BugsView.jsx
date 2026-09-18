@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Bug as BugIcon, Plus, Search, Filter, Trash2, 
   ChevronDown, ChevronUp, RefreshCw, RotateCcw,

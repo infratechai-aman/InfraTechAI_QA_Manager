@@ -679,7 +679,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   return (
-    <div className="flex h-screen h-[100dvh] w-full bg-[#0b0f19] font-sans text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200 overflow-hidden relative">
+    <div className="flex h-screen h-[100dvh] w-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
       
       {/* Desktop Sidebar Navigation (hidden on mobile/tablet screens) */}
       <Sidebar
@@ -699,7 +699,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 relative bg-aurora-glow overflow-y-auto flex flex-col min-w-0 pb-dock-safe md:pb-0">
+      <main className="flex-1 relative bg-white overflow-y-auto flex flex-col min-w-0 pb-dock-safe md:pb-0">
         
         {/* Mobile Header Bar (hidden on desktop) */}
         <MobileHeader

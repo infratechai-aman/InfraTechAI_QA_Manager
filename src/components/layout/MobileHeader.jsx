@@ -15,7 +15,7 @@ export const MobileHeader = ({
   const userColor = getUserColor(currentUser?.email || 'user');
 
   return (
-    <header className="flex md:hidden items-center justify-between px-3.5 py-2.5 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-30 shrink-0">
+    <header className="flex md:hidden items-center justify-between px-3.5 py-2.5 bg-white border-b border-slate-200 sticky top-0 z-30 shrink-0 shadow-sm">
       {/* Brand & Project Info */}
       <div className="flex items-center gap-2.5 min-w-0">
         <button
@@ -30,21 +30,21 @@ export const MobileHeader = ({
           />
           {!activeProjectId && (
             <div className="flex flex-col text-left leading-none">
-              <span className="font-extrabold text-sm text-white tracking-tight">InfratechAI</span>
-              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">QA Manager</span>
+              <span className="font-extrabold text-sm text-slate-900 tracking-tight">InfratechAI</span>
+              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">QA Manager</span>
             </div>
           )}
         </button>
 
         {/* If inside active project: Show Project Pill */}
         {activeProjectId && (
-          <div className="flex items-center gap-1.5 min-w-0 bg-white/5 border border-white/10 rounded-full py-1 px-2.5">
-            <Briefcase size={12} className="text-indigo-400 shrink-0" />
-            <span className="text-xs font-bold text-slate-200 truncate max-w-[130px] sm:max-w-[200px]">
+          <div className="flex items-center gap-1.5 min-w-0 bg-indigo-50 border border-indigo-200 rounded-full py-1 px-2.5">
+            <Briefcase size={12} className="text-indigo-600 shrink-0" />
+            <span className="text-xs font-bold text-slate-800 truncate max-w-[130px] sm:max-w-[200px]">
               {activeProject?.name || 'Project'}
             </span>
             {activeProject?.members && activeProject.members.length > 1 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+              <span className="px-1.5 py-0.5 rounded-full text-[9px] bg-indigo-100 text-indigo-600 font-bold border border-indigo-200">
                 {activeProject.members.length}
               </span>
             )}
@@ -57,7 +57,7 @@ export const MobileHeader = ({
         {activeProjectId && onOpenInviteModal && (
           <button
             onClick={onOpenInviteModal}
-            className="p-2 rounded-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 active-spring"
+            className="p-2 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 active-spring"
             title="Invite Collaborator"
           >
             <UserPlus size={14} />

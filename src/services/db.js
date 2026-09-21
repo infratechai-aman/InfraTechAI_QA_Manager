@@ -1,5 +1,6 @@
 import { firestore, isFirebaseConfigured } from '../config/firebase';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { mergeTestCases, mergeBugs, mergeFiles } from '../utils/workspaceMerger';
 
 // Generate user-scoped storage keys
 const getStorageKey = (key, userId) => {
@@ -603,7 +604,25 @@ export const db = {
 
     // Cache locally under shared project key
     const sharedCacheKey = `qa_shared_ws_${projectId}`;
-    save(sharedCacheKey, { project, files, tests, bugs, reports, updatedAt: new Date().toISOString() });
+    const existingWs = load(sharedCacheKey, null);
+
+    let safeTests = tests || [];
+    let safeBugs = bugs || [];
+    let safeFiles = files || [];
+
+    if (existingWs) {
+      if (Array.isArray(existingWs.tests)) {
+        safeTests = mergeTestCases(existingWs.tests, safeTests);
+      }
+      if (Array.isArray(existingWs.bugs)) {
+        safeBugs = mergeBugs(existingWs.bugs, safeBugs);
+      }
+      if (Array.isArray(existingWs.files)) {
+        safeFiles = mergeFiles(existingWs.files, safeFiles);
+      }
+    }
+
+    save(sharedCacheKey, { project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports, updatedAt: new Date().toISOString() });
 
     if (isFirebaseConfigured && firestore) {
       try {
@@ -615,7 +634,7 @@ export const db = {
           memberEmails.push(currentUser.email.toLowerCase());
         }
 
-        const payloadString = JSON.stringify({ project, files, tests, bugs, reports });
+        const payloadString = JSON.stringify({ project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports });
 
         await writeChunkedDoc(
           'shared_workspaces',

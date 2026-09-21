@@ -12,8 +12,8 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // 3. Shared Workspaces (multi-user collaborative workspaces)
-    match /shared_workspaces/{projectId} {
+    // 3. Shared Workspaces & Chunked Documents (multi-user collaborative workspaces)
+    match /shared_workspaces/{document=**} {
       allow read, write: if request.auth != null;
     }
   }

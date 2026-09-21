@@ -1,5 +1,5 @@
 import { firestore, isFirebaseConfigured } from '../config/firebase';
-import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 // Generate user-scoped storage keys
 const getStorageKey = (key, userId) => {
@@ -28,6 +28,94 @@ const save = (key, data) => {
   }
 };
 
+// Firestore has a hard 1 MiB (1,048,576 byte) document limit.
+// We chunk payloads that exceed 600,000 characters to ensure safe, fail-free synchronization.
+const CHUNK_SIZE = 600000;
+
+const splitIntoChunks = (str, chunkSize = CHUNK_SIZE) => {
+  const chunks = [];
+  for (let i = 0; i < str.length; i += chunkSize) {
+    chunks.push(str.substring(i, i + chunkSize));
+  }
+  return chunks;
+};
+
+/**
+ * Writes document data to Firestore, automatically chunking large payloads across
+ * sibling documents if total string length exceeds CHUNK_SIZE (~600KB).
+ */
+const writeChunkedDoc = async (collectionPath, docId, baseData, payloadString) => {
+  if (!isFirebaseConfigured || !firestore) return;
+
+  const totalLength = (payloadString || '').length;
+  const isChunked = totalLength > CHUNK_SIZE;
+
+  if (!isChunked) {
+    const docRef = doc(firestore, collectionPath, docId);
+    await setDoc(docRef, {
+      ...baseData,
+      payload: payloadString,
+      isChunked: false,
+      chunkCount: 1,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    return;
+  }
+
+  // Chunked storage
+  const chunks = splitIntoChunks(payloadString, CHUNK_SIZE);
+  const mainDocRef = doc(firestore, collectionPath, docId);
+
+  // Main document holds Chunk 0 + metadata so queries (members, etc.) remain intact
+  await setDoc(mainDocRef, {
+    ...baseData,
+    payload: chunks[0],
+    isChunked: true,
+    chunkCount: chunks.length,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true });
+
+  // Remaining chunks 1..N-1 written to sibling documents
+  const subChunkWrites = [];
+  for (let i = 1; i < chunks.length; i++) {
+    const chunkDocRef = doc(firestore, collectionPath, `${docId}__chunk_${i}`);
+    subChunkWrites.push(setDoc(chunkDocRef, {
+      parentId: docId,
+      isChunkDoc: true,
+      chunkIndex: i,
+      chunk: chunks[i],
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+  await Promise.all(subChunkWrites);
+};
+
+/**
+ * Reads document data and reassembles chunks if isChunked is true
+ */
+const readChunkedDocPayload = async (collectionPath, docId, docData) => {
+  if (!docData) return null;
+  if (!docData.isChunked || !docData.chunkCount || docData.chunkCount <= 1) {
+    return docData.payload || null;
+  }
+
+  let fullPayload = docData.payload || '';
+  const chunkReads = [];
+  for (let i = 1; i < docData.chunkCount; i++) {
+    const chunkRef = doc(firestore, collectionPath, `${docId}__chunk_${i}`);
+    chunkReads.push(getDoc(chunkRef));
+  }
+
+  const chunkSnaps = await Promise.all(chunkReads);
+  for (const cSnap of chunkSnaps) {
+    if (cSnap.exists() && cSnap.data()?.chunk) {
+      fullPayload += cSnap.data().chunk;
+    }
+  }
+
+  return fullPayload;
+};
+
 /**
  * Cloud sync helper scoped to the authenticated user's private collection:
  * /users/{userId}/qa_manager/{docId}
@@ -35,12 +123,8 @@ const save = (key, data) => {
 const syncToFirestore = async (userId, docId, data) => {
   if (!isFirebaseConfigured || !firestore || !userId) return;
   try {
-    const docRef = doc(firestore, 'users', userId, 'qa_manager', docId);
-    await setDoc(docRef, { 
-      payload: JSON.stringify(data), 
-      updatedAt: new Date().toISOString(),
-      ownerId: userId
-    });
+    const payloadString = JSON.stringify(data);
+    await writeChunkedDoc(`users/${userId}/qa_manager`, docId, { ownerId: userId }, payloadString);
   } catch (error) {
     console.warn(`[Firebase] Failed to sync ${docId} to user ${userId}:`, error.message);
   }
@@ -135,25 +219,34 @@ export const db = {
         getDoc(doc(firestore, 'users', userId, 'qa_manager', 'reports')),
       ]);
 
+      const collectionPath = `users/${userId}/qa_manager`;
+      const [projPayload, filesPayload, testsPayload, bugsPayload, reportsPayload] = await Promise.all([
+        projSnap.exists() ? readChunkedDocPayload(collectionPath, 'projects', projSnap.data()) : null,
+        filesSnap.exists() ? readChunkedDocPayload(collectionPath, 'files', filesSnap.data()) : null,
+        testsSnap.exists() ? readChunkedDocPayload(collectionPath, 'tests', testsSnap.data()) : null,
+        bugsSnap.exists() ? readChunkedDocPayload(collectionPath, 'bugs', bugsSnap.data()) : null,
+        reportsSnap.exists() ? readChunkedDocPayload(collectionPath, 'reports', reportsSnap.data()) : null,
+      ]);
+
       const result = {};
-      if (projSnap.exists() && projSnap.data().payload) {
-        result.projects = JSON.parse(projSnap.data().payload);
+      if (projPayload) {
+        result.projects = JSON.parse(projPayload);
         save(getStorageKey('projects', userId), result.projects);
       }
-      if (filesSnap.exists() && filesSnap.data().payload) {
-        result.files = JSON.parse(filesSnap.data().payload);
+      if (filesPayload) {
+        result.files = JSON.parse(filesPayload);
         save(getStorageKey('files', userId), result.files);
       }
-      if (testsSnap.exists() && testsSnap.data().payload) {
-        result.tests = JSON.parse(testsSnap.data().payload);
+      if (testsPayload) {
+        result.tests = JSON.parse(testsPayload);
         save(getStorageKey('tests', userId), result.tests);
       }
-      if (bugsSnap.exists() && bugsSnap.data().payload) {
-        result.bugs = JSON.parse(bugsSnap.data().payload);
+      if (bugsPayload) {
+        result.bugs = JSON.parse(bugsPayload);
         save(getStorageKey('bugs', userId), result.bugs);
       }
-      if (reportsSnap.exists() && reportsSnap.data().payload) {
-        result.reports = JSON.parse(reportsSnap.data().payload);
+      if (reportsPayload) {
+        result.reports = JSON.parse(reportsPayload);
         save(getStorageKey('reports', userId), result.reports);
       }
 
@@ -396,7 +489,8 @@ export const db = {
 
           let parsedPayload = {};
           try {
-            parsedPayload = wsData.payload ? JSON.parse(wsData.payload) : {};
+            const rawPayload = await readChunkedDocPayload('shared_workspaces', projectId, wsData);
+            parsedPayload = rawPayload ? JSON.parse(rawPayload) : {};
           } catch (e) {
             console.warn('Error parsing payload:', e);
           }
@@ -417,12 +511,17 @@ export const db = {
             parsedPayload.project.members = projMembers;
           }
 
-          await setDoc(wsRef, {
-            members: currentMembers,
-            payload: JSON.stringify(parsedPayload),
-            updatedAt: new Date().toISOString(),
-            lastModifiedBy: currentUser.email || 'User'
-          }, { merge: true });
+          await writeChunkedDoc(
+            'shared_workspaces',
+            projectId,
+            {
+              projectId,
+              projectName: parsedPayload.project?.name || wsData.projectName || 'Workspace',
+              members: currentMembers,
+              lastModifiedBy: currentUser.email || 'User'
+            },
+            JSON.stringify(parsedPayload)
+          );
         }
       } catch (wsErr) {
         console.warn('[Firebase] Error updating shared workspace on accept:', wsErr.message);
@@ -476,9 +575,10 @@ export const db = {
   },
 
   /**
-   * Synchronize shared workspace payload (project, files, tests, bugs) to Firestore
+   * Synchronize shared workspace payload (project, files, tests, bugs, reports) to Firestore
+   * with automatic chunking for payloads > 600KB to guarantee 1MB limit is never exceeded.
    */
-  syncSharedWorkspace: async (projectId, { project, files, tests, bugs, reports }, currentUser) => {
+  syncSharedWorkspace: async (projectId, { project, files, tests, bugs, reports }, currentUser, clientId = null) => {
     if (!projectId) return;
 
     // Cache locally under shared project key
@@ -487,20 +587,28 @@ export const db = {
 
     if (isFirebaseConfigured && firestore) {
       try {
-        const memberEmails = (project?.members || []).map(m => m.email.toLowerCase());
+        const memberEmails = (project?.members || [])
+          .map(m => (m.email || '').toLowerCase())
+          .filter(Boolean);
+
         if (currentUser?.email && !memberEmails.includes(currentUser.email.toLowerCase())) {
           memberEmails.push(currentUser.email.toLowerCase());
         }
 
-        const docRef = doc(firestore, 'shared_workspaces', projectId);
-        await setDoc(docRef, {
+        const payloadString = JSON.stringify({ project, files, tests, bugs, reports });
+
+        await writeChunkedDoc(
+          'shared_workspaces',
           projectId,
-          projectName: project?.name || 'Workspace',
-          members: memberEmails,
-          payload: JSON.stringify({ project, files, tests, bugs, reports }),
-          updatedAt: new Date().toISOString(),
-          lastModifiedBy: currentUser?.email || 'User',
-        }, { merge: true });
+          {
+            projectId,
+            projectName: project?.name || 'Workspace',
+            members: memberEmails,
+            lastModifiedBy: currentUser?.email || 'User',
+            lastModifiedClientId: clientId || null,
+          },
+          payloadString
+        );
       } catch (error) {
         console.warn(`[Firebase] Failed to sync shared workspace ${projectId}:`, error.message);
       }
@@ -508,7 +616,7 @@ export const db = {
   },
 
   /**
-   * Pull shared workspace data
+   * Pull shared workspace data (with automatic chunk reassembly)
    */
   pullSharedWorkspace: async (projectId) => {
     if (!projectId) return null;
@@ -518,10 +626,14 @@ export const db = {
       try {
         const docRef = doc(firestore, 'shared_workspaces', projectId);
         const snap = await getDoc(docRef);
-        if (snap.exists() && snap.data().payload) {
-          const parsed = JSON.parse(snap.data().payload);
-          save(`qa_shared_ws_${projectId}`, parsed);
-          return parsed;
+        if (snap.exists()) {
+          const docData = snap.data();
+          const fullPayload = await readChunkedDocPayload('shared_workspaces', projectId, docData);
+          if (fullPayload) {
+            const parsed = JSON.parse(fullPayload);
+            save(`qa_shared_ws_${projectId}`, parsed);
+            return parsed;
+          }
         }
       } catch (err) {
         console.warn(`[Firebase] Error loading shared workspace ${projectId}:`, err.message);
@@ -545,16 +657,95 @@ export const db = {
       );
       const snapshot = await getDocs(q);
       const list = [];
-      snapshot.forEach(docSnap => {
-        if (docSnap.data().payload) {
-          list.push(JSON.parse(docSnap.data().payload));
+      for (const docSnap of snapshot.docs) {
+        const docData = docSnap.data();
+        if (docData.payload) {
+          const fullPayload = await readChunkedDocPayload('shared_workspaces', docSnap.id, docData);
+          if (fullPayload) {
+            try {
+              list.push(JSON.parse(fullPayload));
+            } catch (e) {
+              console.warn('Error parsing shared workspace:', e);
+            }
+          }
         }
-      });
+      }
       return list;
     } catch (err) {
       console.warn('[Firebase] Failed to query shared workspaces for user:', err.message);
       return [];
     }
+  },
+
+  /**
+   * Real-time listener for a shared workspace document.
+   * Subscribes to Firestore onSnapshot changes, reassembles chunked payloads if needed,
+   * and invokes onUpdate with latest workspace data. Returns unsubscribe function.
+   */
+  subscribeToSharedWorkspace: (projectId, onUpdate, onError) => {
+    if (!projectId || !isFirebaseConfigured || !firestore) {
+      return () => {};
+    }
+
+    const docRef = doc(firestore, 'shared_workspaces', projectId);
+    return onSnapshot(
+      docRef,
+      async (snapshot) => {
+        if (!snapshot.exists()) return;
+
+        try {
+          const data = snapshot.data();
+          if (!data) return;
+
+          const fullPayload = await readChunkedDocPayload('shared_workspaces', projectId, data);
+          if (fullPayload) {
+            const parsed = JSON.parse(fullPayload);
+            onUpdate({
+              ...parsed,
+              updatedAt: data.updatedAt,
+              lastModifiedBy: data.lastModifiedBy,
+              lastModifiedClientId: data.lastModifiedClientId || null,
+            });
+          }
+        } catch (err) {
+          console.warn(`[Firebase] Error processing real-time workspace update for ${projectId}:`, err);
+          if (onError) onError(err);
+        }
+      },
+      (err) => {
+        console.warn(`[Firebase] Workspace subscription error for ${projectId}:`, err);
+        if (onError) onError(err);
+      }
+    );
+  },
+
+  /**
+   * Real-time listener for pending invitations for a given user email
+   */
+  subscribeToInvitations: (userEmail, onUpdate, onError) => {
+    if (!userEmail || !isFirebaseConfigured || !firestore) {
+      return () => {};
+    }
+    const normalizedEmail = userEmail.trim().toLowerCase();
+    const q = query(
+      collection(firestore, 'invitations'),
+      where('inviteeEmail', '==', normalizedEmail),
+      where('status', '==', 'pending')
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const invites = [];
+        snapshot.forEach((docSnap) => {
+          invites.push({ ...docSnap.data(), id: docSnap.id });
+        });
+        onUpdate(invites);
+      },
+      (err) => {
+        console.warn('[Firebase] Invitations subscription error:', err);
+        if (onError) onError(err);
+      }
+    );
   },
 
   /**

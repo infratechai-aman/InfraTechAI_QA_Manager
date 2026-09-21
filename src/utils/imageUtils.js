@@ -13,8 +13,9 @@ export const formatFileSize = (bytes) => {
 };
 
 /**
- * Reads a File or Blob and compresses it into a high-quality data URL.
- * Max dimensions: 1920x1080 (HD), quality: 0.85.
+ * Reads a File or Blob and compresses it into a high-quality, lightweight data URL.
+ * Max dimensions: 1280x800.
+ * Guarantees screenshots remain compact (~40KB - 80KB) to prevent Firestore 1MB limits.
  */
 export const processImageFile = (file) => {
   return new Promise((resolve, reject) => {
@@ -29,8 +30,8 @@ export const processImageFile = (file) => {
       const img = new Image();
       img.onerror = () => reject(new Error('Failed to decode image data'));
       img.onload = () => {
-        const maxWidth = 1920;
-        const maxHeight = 1200;
+        const maxWidth = 1280;
+        const maxHeight = 800;
         let { width, height } = img;
 
         // Downscale if too large
@@ -44,27 +45,56 @@ export const processImageFile = (file) => {
           }
         }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+        const renderCanvas = (targetW, targetH) => {
+          const canvas = document.createElement('canvas');
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext('2d');
+          
+          // Fill background with white in case image has alpha transparency
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, targetW, targetH);
+          ctx.drawImage(img, 0, 0, targetW, targetH);
+          return canvas;
+        };
 
-        // JPEG compression for compactness, or PNG if small/transparent
-        const isPng = file.type === 'image/png' && file.size < 400 * 1024;
-        const outputFormat = isPng ? 'image/png' : 'image/jpeg';
-        const quality = outputFormat === 'image/jpeg' ? 0.85 : undefined;
-        const dataUrl = canvas.toDataURL(outputFormat, quality);
+        let currentW = width;
+        let currentH = height;
+        let canvas = renderCanvas(currentW, currentH);
 
-        // Approximate base64 payload size
+        // Iterative compression loop to ensure image fits comfortably under ~85KB in base64
+        let quality = 0.72;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+        const MAX_BASE64_LENGTH = 115000; // ~85KB binary
+
+        if (dataUrl.length > MAX_BASE64_LENGTH) {
+          quality = 0.55;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        if (dataUrl.length > MAX_BASE64_LENGTH) {
+          quality = 0.42;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        // If still large, scale dimensions down
+        if (dataUrl.length > MAX_BASE64_LENGTH) {
+          currentW = Math.round(currentW * 0.75);
+          currentH = Math.round(currentH * 0.75);
+          canvas = renderCanvas(currentW, currentH);
+          dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+        }
+
+        // Approximate base64 payload size in bytes
         const approximateSize = Math.round((dataUrl.length * 3) / 4);
 
         resolve({
           id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
           url: dataUrl,
-          name: file.name || 'screenshot.png',
+          name: file.name || 'screenshot.jpg',
           size: approximateSize,
-          type: outputFormat,
+          type: 'image/jpeg',
           createdAt: new Date().toISOString(),
         });
       };

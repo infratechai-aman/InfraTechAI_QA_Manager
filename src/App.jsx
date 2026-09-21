@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from './services/db';
 import { generateId, getTimestamp } from './utils/formatters';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -59,6 +59,102 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const [isMobileOptionsOpen, setIsMobileOptionsOpen] = useState(false);
   const [triggerNewFileModal, setTriggerNewFileModal] = useState(false);
   const [triggerNewBugModal, setTriggerNewBugModal] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
+  const [lastSyncNotice, setLastSyncNotice] = useState(null);
+
+  // Unique tab/client identifier to prevent echo writes in real-time listeners
+  const [clientId] = useState(() => 'client_' + Math.random().toString(36).substring(2, 9));
+  const isRemoteUpdateRef = useRef(false);
+
+  // Real-time subscription to incoming workspace invitations
+  useEffect(() => {
+    if (!currentUser?.email) return;
+    const unsubscribe = db.subscribeToInvitations(currentUser.email, (invites) => {
+      setPendingInvitations(invites);
+    });
+    return () => unsubscribe();
+  }, [currentUser?.email]);
+
+  // Real-time subscription to active shared workspace changes
+  useEffect(() => {
+    if (!activeProjectId || !currentUser) return;
+
+    const unsubscribe = db.subscribeToSharedWorkspace(
+      activeProjectId,
+      (remoteData) => {
+        // Skip update if it originated from this tab/client
+        if (remoteData.lastModifiedClientId && remoteData.lastModifiedClientId === clientId) {
+          return;
+        }
+
+        // Flag as remote update so our auto-sync effect does not echo back to Firestore
+        isRemoteUpdateRef.current = true;
+
+        // Merge incoming project
+        if (remoteData.project) {
+          setProjects((prev) => {
+            const updated = prev.map((p) => (p.id === activeProjectId ? { ...p, ...remoteData.project } : p));
+            db.saveProjects(updated, userId);
+            return normalizeProjects(updated, userId, currentUser.email);
+          });
+        }
+
+        // Merge incoming files
+        if (Array.isArray(remoteData.files)) {
+          setFiles((prev) => {
+            const others = prev.filter((f) => f.projectId !== activeProjectId);
+            const updated = [...others, ...remoteData.files];
+            db.saveFiles(updated, userId);
+            return updated;
+          });
+        }
+
+        // Merge incoming tests
+        if (Array.isArray(remoteData.tests)) {
+          setTests((prev) => {
+            const others = prev.filter((t) => t.projectId !== activeProjectId);
+            const updated = [...others, ...remoteData.tests];
+            db.saveTestCases(updated, userId);
+            return updated;
+          });
+        }
+
+        // Merge incoming bugs
+        if (Array.isArray(remoteData.bugs)) {
+          setBugs((prev) => {
+            const others = prev.filter((b) => b.projectId !== activeProjectId);
+            const updated = [...others, ...remoteData.bugs];
+            db.saveBugs(updated, userId);
+            return updated;
+          });
+        }
+
+        // Merge incoming reports
+        if (Array.isArray(remoteData.reports)) {
+          setReports((prev) => {
+            const others = prev.filter((r) => r.projectId !== activeProjectId);
+            const updated = [...others, ...remoteData.reports];
+            db.saveReports(updated, userId);
+            return updated;
+          });
+        }
+
+        setSyncStatus('synced');
+        if (remoteData.lastModifiedBy && remoteData.lastModifiedBy.toLowerCase() !== currentUser.email?.toLowerCase()) {
+          setLastSyncNotice(`Workspace updated by ${remoteData.lastModifiedBy.split('@')[0]} in real-time`);
+          setTimeout(() => setLastSyncNotice(null), 4500);
+        }
+      },
+      (err) => {
+        console.warn('[Firebase] Real-time sync error:', err);
+        setSyncStatus('error');
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [activeProjectId, currentUser, userId]);
 
   // Initialize and load data whenever authenticated user changes
   useEffect(() => {
@@ -175,15 +271,30 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // Auto sync shared workspace changes (tests, bugs, files) to Firestore if project is shared
   useEffect(() => {
     if (!activeProjectId || !activeProject || !currentUser) return;
+
+    // Prevent echo writes if this update originated from a remote teammate
+    if (isRemoteUpdateRef.current) {
+      isRemoteUpdateRef.current = false;
+      return;
+    }
+
     const isShared = activeProject.members && activeProject.members.length > 1;
     if (isShared) {
-      db.syncSharedWorkspace(activeProjectId, {
-        project: activeProject,
-        files: projectFiles,
-        tests: projectTests,
-        bugs: projectBugs,
-        reports: reports.filter(r => r.projectId === activeProjectId)
-      }, currentUser);
+      setSyncStatus('syncing');
+      db.syncSharedWorkspace(
+        activeProjectId,
+        {
+          project: activeProject,
+          files: projectFiles,
+          tests: projectTests,
+          bugs: projectBugs,
+          reports: reports.filter((r) => r.projectId === activeProjectId),
+        },
+        currentUser,
+        clientId
+      )
+        .then(() => setSyncStatus('synced'))
+        .catch(() => setSyncStatus('error'));
     }
   }, [activeProjectId, tests, bugs, files, reports]);
 
@@ -314,7 +425,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           tests: projectTests,
           bugs: projectBugs,
           reports: reports.filter(r => r.projectId === activeProjectId)
-        }, currentUser);
+        }, currentUser, clientId);
       }
       return updated;
     });
@@ -696,6 +807,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         onImportBackup={handleImportBackup}
         onExitProject={handleExitProject}
         onOpenInviteModal={() => setIsInviteModalOpen(true)}
+        syncStatus={syncStatus}
       />
 
       {/* Main Content Area */}
@@ -890,6 +1002,17 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         onDecline={handleDeclineInvitation}
         onClose={() => setIsInviteAcceptModalOpen(false)}
       />
+
+      {/* Real-time Workspace Update Toast Notification */}
+      {lastSyncNotice && (
+        <div className="fixed bottom-20 sm:bottom-6 right-6 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-xl shadow-xl border border-slate-700/60 backdrop-blur-md flex items-center gap-2.5 text-xs font-semibold animate-fadeIn pointer-events-none">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>⚡ {lastSyncNotice}</span>
+        </div>
+      )}
 
     </div>
   );

@@ -18,6 +18,7 @@ import { InviteAcceptModal } from './components/modals/InviteAcceptModal';
 import { InvitationBanner } from './components/layout/InvitationBanner';
 import { LoginView } from './components/auth/LoginView';
 import { isFileVisibleToUser } from './utils/visibility';
+import { mergeTestCases, mergeBugs, mergeFiles, isExecuted } from './utils/workspaceMerger';
 
 // Helper to ensure projects have owner and member lists
 const normalizeProjects = (projs, userId, userEmail) => {
@@ -93,8 +94,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         }
         if (Array.isArray(initialData.files)) {
           setFiles((prev) => {
-            const others = prev.filter((f) => f.projectId !== activeProjectId);
-            const updated = [...others, ...initialData.files];
+            const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
+            const currentProjFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
+            const incomingMapped = initialData.files.map((f) => ({ ...f, projectId: activeProjectId }));
+            const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
+            const updated = [...others, ...mergedProjFiles];
             db.saveFiles(updated, userId);
             return updated;
           });
@@ -102,16 +106,45 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(initialData.tests)) {
           setTests((prev) => {
             const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
+            const currentProjTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
             const incomingMapped = initialData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
+            const updated = [...others, ...mergedProjTests];
             db.saveTestCases(updated, userId);
+
+            // AUTO-RECOVERY: If local tests had completed executions that cloud was missing:
+            const hasUnpushedExecutions = mergedProjTests.some(
+              (lt) => isExecuted(lt) && initialData.tests.find((rt) => String(rt.id) === String(lt.id) && !isExecuted(rt))
+            );
+            if (hasUnpushedExecutions) {
+              console.info('[Firebase] Auto-syncing local test executions to cloud shared workspace...');
+              setTimeout(() => {
+                db.syncSharedWorkspace(
+                  activeProjectId,
+                  {
+                    project: initialData.project || activeProject,
+                    files: files.filter(f => !f.projectId || f.projectId === activeProjectId),
+                    tests: mergedProjTests,
+                    bugs: bugs.filter(b => !b.projectId || b.projectId === activeProjectId),
+                    reports: reports.filter(r => r.projectId === activeProjectId),
+                  },
+                  currentUser,
+                  clientId
+                ).then(() => setSyncStatus('synced'))
+                 .catch((err) => console.warn('[Firebase] Auto-push error:', err));
+              }, 200);
+            }
+
             return updated;
           });
         }
         if (Array.isArray(initialData.bugs)) {
           setBugs((prev) => {
-            const others = prev.filter((b) => b.projectId !== activeProjectId);
-            const updated = [...others, ...initialData.bugs];
+            const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
+            const currentProjBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
+            const incomingMapped = initialData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
+            const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
+            const updated = [...others, ...mergedProjBugs];
             db.saveBugs(updated, userId);
             return updated;
           });
@@ -151,8 +184,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         // Merge incoming files
         if (Array.isArray(remoteData.files)) {
           setFiles((prev) => {
-            const others = prev.filter((f) => f.projectId !== activeProjectId);
-            const updated = [...others, ...remoteData.files];
+            const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
+            const currentProjFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
+            const incomingMapped = remoteData.files.map((f) => ({ ...f, projectId: activeProjectId }));
+            const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
+            const updated = [...others, ...mergedProjFiles];
             db.saveFiles(updated, userId);
             return updated;
           });
@@ -162,8 +198,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(remoteData.tests)) {
           setTests((prev) => {
             const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
+            const currentProjTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
             const incomingMapped = remoteData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
+            const updated = [...others, ...mergedProjTests];
             db.saveTestCases(updated, userId);
             return updated;
           });
@@ -172,8 +210,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         // Merge incoming bugs
         if (Array.isArray(remoteData.bugs)) {
           setBugs((prev) => {
-            const others = prev.filter((b) => b.projectId !== activeProjectId);
-            const updated = [...others, ...remoteData.bugs];
+            const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
+            const currentProjBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
+            const incomingMapped = remoteData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
+            const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
+            const updated = [...others, ...mergedProjBugs];
             db.saveBugs(updated, userId);
             return updated;
           });
@@ -923,8 +964,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           }
           if (Array.isArray(sharedWs.files)) {
             setFiles((prev) => {
-              const others = prev.filter((f) => f.projectId !== activeProjectId);
-              const updated = [...others, ...sharedWs.files];
+              const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
+              const currentProjFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
+              const incomingMapped = sharedWs.files.map((f) => ({ ...f, projectId: activeProjectId }));
+              const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
+              const updated = [...others, ...mergedProjFiles];
               db.saveFiles(updated, userId);
               return updated;
             });
@@ -932,16 +976,21 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           if (Array.isArray(sharedWs.tests)) {
             setTests((prev) => {
               const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
+              const currentProjTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
               const incomingMapped = sharedWs.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-              const updated = [...others, ...incomingMapped];
+              const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
+              const updated = [...others, ...mergedProjTests];
               db.saveTestCases(updated, userId);
               return updated;
             });
           }
           if (Array.isArray(sharedWs.bugs)) {
             setBugs((prev) => {
-              const others = prev.filter((b) => b.projectId !== activeProjectId);
-              const updated = [...others, ...sharedWs.bugs];
+              const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
+              const currentProjBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
+              const incomingMapped = sharedWs.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
+              const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
+              const updated = [...others, ...mergedProjBugs];
               db.saveBugs(updated, userId);
               return updated;
             });
@@ -965,6 +1014,42 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     return pulledSomething;
   };
 
+  const handleForcePushSync = async () => {
+    if (!activeProjectId || !activeProject || !currentUser) {
+      alert('Please open a project first to sync.');
+      return;
+    }
+    setSyncStatus('syncing');
+    try {
+      const currentFiles = files.filter((f) => !f.projectId || f.projectId === activeProjectId);
+      const currentTests = tests
+        .filter((t) => !t.projectId || t.projectId === activeProjectId)
+        .map((t) => ({ ...t, projectId: activeProjectId }));
+      const currentBugs = bugs.filter((b) => !b.projectId || b.projectId === activeProjectId);
+      const currentReports = reports.filter((r) => r.projectId === activeProjectId);
+
+      await db.syncSharedWorkspace(
+        activeProjectId,
+        {
+          project: activeProject,
+          files: currentFiles,
+          tests: currentTests,
+          bugs: currentBugs,
+          reports: currentReports,
+        },
+        currentUser,
+        clientId
+      );
+      setSyncStatus('synced');
+      const execCount = currentTests.filter(t => isExecuted(t)).length;
+      alert(`✅ Workspace "${activeProject.name}" synced to cloud successfully!\n\n• ${currentTests.length} Total Test Cases (${execCount} Executed)\n• ${currentBugs.length} Defects & Issues\n• ${currentFiles.length} Test Files\n\nYour teammates can now see these updates in real-time.`);
+    } catch (err) {
+      console.error('Force push sync failed:', err);
+      setSyncStatus('error');
+      alert(`⚠️ Sync failed: ${err.message || 'Check network connection'}`);
+    }
+  };
+
   return (
     <div className="flex h-screen h-[100dvh] w-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
       
@@ -985,6 +1070,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         onOpenInviteModal={() => setIsInviteModalOpen(true)}
         syncStatus={syncStatus}
         onPullSync={handlePullSync}
+        onForcePushSync={handleForcePushSync}
       />
 
       {/* Main Content Area */}

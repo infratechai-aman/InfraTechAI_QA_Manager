@@ -22,6 +22,7 @@ export const Sidebar = ({
   onOpenInviteModal,
   syncStatus = 'synced',
   onPullSync,
+  onForcePushSync,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -245,8 +246,34 @@ export const Sidebar = ({
         </div>
       )}
 
-      {/* Bottom Footer ΓÇö Export/Import only */}
-      <div className="p-3 border-t border-slate-100 space-y-1">
+      {/* Bottom Footer — Push/Pull Sync + Export/Import */}
+      <div className="p-3 border-t border-slate-100 space-y-2 bg-white">
+        {/* Collaborative Cloud Actions */}
+        {activeProjectId && (
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={onForcePushSync}
+              disabled={syncStatus === 'syncing'}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              title="Push your test executions & defects to cloud for team"
+            >
+              <UploadCloud size={13} className="text-indigo-600 shrink-0" />
+              <span>Push to Team</span>
+            </button>
+            <button
+              type="button"
+              onClick={onPullSync}
+              disabled={syncStatus === 'syncing'}
+              className="flex items-center justify-center gap-1 py-1.5 px-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              title="Pull latest team updates from cloud"
+            >
+              <RefreshCw size={12} className={`text-slate-500 shrink-0 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+              <span>Pull</span>
+            </button>
+          </div>
+        )}
+
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -260,14 +287,14 @@ export const Sidebar = ({
             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             title="Download JSON Backup"
           >
-            <Download size={13} /> Export
+            <Download size={13} /> Export Backup
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             title="Import JSON Backup"
           >
-            <UploadCloud size={13} /> Import
+            <UploadCloud size={13} /> Import Backup
           </button>
         </div>
       </div>

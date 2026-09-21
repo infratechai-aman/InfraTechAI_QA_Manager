@@ -3,7 +3,7 @@ import {
   Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List,
   Download, UploadCloud, LogOut, DoorOpen, BookOpen,
-  FileText, UserPlus, Users
+  FileText, UserPlus, Users, RefreshCw
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -21,6 +21,7 @@ export const Sidebar = ({
   onExitProject,
   onOpenInviteModal,
   syncStatus = 'synced',
+  onPullSync,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -217,7 +218,12 @@ export const Sidebar = ({
               <p className="text-xs font-bold text-slate-800 truncate" title={currentUser.email}>
                 {currentUser.email}
               </p>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold">
+              <button
+                type="button"
+                onClick={onPullSync}
+                className="flex items-center gap-1.5 text-[10px] font-semibold hover:opacity-80 transition-opacity cursor-pointer text-left group"
+                title="Click to refresh & pull latest updates from cloud"
+              >
                 <span className={`w-1.5 h-1.5 rounded-full ${
                   syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' :
                   syncStatus === 'error' ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'
@@ -225,7 +231,8 @@ export const Sidebar = ({
                 <span className={syncStatus === 'error' ? 'text-rose-600' : 'text-emerald-600'}>
                   {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Paused' : 'Live Synced'}
                 </span>
-              </div>
+                <RefreshCw size={9} className={`text-slate-400 group-hover:text-indigo-600 transition-colors ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
           <button

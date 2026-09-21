@@ -16,7 +16,7 @@
 export const isTestCasePassOrFail = (test) => {
   if (!test || !test.status) return false;
   const s = String(test.status).trim().toLowerCase();
-  return s === 'pass' || s === 'passed' || s === 'fail' || s === 'failed';
+  return s === 'pass' || s === 'passed' || s === 'fail' || s === 'failed' || s === 'blocked';
 };
 
 /**
@@ -50,8 +50,8 @@ export const isFileVisibleToUser = (file, tests = [], currentUser = null) => {
   }
 
   // 3. For any other user (Account B, Account C, etc.):
-  // The file is INVISIBLE until AT LEAST 1 test case in this file has status 'Pass' or 'Fail'
-  const fileTests = tests.filter((t) => t.fileId === file.id);
+  // The file is INVISIBLE until AT LEAST 1 test case in this file has status 'Pass' or 'Fail' or 'Blocked'
+  const fileTests = tests.filter((t) => t && String(t.fileId) === String(file.id));
   const hasPassOrFail = fileTests.some(isTestCasePassOrFail);
 
   return hasPassOrFail;
@@ -87,7 +87,7 @@ export const getFileSharingMeta = (file, tests = [], currentUser = null) => {
     (currentUid && fileCreatorUid && currentUid === fileCreatorUid)
   );
 
-  const fileTests = tests.filter((t) => t.fileId === file.id);
+  const fileTests = tests.filter((t) => t && String(t.fileId) === String(file.id));
   const totalTests = fileTests.length;
   const passedCount = fileTests.filter((t) => {
     const s = String(t.status || '').toLowerCase();
@@ -97,9 +97,13 @@ export const getFileSharingMeta = (file, tests = [], currentUser = null) => {
     const s = String(t.status || '').toLowerCase();
     return s === 'fail' || s === 'failed';
   }).length;
-  const passedOrFailedCount = passedCount + failedCount;
+  const blockedCount = fileTests.filter((t) => {
+    const s = String(t.status || '').toLowerCase();
+    return s === 'blocked';
+  }).length;
+  const passedOrFailedCount = passedCount + failedCount + blockedCount;
 
-  // Unlocked / Shared with team if at least 1 test case is Pass or Fail, or if legacy
+  // Unlocked / Shared with team if at least 1 test case is Pass, Fail, or Blocked, or if legacy
   const isSharedWithTeam = !fileCreatorEmail || passedOrFailedCount >= 1;
 
   let badgeText = 'Shared with Team';

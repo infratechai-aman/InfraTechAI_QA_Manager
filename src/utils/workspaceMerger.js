@@ -63,15 +63,15 @@ export const mergeTestCases = (localTests = [], remoteTests = []) => {
       // Remote has been executed, local is 'Not Run' -> take remote execution
       merged.push(remote);
     } else if (localExec && remoteExec) {
-      // Both executed -> compare execution time, newer wins
+      // Both executed -> compare execution time, newer wins. Remote wins on tie/same timestamp.
       const localTime = Math.max(toMillis(local.executedAt), toMillis(local.updatedAt));
       const remoteTime = Math.max(toMillis(remote.executedAt), toMillis(remote.updatedAt));
-      merged.push(localTime >= remoteTime ? local : remote);
+      merged.push(remoteTime >= localTime ? remote : local);
     } else {
-      // Neither executed -> newer updatedAt wins
+      // Neither executed -> newer updatedAt wins. Remote wins on tie/same timestamp.
       const localTime = toMillis(local.updatedAt || local.createdAt);
       const remoteTime = toMillis(remote.updatedAt || remote.createdAt);
-      merged.push(localTime >= remoteTime ? local : remote);
+      merged.push(remoteTime >= localTime ? remote : local);
     }
   }
 
@@ -113,7 +113,7 @@ export const mergeBugs = (localBugs = [], remoteBugs = []) => {
     } else {
       const localTime = Math.max(toMillis(local.updatedAt), toMillis(local.createdAt));
       const remoteTime = Math.max(toMillis(remote.updatedAt), toMillis(remote.createdAt));
-      merged.push(localTime >= remoteTime ? local : remote);
+      merged.push(remoteTime >= localTime ? remote : local);
     }
   }
 
@@ -154,7 +154,7 @@ export const mergeFiles = (localFiles = [], remoteFiles = []) => {
     } else {
       const localTime = Math.max(toMillis(local.updatedAt), toMillis(local.createdAt || local.date));
       const remoteTime = Math.max(toMillis(remote.updatedAt), toMillis(remote.createdAt || remote.date));
-      merged.push(localTime >= remoteTime ? local : remote);
+      merged.push(remoteTime >= localTime ? remote : local);
     }
   }
 

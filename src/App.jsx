@@ -97,24 +97,20 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             return normalizeProjects(updated, userId, currentUser.email);
           });
         }
-        if (Array.isArray(initialData.files)) {
+        if (Array.isArray(initialData.files) && initialData.files.length > 0) {
           setFiles((prev) => {
             const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
-            const currentProjFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
             const incomingMapped = initialData.files.map((f) => ({ ...f, projectId: activeProjectId }));
-            const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
-            const updated = [...others, ...mergedProjFiles];
+            const updated = [...others, ...incomingMapped];
             db.saveFiles(updated, userId, false);
             return updated;
           });
         }
-        if (Array.isArray(initialData.tests)) {
+        if (Array.isArray(initialData.tests) && initialData.tests.length > 0) {
           setTests((prev) => {
             const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
-            const currentProjTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
             const incomingMapped = initialData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-            const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
-            const updated = [...others, ...mergedProjTests];
+            const updated = [...others, ...incomingMapped];
             db.saveTestCases(updated, userId, false);
             return updated;
           });
@@ -122,10 +118,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(initialData.bugs)) {
           setBugs((prev) => {
             const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
-            const currentProjBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
             const incomingMapped = initialData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
-            const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
-            const updated = [...others, ...mergedProjBugs];
+            const updated = [...others, ...incomingMapped];
             db.saveBugs(updated, userId, false);
             return updated;
           });
@@ -156,7 +150,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         // Suppress auto-sync echo writes for 3s after remote update arrives
         remoteUpdateCooldownRef.current = Date.now() + 3000;
 
-        // Merge incoming project
+        // Apply incoming project updates
         if (remoteData.project) {
           setProjects((prev) => {
             const updated = prev.map((p) => (p.id === activeProjectId ? { ...p, ...remoteData.project } : p));
@@ -165,46 +159,40 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           });
         }
 
-        // Merge incoming files
-        if (Array.isArray(remoteData.files)) {
+        // Apply incoming files directly in real-time
+        if (Array.isArray(remoteData.files) && remoteData.files.length > 0) {
           setFiles((prev) => {
             const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
-            const currentProjFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
             const incomingMapped = remoteData.files.map((f) => ({ ...f, projectId: activeProjectId }));
-            const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
-            const updated = [...others, ...mergedProjFiles];
+            const updated = [...others, ...incomingMapped];
             db.saveFiles(updated, userId, false);
             return updated;
           });
         }
 
-        // Merge incoming tests
-        if (Array.isArray(remoteData.tests)) {
+        // Apply incoming tests directly in real-time (instant status & execution updates)
+        if (Array.isArray(remoteData.tests) && remoteData.tests.length > 0) {
           setTests((prev) => {
             const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
-            const currentProjTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
             const incomingMapped = remoteData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-            const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
-            const updated = [...others, ...mergedProjTests];
+            const updated = [...others, ...incomingMapped];
             db.saveTestCases(updated, userId, false);
             return updated;
           });
         }
 
-        // Merge incoming bugs
+        // Apply incoming bugs directly in real-time (instant defects, comments, status changes)
         if (Array.isArray(remoteData.bugs)) {
           setBugs((prev) => {
             const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
-            const currentProjBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
             const incomingMapped = remoteData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
-            const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
-            const updated = [...others, ...mergedProjBugs];
+            const updated = [...others, ...incomingMapped];
             db.saveBugs(updated, userId, false);
             return updated;
           });
         }
 
-        // Merge incoming reports
+        // Apply incoming reports
         if (Array.isArray(remoteData.reports)) {
           setReports((prev) => {
             const others = prev.filter((r) => r.projectId !== activeProjectId);
@@ -216,8 +204,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
         setSyncStatus('synced');
         if (remoteData.lastModifiedBy && remoteData.lastModifiedBy.toLowerCase() !== currentUser.email?.toLowerCase()) {
-          setLastSyncNotice(`Workspace updated by ${remoteData.lastModifiedBy.split('@')[0]} in real-time`);
-          setTimeout(() => setLastSyncNotice(null), 4500);
+          const editor = remoteData.lastModifiedBy.split('@')[0];
+          setLastSyncNotice(`🟢 Real-time: Live update from ${editor}`);
+          setTimeout(() => setLastSyncNotice(null), 4000);
         }
       },
       (err) => {
@@ -385,7 +374,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           console.warn('[Firebase] Auto sync failed:', err);
           setSyncStatus('error');
         });
-    }, 1000);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [activeProjectId, tests, bugs, files, reports, activeProject, currentUser, clientId]);
@@ -755,7 +744,6 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
   const handleUpdateTest = useCallback(
     (id, updates) => {
-      let updatedTestsList = [];
       setTests((prev) => {
         const isOwner = activeProject?.ownerEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
         const updated = prev.map((t) => {
@@ -777,36 +765,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           }
           return t;
         });
-        updatedTestsList = updated;
         db.saveTestCases(updated, userId);
         return updated;
       });
-
-      // Immediate direct sync to Firestore so teammates see test executions in real time
-      if (activeProjectId && activeProject && currentUser) {
-        const syncFiles = files.filter(f => !f.projectId || f.projectId === activeProjectId);
-        const syncTests = updatedTestsList
-          .filter(t => !t.projectId || t.projectId === activeProjectId)
-          .map(t => ({ ...t, projectId: activeProjectId }));
-        const syncBugs = bugs.filter(b => !b.projectId || b.projectId === activeProjectId);
-        const syncReports = reports.filter(r => !r.projectId || r.projectId === activeProjectId);
-
-        db.syncSharedWorkspace(
-          activeProjectId,
-          {
-            project: activeProject,
-            files: syncFiles,
-            tests: syncTests,
-            bugs: syncBugs,
-            reports: syncReports,
-          },
-          currentUser,
-          clientId
-        ).then(() => setSyncStatus('synced'))
-         .catch((err) => console.warn('[Firebase] Direct test sync error:', err));
-      }
     },
-    [userId, activeProjectId, activeProject, currentUser, files, bugs, reports, clientId]
+    [userId, activeProjectId, activeProject, currentUser]
   );
 
   const handleDeleteTest = (testId) => {
@@ -864,58 +827,24 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         createdAt: getTimestamp(),
         updatedAt: getTimestamp(),
       };
-      let updatedBugsList = [];
       setBugs((prev) => {
         const updated = [newBug, ...prev];
-        updatedBugsList = updated;
         db.saveBugs(updated, userId);
         return updated;
       });
-
-      if (activeProjectId && activeProject && currentUser) {
-        const syncFiles = files.filter(f => !f.projectId || f.projectId === activeProjectId);
-        const syncTests = tests.filter(t => !t.projectId || t.projectId === activeProjectId);
-        const syncBugs = updatedBugsList.filter(b => !b.projectId || b.projectId === activeProjectId);
-        const syncReports = reports.filter(r => !r.projectId || r.projectId === activeProjectId);
-
-        db.syncSharedWorkspace(
-          activeProjectId,
-          { project: activeProject, files: syncFiles, tests: syncTests, bugs: syncBugs, reports: syncReports },
-          currentUser,
-          clientId
-        ).then(() => setSyncStatus('synced'))
-         .catch((err) => console.warn('[Firebase] Direct bug add sync error:', err));
-      }
     },
-    [userId, activeProjectId, activeProject, currentUser, files, tests, reports, clientId]
+    [userId, activeProjectId]
   );
 
   const handleUpdateBug = useCallback(
     (bugId, updates) => {
-      let updatedBugsList = [];
       setBugs((prev) => {
         const updated = prev.map((b) => (b.id === bugId ? { ...b, ...updates, updatedAt: getTimestamp() } : b));
-        updatedBugsList = updated;
         db.saveBugs(updated, userId);
         return updated;
       });
-
-      if (activeProjectId && activeProject && currentUser) {
-        const syncFiles = files.filter(f => !f.projectId || f.projectId === activeProjectId);
-        const syncTests = tests.filter(t => !t.projectId || t.projectId === activeProjectId);
-        const syncBugs = updatedBugsList.filter(b => !b.projectId || b.projectId === activeProjectId);
-        const syncReports = reports.filter(r => !r.projectId || r.projectId === activeProjectId);
-
-        db.syncSharedWorkspace(
-          activeProjectId,
-          { project: activeProject, files: syncFiles, tests: syncTests, bugs: syncBugs, reports: syncReports },
-          currentUser,
-          clientId
-        ).then(() => setSyncStatus('synced'))
-         .catch((err) => console.warn('[Firebase] Direct bug update sync error:', err));
-      }
     },
-    [userId, activeProjectId, activeProject, currentUser, files, tests, reports, clientId]
+    [userId]
   );
 
   const handleDeleteBug = (bugId) => {
@@ -960,7 +889,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   const handlePullSync = async () => {
-    isRemoteUpdateRef.current = true;
+    remoteUpdateCooldownRef.current = Date.now() + 3000;
     setSyncStatus('syncing');
     let pulledSomething = false;
 
@@ -975,24 +904,20 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
               return normalizeProjects(updated, userId, currentUser.email);
             });
           }
-          if (Array.isArray(sharedWs.files)) {
+          if (Array.isArray(sharedWs.files) && sharedWs.files.length > 0) {
             setFiles((prev) => {
               const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
-              const currentProjFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
               const incomingMapped = sharedWs.files.map((f) => ({ ...f, projectId: activeProjectId }));
-              const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
-              const updated = [...others, ...mergedProjFiles];
+              const updated = [...others, ...incomingMapped];
               db.saveFiles(updated, userId, false);
               return updated;
             });
           }
-          if (Array.isArray(sharedWs.tests)) {
+          if (Array.isArray(sharedWs.tests) && sharedWs.tests.length > 0) {
             setTests((prev) => {
               const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
-              const currentProjTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
               const incomingMapped = sharedWs.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-              const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
-              const updated = [...others, ...mergedProjTests];
+              const updated = [...others, ...incomingMapped];
               db.saveTestCases(updated, userId, false);
               return updated;
             });
@@ -1000,10 +925,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           if (Array.isArray(sharedWs.bugs)) {
             setBugs((prev) => {
               const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
-              const currentProjBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
               const incomingMapped = sharedWs.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
-              const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
-              const updated = [...others, ...mergedProjBugs];
+              const updated = [...others, ...incomingMapped];
               db.saveBugs(updated, userId, false);
               return updated;
             });

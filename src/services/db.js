@@ -30,8 +30,8 @@ const save = (key, data) => {
 };
 
 // Firestore has a hard 1 MiB (1,048,576 byte) document limit.
-// We chunk payloads that exceed 600,000 characters to ensure safe, fail-free synchronization.
-const CHUNK_SIZE = 600000;
+// We chunk payloads only if they exceed 850,000 characters to keep single-document real-time onSnapshot instant.
+const CHUNK_SIZE = 850000;
 
 const splitIntoChunks = (str, chunkSize = CHUNK_SIZE) => {
   const chunks = [];
@@ -43,7 +43,7 @@ const splitIntoChunks = (str, chunkSize = CHUNK_SIZE) => {
 
 /**
  * Writes document data to Firestore, automatically chunking large payloads across
- * sibling documents if total string length exceeds CHUNK_SIZE (~600KB).
+ * sibling documents only if total string length exceeds CHUNK_SIZE (~850KB).
  */
 const writeChunkedDoc = async (collectionPath, docId, baseData, payloadString) => {
   if (!isFirebaseConfigured || !firestore) return;
@@ -60,6 +60,12 @@ const writeChunkedDoc = async (collectionPath, docId, baseData, payloadString) =
       chunkCount: 1,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+
+    // Clean up any old sibling chunk document so queries and listeners are purely single-doc
+    try {
+      const oldChunkRef = doc(firestore, collectionPath, `${docId}__chunk_1`);
+      await deleteDoc(oldChunkRef);
+    } catch (_) {}
     return;
   }
 
@@ -610,48 +616,38 @@ export const db = {
     let safeBugs = bugs || [];
     let safeFiles = files || [];
 
-    // 1. Merge with local cache first
-    if (existingWs) {
-      if (Array.isArray(existingWs.tests)) {
-        safeTests = mergeTestCases(existingWs.tests, safeTests);
-      }
-      if (Array.isArray(existingWs.bugs)) {
-        safeBugs = mergeBugs(existingWs.bugs, safeBugs);
-      }
-      if (Array.isArray(existingWs.files)) {
-        safeFiles = mergeFiles(existingWs.files, safeFiles);
-      }
+    // Guard: Prevent an uninitialized client (empty tests/bugs) from wiping out existing data
+    if (safeTests.length === 0 && Array.isArray(existingWs?.tests) && existingWs.tests.length > 0) {
+      safeTests = existingWs.tests;
     }
+    if (safeBugs.length === 0 && Array.isArray(existingWs?.bugs) && existingWs.bugs.length > 0) {
+      safeBugs = existingWs.bugs;
+    }
+    if (safeFiles.length === 0 && Array.isArray(existingWs?.files) && existingWs.files.length > 0) {
+      safeFiles = existingWs.files;
+    }
+
+    // Sanitize bugs to prevent duplicate base64 strings in both b.images and b.imageUrl (keeps payload < 650KB)
+    safeBugs = safeBugs.map((b) => {
+      if (b && Array.isArray(b.images) && b.images.length > 0 && b.imageUrl) {
+        const { imageUrl, ...rest } = b;
+        return rest;
+      }
+      return b;
+    });
+
+    // Update local cache immediately
+    save(sharedCacheKey, {
+      project,
+      files: safeFiles,
+      tests: safeTests,
+      bugs: safeBugs,
+      reports,
+      updatedAt: new Date().toISOString(),
+    });
 
     if (isFirebaseConfigured && firestore) {
       try {
-        // 2. Fetch latest remote doc to ensure no client ever drops bugs or executions added in cloud
-        try {
-          const docRef = doc(firestore, 'shared_workspaces', projectId);
-          const snap = await getDoc(docRef);
-          if (snap.exists()) {
-            const remoteData = snap.data();
-            const fullRemotePayload = await readChunkedDocPayload('shared_workspaces', projectId, remoteData);
-            if (fullRemotePayload) {
-              const parsedRemote = JSON.parse(fullRemotePayload);
-              if (Array.isArray(parsedRemote.bugs)) {
-                safeBugs = mergeBugs(parsedRemote.bugs, safeBugs);
-              }
-              if (Array.isArray(parsedRemote.tests)) {
-                safeTests = mergeTestCases(parsedRemote.tests, safeTests);
-              }
-              if (Array.isArray(parsedRemote.files)) {
-                safeFiles = mergeFiles(parsedRemote.files, safeFiles);
-              }
-            }
-          }
-        } catch (mergeErr) {
-          console.warn('[Firebase] Remote pre-merge check note:', mergeErr.message);
-        }
-
-        // Update local cache with safe merged state
-        save(sharedCacheKey, { project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports, updatedAt: new Date().toISOString() });
-
         const memberEmails = (project?.members || [])
           .map(m => (m.email || '').toLowerCase())
           .filter(Boolean);
@@ -677,8 +673,6 @@ export const db = {
       } catch (error) {
         console.warn(`[Firebase] Failed to sync shared workspace ${projectId}:`, error.message);
       }
-    } else {
-      save(sharedCacheKey, { project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports, updatedAt: new Date().toISOString() });
     }
   },
 

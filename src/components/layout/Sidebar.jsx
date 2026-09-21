@@ -246,31 +246,24 @@ export const Sidebar = ({
         </div>
       )}
 
-      {/* Bottom Footer — Push/Pull Sync + Export/Import */}
+      {/* Bottom Footer — Real-Time Sync & Export/Import */}
       <div className="p-3 border-t border-slate-100 space-y-2 bg-white">
-        {/* Collaborative Cloud Actions */}
+        {/* Real-time Collaboration Status (Zero manual pull needed) */}
         {activeProjectId && (
-          <div className="flex gap-1.5">
-            <button
-              type="button"
-              onClick={onForcePushSync}
-              disabled={syncStatus === 'syncing'}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-              title="Push your test executions & defects to cloud for team"
-            >
-              <UploadCloud size={13} className="text-indigo-600 shrink-0" />
-              <span>Push to Team</span>
-            </button>
-            <button
-              type="button"
-              onClick={onPullSync}
-              disabled={syncStatus === 'syncing'}
-              className="flex items-center justify-center gap-1 py-1.5 px-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50"
-              title="Pull latest team updates from cloud"
-            >
-              <RefreshCw size={12} className={`text-slate-500 shrink-0 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-              <span>Pull</span>
-            </button>
+          <div className="py-2 px-2.5 bg-emerald-50/80 border border-emerald-200/90 rounded-lg flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${syncStatus === 'syncing' ? 'bg-amber-400' : syncStatus === 'error' ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${syncStatus === 'syncing' ? 'bg-amber-500' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+              </span>
+              <div>
+                <p className="text-[11px] font-bold text-emerald-950 leading-tight">Live Real-Time Sync</p>
+                <p className="text-[9px] text-emerald-700 font-medium">Automatic cloud updates</p>
+              </div>
+            </div>
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${syncStatus === 'syncing' ? 'text-amber-700 bg-amber-100' : syncStatus === 'error' ? 'text-rose-700 bg-rose-100' : 'text-emerald-700 bg-emerald-100'}`}>
+              {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Error' : 'Active'}
+            </span>
           </div>
         )}
 

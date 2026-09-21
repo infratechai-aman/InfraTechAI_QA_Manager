@@ -66,6 +66,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // Unique tab/client identifier to prevent echo writes in real-time listeners
   const [clientId] = useState(() => 'client_' + Math.random().toString(36).substring(2, 9));
   const isRemoteUpdateRef = useRef(false);
+  const isInitialPullCompleteRef = useRef(false);
 
   // Real-time subscription to incoming workspace invitations
   useEffect(() => {
@@ -78,7 +79,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
   // Real-time subscription to active shared workspace changes
   useEffect(() => {
-    if (!activeProjectId || !currentUser) return;
+    if (!activeProjectId || !currentUser) {
+      isInitialPullCompleteRef.current = false;
+      return;
+    }
+    isInitialPullCompleteRef.current = false;
 
     // 1. Immediately pull latest workspace data from Firestore on opening project
     db.pullSharedWorkspace(activeProjectId)
@@ -158,7 +163,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           });
         }
       })
-      .catch((err) => console.warn('[Firebase] Initial workspace pull error:', err));
+      .catch((err) => console.warn('[Firebase] Initial workspace pull error:', err))
+      .finally(() => {
+        isInitialPullCompleteRef.current = true;
+      });
 
     // 2. Subscribe to real-time changes
     const unsubscribe = db.subscribeToSharedWorkspace(
@@ -362,6 +370,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   // Auto sync shared workspace changes (tests, bugs, files) to Firestore whenever active project is open
   useEffect(() => {
     if (!activeProjectId || !activeProject || !currentUser) return;
+    if (!isInitialPullCompleteRef.current) return;
 
     // Prevent echo writes if this update originated from a remote teammate
     if (isRemoteUpdateRef.current) {
@@ -370,30 +379,34 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     }
 
     setSyncStatus('syncing');
-    const currentFiles = files.filter((f) => f.projectId === activeProjectId);
-    const currentTests = tests
-      .filter((t) => !t.projectId || t.projectId === activeProjectId)
-      .map((t) => ({ ...t, projectId: activeProjectId }));
-    const currentBugs = bugs.filter((b) => b.projectId === activeProjectId);
-    const currentReports = reports.filter((r) => r.projectId === activeProjectId);
+    const timer = setTimeout(() => {
+      const currentFiles = files.filter((f) => !f.projectId || f.projectId === activeProjectId);
+      const currentTests = tests
+        .filter((t) => !t.projectId || t.projectId === activeProjectId)
+        .map((t) => ({ ...t, projectId: activeProjectId }));
+      const currentBugs = bugs.filter((b) => b.projectId === activeProjectId);
+      const currentReports = reports.filter((r) => r.projectId === activeProjectId);
 
-    db.syncSharedWorkspace(
-      activeProjectId,
-      {
-        project: activeProject,
-        files: currentFiles,
-        tests: currentTests,
-        bugs: currentBugs,
-        reports: currentReports,
-      },
-      currentUser,
-      clientId
-    )
-      .then(() => setSyncStatus('synced'))
-      .catch((err) => {
-        console.warn('[Firebase] Auto sync failed:', err);
-        setSyncStatus('error');
-      });
+      db.syncSharedWorkspace(
+        activeProjectId,
+        {
+          project: activeProject,
+          files: currentFiles,
+          tests: currentTests,
+          bugs: currentBugs,
+          reports: currentReports,
+        },
+        currentUser,
+        clientId
+      )
+        .then(() => setSyncStatus('synced'))
+        .catch((err) => {
+          console.warn('[Firebase] Auto sync failed:', err);
+          setSyncStatus('error');
+        });
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [activeProjectId, tests, bugs, files, reports, activeProject, currentUser, clientId]);
 
   // --- Project Management ---
@@ -579,12 +592,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       creatorRole: isOwner ? 'Owner' : 'QA Tester',
     };
 
-    setFiles((prev) => {
-      const updated = [newFile, ...prev];
-      db.saveFiles(updated, userId);
-      return updated;
-    });
+    const updatedFiles = [newFile, ...files];
+    setFiles(updatedFiles);
+    db.saveFiles(updatedFiles, userId);
 
+    let updatedTests = tests;
     if (copyFromId) {
       const testsToCopy = tests.filter((t) => t.fileId === copyFromId);
       const duplicatedTests = testsToCopy.map((t) => ({
@@ -594,14 +606,31 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         status: 'Not Run',
         actualResult: '',
         testerNotes: '',
+        executedBy: null,
+        executedByName: null,
+        executedByRole: null,
+        executedAt: null,
         createdAt: getTimestamp(),
         updatedAt: getTimestamp(),
       }));
-      setTests((prev) => {
-        const updated = [...prev, ...duplicatedTests];
-        db.saveTestCases(updated, userId);
-        return updated;
-      });
+      updatedTests = [...tests, ...duplicatedTests];
+      setTests(updatedTests);
+      db.saveTestCases(updatedTests, userId);
+    }
+
+    if (activeProjectId && activeProject && currentUser) {
+      db.syncSharedWorkspace(
+        activeProjectId,
+        {
+          project: activeProject,
+          files: updatedFiles.filter((f) => !f.projectId || f.projectId === activeProjectId),
+          tests: updatedTests.filter((t) => !t.projectId || t.projectId === activeProjectId),
+          bugs: bugs.filter((b) => !b.projectId || b.projectId === activeProjectId),
+          reports: reports.filter((r) => r.projectId === activeProjectId),
+        },
+        currentUser,
+        clientId
+      ).catch((e) => console.warn('[Firebase] New suite sync error:', e));
     }
 
     return newFile;
@@ -1042,11 +1071,13 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       );
       setSyncStatus('synced');
       const execCount = currentTests.filter(t => isExecuted(t)).length;
-      alert(`✅ Workspace "${activeProject.name}" synced to cloud successfully!\n\n• ${currentTests.length} Total Test Cases (${execCount} Executed)\n• ${currentBugs.length} Defects & Issues\n• ${currentFiles.length} Test Files\n\nYour teammates can now see these updates in real-time.`);
+      setLastSyncNotice(`✅ Workspace "${activeProject.name}" synced (${execCount}/${currentTests.length} tests executed)`);
+      setTimeout(() => setLastSyncNotice(null), 4500);
     } catch (err) {
       console.error('Force push sync failed:', err);
       setSyncStatus('error');
-      alert(`⚠️ Sync failed: ${err.message || 'Check network connection'}`);
+      setLastSyncNotice(`⚠️ Sync failed: ${err.message || 'Check network connection'}`);
+      setTimeout(() => setLastSyncNotice(null), 5000);
     }
   };
 

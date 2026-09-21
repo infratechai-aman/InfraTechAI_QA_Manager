@@ -66,16 +66,7 @@ const writeChunkedDoc = async (collectionPath, docId, baseData, payloadString) =
   const chunks = splitIntoChunks(payloadString, CHUNK_SIZE);
   const mainDocRef = doc(firestore, collectionPath, docId);
 
-  // Main document holds Chunk 0 + metadata so queries (members, etc.) remain intact
-  await setDoc(mainDocRef, {
-    ...baseData,
-    payload: chunks[0],
-    isChunked: true,
-    chunkCount: chunks.length,
-    updatedAt: new Date().toISOString(),
-  }, { merge: true });
-
-  // Remaining chunks 1..N-1 written to sibling documents
+  // 1. Write sibling chunks 1..N-1 FIRST so they are guaranteed to exist before onSnapshot triggers
   const subChunkWrites = [];
   for (let i = 1; i < chunks.length; i++) {
     const chunkDocRef = doc(firestore, collectionPath, `${docId}__chunk_${i}`);
@@ -84,14 +75,25 @@ const writeChunkedDoc = async (collectionPath, docId, baseData, payloadString) =
       isChunkDoc: true,
       chunkIndex: i,
       chunk: chunks[i],
+      payload: chunks[i], // both keys for backwards compatibility
       updatedAt: new Date().toISOString(),
     }));
   }
   await Promise.all(subChunkWrites);
+
+  // 2. Write main document (triggers onSnapshot listener with guaranteed chunk availability)
+  await setDoc(mainDocRef, {
+    ...baseData,
+    payload: chunks[0],
+    isChunked: true,
+    chunkCount: chunks.length,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true });
 };
 
 /**
- * Reads document data and reassembles chunks if isChunked is true
+ * Reads document data and reassembles chunks if isChunked is true.
+ * Includes retries for temporary eventual-consistency delays on newly written chunks.
  */
 const readChunkedDocPayload = async (collectionPath, docId, docData) => {
   if (!docData) return null;
@@ -100,16 +102,23 @@ const readChunkedDocPayload = async (collectionPath, docId, docData) => {
   }
 
   let fullPayload = docData.payload || '';
-  const chunkReads = [];
   for (let i = 1; i < docData.chunkCount; i++) {
     const chunkRef = doc(firestore, collectionPath, `${docId}__chunk_${i}`);
-    chunkReads.push(getDoc(chunkRef));
-  }
+    let chunkSnap = await getDoc(chunkRef);
 
-  const chunkSnaps = await Promise.all(chunkReads);
-  for (const cSnap of chunkSnaps) {
-    if (cSnap.exists() && cSnap.data()?.chunk) {
-      fullPayload += cSnap.data().chunk;
+    // Resilient retry in case replication delay makes sibling chunk momentarily unavailable
+    if (!chunkSnap.exists()) {
+      for (let attempt = 0; attempt < 3 && !chunkSnap.exists(); attempt++) {
+        await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+        chunkSnap = await getDoc(chunkRef);
+      }
+    }
+
+    if (chunkSnap.exists()) {
+      const data = chunkSnap.data();
+      fullPayload += (data?.chunk || data?.payload || '');
+    } else {
+      console.warn(`[Firebase] Missing chunk ${i} for ${collectionPath}/${docId}`);
     }
   }
 

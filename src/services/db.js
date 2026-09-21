@@ -610,6 +610,7 @@ export const db = {
     let safeBugs = bugs || [];
     let safeFiles = files || [];
 
+    // 1. Merge with local cache first
     if (existingWs) {
       if (Array.isArray(existingWs.tests)) {
         safeTests = mergeTestCases(existingWs.tests, safeTests);
@@ -622,10 +623,35 @@ export const db = {
       }
     }
 
-    save(sharedCacheKey, { project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports, updatedAt: new Date().toISOString() });
-
     if (isFirebaseConfigured && firestore) {
       try {
+        // 2. Fetch latest remote doc to ensure no client ever drops bugs or executions added in cloud
+        try {
+          const docRef = doc(firestore, 'shared_workspaces', projectId);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const remoteData = snap.data();
+            const fullRemotePayload = await readChunkedDocPayload('shared_workspaces', projectId, remoteData);
+            if (fullRemotePayload) {
+              const parsedRemote = JSON.parse(fullRemotePayload);
+              if (Array.isArray(parsedRemote.bugs)) {
+                safeBugs = mergeBugs(parsedRemote.bugs, safeBugs);
+              }
+              if (Array.isArray(parsedRemote.tests)) {
+                safeTests = mergeTestCases(parsedRemote.tests, safeTests);
+              }
+              if (Array.isArray(parsedRemote.files)) {
+                safeFiles = mergeFiles(parsedRemote.files, safeFiles);
+              }
+            }
+          }
+        } catch (mergeErr) {
+          console.warn('[Firebase] Remote pre-merge check note:', mergeErr.message);
+        }
+
+        // Update local cache with safe merged state
+        save(sharedCacheKey, { project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports, updatedAt: new Date().toISOString() });
+
         const memberEmails = (project?.members || [])
           .map(m => (m.email || '').toLowerCase())
           .filter(Boolean);
@@ -651,6 +677,8 @@ export const db = {
       } catch (error) {
         console.warn(`[Firebase] Failed to sync shared workspace ${projectId}:`, error.message);
       }
+    } else {
+      save(sharedCacheKey, { project, files: safeFiles, tests: safeTests, bugs: safeBugs, reports, updatedAt: new Date().toISOString() });
     }
   },
 

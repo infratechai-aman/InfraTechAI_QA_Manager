@@ -65,7 +65,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
   // Unique tab/client identifier to prevent echo writes in real-time listeners
   const [clientId] = useState(() => 'client_' + Math.random().toString(36).substring(2, 9));
-  const isRemoteUpdateRef = useRef(false);
+  const remoteUpdateCooldownRef = useRef(0);
   const isInitialPullCompleteRef = useRef(false);
 
   // Real-time subscription to incoming workspace invitations
@@ -89,7 +89,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     db.pullSharedWorkspace(activeProjectId)
       .then((initialData) => {
         if (!initialData) return;
-        isRemoteUpdateRef.current = true;
+        remoteUpdateCooldownRef.current = Date.now() + 3000;
         if (initialData.project) {
           setProjects((prev) => {
             const updated = prev.map((p) => (p.id === activeProjectId ? { ...p, ...initialData.project } : p));
@@ -116,30 +116,6 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
             const updated = [...others, ...mergedProjTests];
             db.saveTestCases(updated, userId, false);
-
-            // AUTO-RECOVERY: If local tests had completed executions that cloud was missing:
-            const hasUnpushedExecutions = mergedProjTests.some(
-              (lt) => isExecuted(lt) && initialData.tests.find((rt) => String(rt.id) === String(lt.id) && !isExecuted(rt))
-            );
-            if (hasUnpushedExecutions) {
-              console.info('[Firebase] Auto-syncing local test executions to cloud shared workspace...');
-              setTimeout(() => {
-                db.syncSharedWorkspace(
-                  activeProjectId,
-                  {
-                    project: initialData.project || activeProject,
-                    files: files.filter(f => !f.projectId || f.projectId === activeProjectId),
-                    tests: mergedProjTests,
-                    bugs: bugs.filter(b => !b.projectId || b.projectId === activeProjectId),
-                    reports: reports.filter(r => r.projectId === activeProjectId),
-                  },
-                  currentUser,
-                  clientId
-                ).then(() => setSyncStatus('synced'))
-                 .catch((err) => console.warn('[Firebase] Auto-push error:', err));
-              }, 300);
-            }
-
             return updated;
           });
         }
@@ -177,8 +153,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           return;
         }
 
-        // Flag as remote update so our auto-sync effect does not echo back to Firestore
-        isRemoteUpdateRef.current = true;
+        // Suppress auto-sync echo writes for 3s after remote update arrives
+        remoteUpdateCooldownRef.current = Date.now() + 3000;
 
         // Merge incoming project
         if (remoteData.project) {
@@ -372,19 +348,24 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     if (!activeProjectId || !activeProject || !currentUser) return;
     if (!isInitialPullCompleteRef.current) return;
 
-    // Prevent echo writes if this update originated from a remote teammate
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false;
+    // Suppress auto-sync echo writes if we recently pulled or received a remote update
+    if (Date.now() < remoteUpdateCooldownRef.current) {
       return;
     }
 
     setSyncStatus('syncing');
     const timer = setTimeout(() => {
+      // Re-check cooldown before executing write
+      if (Date.now() < remoteUpdateCooldownRef.current) {
+        setSyncStatus('synced');
+        return;
+      }
+
       const currentFiles = files.filter((f) => !f.projectId || f.projectId === activeProjectId);
       const currentTests = tests
         .filter((t) => !t.projectId || t.projectId === activeProjectId)
         .map((t) => ({ ...t, projectId: activeProjectId }));
-      const currentBugs = bugs.filter((b) => b.projectId === activeProjectId);
+      const currentBugs = bugs.filter((b) => !b.projectId || b.projectId === activeProjectId);
       const currentReports = reports.filter((r) => r.projectId === activeProjectId);
 
       db.syncSharedWorkspace(
@@ -404,7 +385,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           console.warn('[Firebase] Auto sync failed:', err);
           setSyncStatus('error');
         });
-    }, 400);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [activeProjectId, tests, bugs, files, reports, activeProject, currentUser, clientId]);

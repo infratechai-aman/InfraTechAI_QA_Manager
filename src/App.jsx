@@ -93,7 +93,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (initialData.project) {
           setProjects((prev) => {
             const updated = prev.map((p) => (p.id === activeProjectId ? { ...p, ...initialData.project } : p));
-            db.saveProjects(updated, userId);
+            db.saveProjects(updated, userId, false);
             return normalizeProjects(updated, userId, currentUser.email);
           });
         }
@@ -104,7 +104,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const incomingMapped = initialData.files.map((f) => ({ ...f, projectId: activeProjectId }));
             const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
             const updated = [...others, ...mergedProjFiles];
-            db.saveFiles(updated, userId);
+            db.saveFiles(updated, userId, false);
             return updated;
           });
         }
@@ -115,7 +115,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const incomingMapped = initialData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
             const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
             const updated = [...others, ...mergedProjTests];
-            db.saveTestCases(updated, userId);
+            db.saveTestCases(updated, userId, false);
 
             // AUTO-RECOVERY: If local tests had completed executions that cloud was missing:
             const hasUnpushedExecutions = mergedProjTests.some(
@@ -137,7 +137,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
                   clientId
                 ).then(() => setSyncStatus('synced'))
                  .catch((err) => console.warn('[Firebase] Auto-push error:', err));
-              }, 200);
+              }, 300);
             }
 
             return updated;
@@ -150,7 +150,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const incomingMapped = initialData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
             const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
             const updated = [...others, ...mergedProjBugs];
-            db.saveBugs(updated, userId);
+            db.saveBugs(updated, userId, false);
             return updated;
           });
         }
@@ -158,7 +158,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           setReports((prev) => {
             const others = prev.filter((r) => r.projectId !== activeProjectId);
             const updated = [...others, ...initialData.reports];
-            db.saveReports(updated, userId);
+            db.saveReports(updated, userId, false);
             return updated;
           });
         }
@@ -184,7 +184,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (remoteData.project) {
           setProjects((prev) => {
             const updated = prev.map((p) => (p.id === activeProjectId ? { ...p, ...remoteData.project } : p));
-            db.saveProjects(updated, userId);
+            db.saveProjects(updated, userId, false);
             return normalizeProjects(updated, userId, currentUser.email);
           });
         }
@@ -197,7 +197,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const incomingMapped = remoteData.files.map((f) => ({ ...f, projectId: activeProjectId }));
             const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
             const updated = [...others, ...mergedProjFiles];
-            db.saveFiles(updated, userId);
+            db.saveFiles(updated, userId, false);
             return updated;
           });
         }
@@ -210,7 +210,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const incomingMapped = remoteData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
             const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
             const updated = [...others, ...mergedProjTests];
-            db.saveTestCases(updated, userId);
+            db.saveTestCases(updated, userId, false);
             return updated;
           });
         }
@@ -223,7 +223,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             const incomingMapped = remoteData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
             const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
             const updated = [...others, ...mergedProjBugs];
-            db.saveBugs(updated, userId);
+            db.saveBugs(updated, userId, false);
             return updated;
           });
         }
@@ -233,7 +233,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           setReports((prev) => {
             const others = prev.filter((r) => r.projectId !== activeProjectId);
             const updated = [...others, ...remoteData.reports];
-            db.saveReports(updated, userId);
+            db.saveReports(updated, userId, false);
             return updated;
           });
         }
@@ -979,7 +979,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   const handlePullSync = async () => {
+    isRemoteUpdateRef.current = true;
+    setSyncStatus('syncing');
     let pulledSomething = false;
+
     if (activeProjectId) {
       try {
         const sharedWs = await db.pullSharedWorkspace(activeProjectId);
@@ -987,7 +990,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           if (sharedWs.project) {
             setProjects((prev) => {
               const updated = prev.map((p) => (p.id === activeProjectId ? { ...p, ...sharedWs.project } : p));
-              db.saveProjects(updated, userId);
+              db.saveProjects(updated, userId, false);
               return normalizeProjects(updated, userId, currentUser.email);
             });
           }
@@ -998,7 +1001,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
               const incomingMapped = sharedWs.files.map((f) => ({ ...f, projectId: activeProjectId }));
               const mergedProjFiles = mergeFiles(currentProjFiles, incomingMapped);
               const updated = [...others, ...mergedProjFiles];
-              db.saveFiles(updated, userId);
+              db.saveFiles(updated, userId, false);
               return updated;
             });
           }
@@ -1009,7 +1012,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
               const incomingMapped = sharedWs.tests.map((t) => ({ ...t, projectId: activeProjectId }));
               const mergedProjTests = mergeTestCases(currentProjTests, incomingMapped);
               const updated = [...others, ...mergedProjTests];
-              db.saveTestCases(updated, userId);
+              db.saveTestCases(updated, userId, false);
               return updated;
             });
           }
@@ -1020,26 +1023,32 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
               const incomingMapped = sharedWs.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
               const mergedProjBugs = mergeBugs(currentProjBugs, incomingMapped);
               const updated = [...others, ...mergedProjBugs];
-              db.saveBugs(updated, userId);
+              db.saveBugs(updated, userId, false);
               return updated;
             });
           }
           pulledSomething = true;
+          setSyncStatus('synced');
+          setLastSyncNotice('✅ Synced latest workspace updates from cloud');
+          setTimeout(() => setLastSyncNotice(null), 3500);
+          return true;
         }
       } catch (wsErr) {
         console.warn('[Firebase] Error pulling active shared workspace:', wsErr);
+        setSyncStatus('error');
+      }
+    } else {
+      const cloudData = await db.pullFromFirestore(userId, currentUser.email);
+      if (cloudData) {
+        if (cloudData.projects) setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
+        if (cloudData.files) setFiles(cloudData.files);
+        if (cloudData.tests) setTests(cloudData.tests);
+        if (cloudData.bugs) setBugs(cloudData.bugs);
+        if (cloudData.reports) setReports(cloudData.reports);
+        pulledSomething = true;
       }
     }
-
-    const cloudData = await db.pullFromFirestore(userId, currentUser.email);
-    if (cloudData) {
-      if (cloudData.projects) setProjects(normalizeProjects(cloudData.projects, userId, currentUser.email));
-      if (cloudData.files) setFiles(cloudData.files);
-      if (cloudData.tests) setTests(cloudData.tests);
-      if (cloudData.bugs) setBugs(cloudData.bugs);
-      if (cloudData.reports) setReports(cloudData.reports);
-      pulledSomething = true;
-    }
+    setSyncStatus('synced');
     return pulledSomething;
   };
 

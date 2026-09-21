@@ -125,18 +125,29 @@ const readChunkedDocPayload = async (collectionPath, docId, docData) => {
   return fullPayload;
 };
 
+const pendingUserSyncs = new Map();
+
 /**
  * Cloud sync helper scoped to the authenticated user's private collection:
  * /users/{userId}/qa_manager/{docId}
+ * Debounced by 1 second to prevent write stream exhaustion.
  */
-const syncToFirestore = async (userId, docId, data) => {
+const syncToFirestore = (userId, docId, data) => {
   if (!isFirebaseConfigured || !firestore || !userId) return;
-  try {
-    const payloadString = JSON.stringify(data);
-    await writeChunkedDoc(`users/${userId}/qa_manager`, docId, { ownerId: userId }, payloadString);
-  } catch (error) {
-    console.warn(`[Firebase] Failed to sync ${docId} to user ${userId}:`, error.message);
+  const key = `${userId}_${docId}`;
+  if (pendingUserSyncs.has(key)) {
+    clearTimeout(pendingUserSyncs.get(key));
   }
+  const timer = setTimeout(async () => {
+    pendingUserSyncs.delete(key);
+    try {
+      const payloadString = JSON.stringify(data);
+      await writeChunkedDoc(`users/${userId}/qa_manager`, docId, { ownerId: userId }, payloadString);
+    } catch (error) {
+      console.warn(`[Firebase] Failed to sync ${docId} to user ${userId}:`, error.message);
+    }
+  }, 1000);
+  pendingUserSyncs.set(key, timer);
 };
 
 export const db = {
@@ -145,10 +156,10 @@ export const db = {
     const key = getStorageKey('projects', userId);
     return load(key, []);
   },
-  saveProjects: (projects, userId) => {
+  saveProjects: (projects, userId, syncRemote = true) => {
     const key = getStorageKey('projects', userId);
     save(key, projects);
-    syncToFirestore(userId, 'projects', projects);
+    if (syncRemote) syncToFirestore(userId, 'projects', projects);
   },
 
   // --- Test Files ---
@@ -156,10 +167,10 @@ export const db = {
     const key = getStorageKey('files', userId);
     return load(key, []);
   },
-  saveFiles: (files, userId) => {
+  saveFiles: (files, userId, syncRemote = true) => {
     const key = getStorageKey('files', userId);
     save(key, files);
-    syncToFirestore(userId, 'files', files);
+    if (syncRemote) syncToFirestore(userId, 'files', files);
   },
 
   // --- Test Cases ---
@@ -167,10 +178,10 @@ export const db = {
     const key = getStorageKey('tests', userId);
     return load(key, []);
   },
-  saveTestCases: (tests, userId) => {
+  saveTestCases: (tests, userId, syncRemote = true) => {
     const key = getStorageKey('tests', userId);
     save(key, tests);
-    syncToFirestore(userId, 'tests', tests);
+    if (syncRemote) syncToFirestore(userId, 'tests', tests);
   },
 
   // --- Bugs & Issues ---
@@ -178,10 +189,10 @@ export const db = {
     const key = getStorageKey('bugs', userId);
     return load(key, []);
   },
-  saveBugs: (bugs, userId) => {
+  saveBugs: (bugs, userId, syncRemote = true) => {
     const key = getStorageKey('bugs', userId);
     save(key, bugs);
-    syncToFirestore(userId, 'bugs', bugs);
+    if (syncRemote) syncToFirestore(userId, 'bugs', bugs);
   },
 
   // --- Reports ---
@@ -189,10 +200,10 @@ export const db = {
     const key = getStorageKey('reports', userId);
     return load(key, []);
   },
-  saveReports: (reports, userId) => {
+  saveReports: (reports, userId, syncRemote = true) => {
     const key = getStorageKey('reports', userId);
     save(key, reports);
-    syncToFirestore(userId, 'reports', reports);
+    if (syncRemote) syncToFirestore(userId, 'reports', reports);
   },
 
   // --- Wipe User Data ---

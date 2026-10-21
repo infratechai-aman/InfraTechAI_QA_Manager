@@ -3,12 +3,19 @@ import {
   Briefcase, LayoutDashboard, Play, 
   Bug as BugIcon, Upload, List,
   Download, UploadCloud, LogOut, DoorOpen, BookOpen,
-  FileText, UserPlus, Users, RefreshCw
+  FileText, UserPlus, Users, RefreshCw, Bot, Mail,
+  Layers, MessageSquare, Sliders, Sparkles, ShieldCheck
 } from 'lucide-react';
 
 export const Sidebar = ({ 
+  activeApp = 'qa',
+  onReturnToHub,
   activeTab, 
   setActiveTab, 
+  salesTab = 'cockpit',
+  setSalesTab,
+  pendingOutboxCount = 0,
+  onOpenHarveySettings,
   activeProject, 
   activeProjectId,
   activeFile,
@@ -26,7 +33,7 @@ export const Sidebar = ({
 }) => {
   const fileInputRef = useRef(null);
 
-  const navItems = [
+  const qaNavItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', disabled: !activeProjectId },
     { id: 'execute', icon: Play, label: 'Test Execution', disabled: !activeProjectId },
     { 
@@ -38,6 +45,20 @@ export const Sidebar = ({
     },
     { id: 'files', icon: List, label: 'All Test Cases', disabled: !activeProjectId },
     { id: 'reports', icon: BookOpen, label: 'Reports', disabled: !activeProjectId },
+  ];
+
+  const salesNavItems = [
+    { id: 'cockpit', icon: LayoutDashboard, label: 'Cockpit Overview' },
+    { 
+      id: 'outbox', 
+      icon: Mail, 
+      label: 'Decisions Desk', 
+      badge: pendingOutboxCount > 0 ? pendingOutboxCount : null,
+      badgeColor: 'amber'
+    },
+    { id: 'leads', icon: Users, label: 'Prospects & Signals' },
+    { id: 'campaigns', icon: Layers, label: 'Sequence Playbooks' },
+    { id: 'conversations', icon: MessageSquare, label: 'Inbound & Replies' },
   ];
 
   const handleFileChange = (e) => {
@@ -62,150 +83,240 @@ export const Sidebar = ({
     <aside className="hidden md:flex w-64 border-r border-slate-200 flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
       
       {/* Brand Header with Logo */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-        <img 
-          src="/qa-logo.png" 
-          alt="QA Manager Logo" 
-          className="w-10 h-10 object-contain shrink-0"
-        />
-        <div>
-          <span className="font-extrabold text-slate-900 text-base tracking-tight block leading-tight">
-            InfratechAI
-          </span>
-          <span className="text-[11px] font-semibold text-indigo-600 tracking-wider uppercase">
-            QA Manager
-          </span>
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img 
+            src="/qa-logo.png" 
+            alt="App Logo" 
+            className="w-10 h-10 object-contain shrink-0"
+          />
+          <div>
+            <span className="font-extrabold text-slate-900 text-base tracking-tight block leading-tight">
+              InfratechAI
+            </span>
+            <span className={`text-[11px] font-semibold tracking-wider uppercase ${
+              activeApp === 'sales' ? 'text-amber-600' : 'text-indigo-600'
+            }`}>
+              {activeApp === 'sales' ? 'Sales SDR (Harvey)' : 'QA Manager'}
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Return to App Library Capsule */}
+      {onReturnToHub && (
+        <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/60">
+          <button
+            onClick={onReturnToHub}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs group"
+            title="Return to Apps"
+          >
+            <div className="flex items-center gap-2">
+              <Layers size={14} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+              <span>⊞ Apps</span>
+            </div>
+            <span className="text-[10px] text-slate-400 group-hover:text-indigo-600 font-semibold">Switch App →</span>
+          </button>
+        </div>
+      )}
 
       {/* Nav List */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
         
-        {/* === NOT INSIDE A PROJECT: Show "All Projects" button === */}
-        {!activeProjectId && (
-          <button
-            onClick={() => setActiveTab('projects')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-              activeTab === 'projects'
-                ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-            }`}
-          >
-            <Briefcase size={18} className={activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-400'} />
-            <span>All Projects</span>
-          </button>
-        )}
-
-        {/* === INSIDE A PROJECT: Show project context + Exit button === */}
-        {activeProjectId && (
-          <div className="space-y-2">
-            {/* Active Project Display Card */}
-            <div className="px-3.5 py-3 bg-indigo-50/80 rounded-xl border border-indigo-200/80">
-              <div className="flex items-start gap-2.5">
-                <div className="p-1.5 bg-indigo-600 rounded-lg text-white shrink-0 mt-0.5">
-                  <Briefcase size={13} />
-                </div>
-                <div className="overflow-hidden flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Active Project</p>
-                  <p className="text-xs font-extrabold text-indigo-900 truncate">{activeProject?.name || 'Project'}</p>
-                </div>
+        {/* === MODE A: SALES MANAGER (HARVEY) NAVIGATION === */}
+        {activeApp === 'sales' && (
+          <div className="space-y-4">
+            {/* Harvey SDR Engine Status Pill */}
+            <div className="p-3 bg-gradient-to-r from-amber-50 to-indigo-50/60 rounded-xl border border-amber-200/80 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agent Engine</span>
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Active
+                </span>
               </div>
+              <p className="text-xs font-black text-slate-800">Harvey Auto Outbound</p>
+              <p className="text-[10px] text-slate-500">Autonomous prospecting & zero API bill</p>
             </div>
 
-            {/* Invite Collaborator Button */}
-            {onOpenInviteModal && (
+            <div className="space-y-1">
+              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                Sales Suite
+              </div>
+              {salesNavItems.map(item => {
+                const Icon = item.icon;
+                const isActive = salesTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setSalesTab && setSalesTab(item.id)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge !== null && item.badge !== undefined && (
+                      <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
+                        isActive 
+                          ? 'bg-amber-400 text-slate-900' 
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Engine Settings Action */}
+            <div className="pt-2 border-t border-slate-100">
               <button
-                onClick={onOpenInviteModal}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs"
-                title="Invite friend or team member to collaborate"
+                onClick={onOpenHarveySettings}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-xl transition-all cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <UserPlus size={14} className="text-indigo-600" />
-                  <span>Invite Member</span>
-                </div>
-                {activeProject?.members && activeProject.members.length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-200/80 text-indigo-800 font-extrabold">
-                    {activeProject.members.length}
-                  </span>
-                )}
+                <Sliders size={14} className="text-indigo-600" />
+                <span>Configure Harvey Brain</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* === MODE B: QA MANAGER NAVIGATION === */}
+        {activeApp === 'qa' && (
+          <>
+            {/* === NOT INSIDE A PROJECT: Show "All Projects" button === */}
+            {!activeProjectId && (
+              <button
+                onClick={() => setActiveTab('projects')}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  activeTab === 'projects'
+                    ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <Briefcase size={18} className={activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-400'} />
+                <span>All Projects</span>
               </button>
             )}
 
-            {/* Exit Workspace Button */}
-            <button
-              onClick={onExitProject}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-rose-100 hover:border-rose-200"
-            >
-              <DoorOpen size={17} className="text-rose-500" />
-              <span>Exit Workspace</span>
-            </button>
-
-            {/* Active Test Case / File Display Card + Exit TestCase Button */}
-            {activeFile && (
-              <div className="pt-2 space-y-2 animate-fadeIn border-t border-slate-100">
-                <div className="px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            {/* === INSIDE A PROJECT: Show project context + Exit button === */}
+            {activeProjectId && (
+              <div className="space-y-2">
+                {/* Active Project Display Card */}
+                <div className="px-3.5 py-3 bg-indigo-50/80 rounded-xl border border-indigo-200/80">
                   <div className="flex items-start gap-2.5">
-                    <div className="p-1.5 bg-slate-800 rounded-lg text-white shrink-0 mt-0.5">
-                      <FileText size={13} />
+                    <div className="p-1.5 bg-indigo-600 rounded-lg text-white shrink-0 mt-0.5">
+                      <Briefcase size={13} />
                     </div>
                     <div className="overflow-hidden flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active TestCase File</p>
-                      <p className="text-xs font-bold text-slate-900 truncate" title={activeFile.name}>{activeFile.name}</p>
+                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Active Project</p>
+                      <p className="text-xs font-extrabold text-indigo-900 truncate">{activeProject?.name || 'Project'}</p>
                     </div>
                   </div>
                 </div>
 
+                {/* Invite Collaborator Button */}
+                {onOpenInviteModal && (
+                  <button
+                    onClick={onOpenInviteModal}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs"
+                    title="Invite friend or team member to collaborate"
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserPlus size={14} className="text-indigo-600" />
+                      <span>Invite Member</span>
+                    </div>
+                    {activeProject?.members && activeProject.members.length > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-200/80 text-indigo-800 font-extrabold">
+                        {activeProject.members.length}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Exit Workspace Button */}
                 <button
-                  onClick={onExitTestFile}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all cursor-pointer shadow-xs"
-                  title="Deselect active test case file"
+                  onClick={onExitProject}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-rose-100 hover:border-rose-200"
                 >
-                  <DoorOpen size={14} className="text-amber-600" />
-                  <span>Exit TestCase</span>
+                  <DoorOpen size={17} className="text-rose-500" />
+                  <span>Exit Workspace</span>
                 </button>
+
+                {/* Active Test Case / File Display Card + Exit TestCase Button */}
+                {activeFile && (
+                  <div className="pt-2 space-y-2 animate-fadeIn border-t border-slate-100">
+                    <div className="px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                      <div className="flex items-start gap-2.5">
+                        <div className="p-1.5 bg-slate-800 rounded-lg text-white shrink-0 mt-0.5">
+                          <FileText size={13} />
+                        </div>
+                        <div className="overflow-hidden flex-1 min-w-0">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active TestCase File</p>
+                          <p className="text-xs font-bold text-slate-900 truncate" title={activeFile.name}>{activeFile.name}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={onExitTestFile}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all cursor-pointer shadow-xs"
+                      title="Deselect active test case file"
+                    >
+                      <DoorOpen size={14} className="text-amber-600" />
+                      <span>Exit TestCase</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* Core Module Nav Items */}
-        <div className="space-y-1">
-          {activeProjectId && (
-            <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-              Workspace
-            </div>
-          )}
-          {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => !item.disabled && setActiveTab(item.id)}
-                disabled={item.disabled}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
-                  item.disabled
-                    ? 'opacity-40 cursor-not-allowed text-slate-400'
-                    : isActive
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
-                  <span>{item.label}</span>
+            {/* Core Module Nav Items */}
+            <div className="space-y-1">
+              {activeProjectId && (
+                <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                  Workspace
                 </div>
-                {item.badge !== null && item.badge !== undefined && (
-                  <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
-                    isActive ? 'bg-white text-indigo-700' : 'bg-rose-100 text-rose-700'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+              )}
+              {qaNavItems.map(item => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => !item.disabled && setActiveTab(item.id)}
+                    disabled={item.disabled}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
+                      item.disabled
+                        ? 'opacity-40 cursor-not-allowed text-slate-400'
+                        : isActive
+                          ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge !== null && item.badge !== undefined && (
+                      <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
+                        isActive ? 'bg-white text-indigo-700' : 'bg-rose-100 text-rose-700'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* User Account Info Bar */}

@@ -3,12 +3,16 @@ import {
   Briefcase, LayoutDashboard, Play, Bug as BugIcon, 
   List, Plus, Sparkles, X, ChevronRight, UserPlus, 
   CloudRain, Download, UploadCloud, LogOut, FileText,
-  Shield, BookOpen, Layers, RefreshCw
+  Shield, BookOpen, Layers, RefreshCw, Mail, Users, MessageSquare, Bot
 } from 'lucide-react';
 
 export const MobileBottomNav = ({
+  activeApp = 'qa',
   activeTab,
   setActiveTab,
+  salesTab = 'cockpit',
+  setSalesTab,
+  pendingOutboxCount = 0,
   activeProjectId,
   activeProject,
   projects = [],
@@ -52,14 +56,13 @@ export const MobileBottomNav = ({
     setActiveTab(tabName);
   };
 
-  const navItems = [
+  const qaNavItems = [
     {
       id: 'projects',
       label: 'Projects',
       icon: Briefcase,
       onClick: () => {
         if (activeProjectId) {
-          // Must exit the workspace first — mirror desktop behavior
           onExitProject();
         } else {
           setActiveTab('projects');
@@ -76,7 +79,6 @@ export const MobileBottomNav = ({
       isActive: activeTab === 'dashboard',
       disabled: false,
     },
-    // Center Button (Options FAB) is handled separately
     {
       id: 'execute',
       label: 'Execute',
@@ -103,6 +105,53 @@ export const MobileBottomNav = ({
       disabled: false,
     },
   ];
+
+  const salesNavItems = [
+    {
+      id: 'cockpit',
+      label: 'Cockpit',
+      icon: LayoutDashboard,
+      onClick: () => setSalesTab && setSalesTab('cockpit'),
+      isActive: salesTab === 'cockpit',
+      disabled: false,
+    },
+    {
+      id: 'outbox',
+      label: 'Outbox',
+      icon: Mail,
+      badge: pendingOutboxCount > 0 ? pendingOutboxCount : null,
+      badgeColor: 'amber',
+      onClick: () => setSalesTab && setSalesTab('outbox'),
+      isActive: salesTab === 'outbox',
+      disabled: false,
+    },
+    {
+      id: 'leads',
+      label: 'Leads',
+      icon: Users,
+      onClick: () => setSalesTab && setSalesTab('leads'),
+      isActive: salesTab === 'leads',
+      disabled: false,
+    },
+    {
+      id: 'campaigns',
+      label: 'Playbooks',
+      icon: Layers,
+      onClick: () => setSalesTab && setSalesTab('campaigns'),
+      isActive: salesTab === 'campaigns',
+      disabled: false,
+    },
+    {
+      id: 'conversations',
+      label: 'Inbound',
+      icon: MessageSquare,
+      onClick: () => setSalesTab && setSalesTab('conversations'),
+      isActive: salesTab === 'conversations',
+      disabled: false,
+    },
+  ];
+
+  const navItems = activeApp === 'sales' ? salesNavItems : qaNavItems;
 
   return (
     <>

@@ -189,20 +189,15 @@ export const TestFilesView = ({
     e?.preventDefault();
     if (!bulkSuiteName.trim() || bulkPreview.length === 0) return;
 
-    const createdFile = onAddFile(bulkSuiteName.trim());
-    const fileId = createdFile?.id;
-
     const testCasesToSave = bulkPreview.map((t) => ({
       ...t,
-      fileId,
       projectId: project?.id,
       createdBy: currentUser?.email || 'Unknown',
       createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
     }));
 
-    if (onImportTests) {
-      onImportTests(testCasesToSave, false);
-    }
+    const createdFile = onAddFile(bulkSuiteName.trim(), null, testCasesToSave);
+    const fileId = createdFile?.id;
 
     setBulkSuiteName('');
     setBulkRawText('');
@@ -643,23 +638,12 @@ export const TestFilesView = ({
                             );
                           })()}
 
-                          {/* Account A / Account B Visibility & Sharing Status Badge */}
+                          {/* Suite Sharing & Execution Status Badge */}
                           {(() => {
                             const meta = getFileSharingMeta(f, allTests || tests, currentUser);
-                            if (meta.isCreator) {
-                              return meta.isSharedWithTeam ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                                  👥 Shared with Team ({meta.passedOrFailedCount} TC Run)
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                                  🔒 Private Draft (Execute 1 TC to share with team)
-                                </span>
-                              );
-                            }
                             return (
-                              <span className="inline-flex items-center gap-1 bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                                👥 Shared Suite
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${meta.badgeColor}`}>
+                                👥 {meta.badgeText}
                               </span>
                             );
                           })()}

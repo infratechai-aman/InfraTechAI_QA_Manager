@@ -1,17 +1,13 @@
 /**
  * Test File Visibility & Sharing Rules
  * 
- * Rule:
- * When Account A and Account B are in the same project:
- * - When Account A generates/creates a test file, it is INVISIBLE to Account B
- *   UNTIL OR UNLESS Account A (or any tester) passes or fails at least 1 single test case in that file.
- * - For Account A (the creator), the file is ALWAYS visible.
- * - Once >= 1 test case in the file has status 'Pass' or 'Fail' (or 'Passed' / 'Failed'),
- *   the test file automatically unlocks and becomes visible to Account B and all team members.
+ * Collaborative Workspace Model:
+ * All test suites created in a project workspace are 100% visible and accessible
+ * immediately to all workspace collaborators (Account A, Account B, and all team members).
  */
 
 /**
- * Checks if a test case has been verified with a Pass or Fail status
+ * Checks if a test case has been verified with a Pass, Fail, or Blocked status
  */
 export const isTestCasePassOrFail = (test) => {
   if (!test || !test.status) return false;
@@ -20,41 +16,18 @@ export const isTestCasePassOrFail = (test) => {
 };
 
 /**
- * Determines whether a test file is visible to the given user
+ * Determines whether a test file is visible to the given user.
+ * In collaborative QA workspaces, all test suites belonging to the active project
+ * are immediately visible to all team members.
  * 
  * @param {Object} file - The test file object
- * @param {Array} tests - Array of all test cases
- * @param {Object} currentUser - The currently logged-in user object (contains email, uid)
- * @returns {boolean} - true if file should be visible, false if hidden
+ * @param {Array} _tests - Array of all test cases (unused for filtering now)
+ * @param {Object} _currentUser - The currently logged-in user object
+ * @returns {boolean} - true for all valid files
  */
-export const isFileVisibleToUser = (file, tests = [], currentUser = null) => {
+export const isFileVisibleToUser = (file, _tests = [], _currentUser = null) => {
   if (!file) return false;
-  if (!currentUser) return true;
-
-  const currentEmail = (currentUser.email || '').trim().toLowerCase();
-  const currentUid = currentUser.uid;
-  const fileCreatorEmail = (file.createdBy || '').trim().toLowerCase();
-  const fileCreatorUid = file.creatorId;
-
-  // 1. If file has no creator information (legacy data), visible to everyone in project
-  if (!fileCreatorEmail && !fileCreatorUid) {
-    return true;
-  }
-
-  // 2. If the current user is the creator (Account A), it is ALWAYS visible
-  if (
-    (currentEmail && fileCreatorEmail && currentEmail === fileCreatorEmail) ||
-    (currentUid && fileCreatorUid && currentUid === fileCreatorUid)
-  ) {
-    return true;
-  }
-
-  // 3. For any other user (Account B, Account C, etc.):
-  // The file is INVISIBLE until AT LEAST 1 test case in this file has status 'Pass' or 'Fail' or 'Blocked'
-  const fileTests = tests.filter((t) => t && String(t.fileId) === String(file.id));
-  const hasPassOrFail = fileTests.some(isTestCasePassOrFail);
-
-  return hasPassOrFail;
+  return true;
 };
 
 /**
@@ -69,11 +42,11 @@ export const getFileSharingMeta = (file, tests = [], currentUser = null) => {
   if (!file) {
     return {
       isCreator: false,
-      isSharedWithTeam: false,
+      isSharedWithTeam: true,
       passedOrFailedCount: 0,
       totalTests: 0,
-      badgeText: 'Unknown',
-      badgeColor: 'text-slate-400 bg-slate-100 border-slate-200',
+      badgeText: 'Shared Suite',
+      badgeColor: 'text-indigo-400 bg-indigo-950/60 border-indigo-500/30',
     };
   }
 
@@ -87,7 +60,7 @@ export const getFileSharingMeta = (file, tests = [], currentUser = null) => {
     (currentUid && fileCreatorUid && currentUid === fileCreatorUid)
   );
 
-  const fileTests = tests.filter((t) => t && String(t.fileId) === String(file.id));
+  const fileTests = (tests || []).filter((t) => t && String(t.fileId) === String(file.id));
   const totalTests = fileTests.length;
   const passedCount = fileTests.filter((t) => {
     const s = String(t.status || '').toLowerCase();
@@ -103,22 +76,22 @@ export const getFileSharingMeta = (file, tests = [], currentUser = null) => {
   }).length;
   const passedOrFailedCount = passedCount + failedCount + blockedCount;
 
-  // Unlocked / Shared with team if at least 1 test case is Pass, Fail, or Blocked, or if legacy
-  const isSharedWithTeam = !fileCreatorEmail || passedOrFailedCount >= 1;
+  // In collaborative workspaces, all suites are shared with the team
+  const isSharedWithTeam = true;
 
-  let badgeText = 'Shared with Team';
-  let badgeColor = 'text-emerald-400 bg-emerald-950/60 border-emerald-500/30';
-
-  if (!isSharedWithTeam) {
-    badgeText = 'Private Draft (Pass/Fail 1 TC to share)';
-    badgeColor = 'text-amber-300 bg-amber-950/60 border-amber-500/30';
-  }
+  let badgeText = passedOrFailedCount > 0
+    ? `Shared Suite (${passedOrFailedCount}/${totalTests} Run)`
+    : 'Shared Suite (Ready to Test)';
+  let badgeColor = passedOrFailedCount > 0
+    ? 'text-emerald-400 bg-emerald-950/60 border-emerald-500/30'
+    : 'text-indigo-400 bg-indigo-950/60 border-indigo-500/30';
 
   return {
     isCreator,
     isSharedWithTeam,
     passedCount,
     failedCount,
+    blockedCount,
     passedOrFailedCount,
     totalTests,
     badgeText,
@@ -126,3 +99,4 @@ export const getFileSharingMeta = (file, tests = [], currentUser = null) => {
     creatorName: file.createdByName || file.createdBy?.split('@')[0] || 'Team Member',
   };
 };
+

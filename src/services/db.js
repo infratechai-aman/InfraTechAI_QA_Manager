@@ -670,6 +670,7 @@ export const db = {
           },
           payloadString
         );
+        console.log(`[QA Sync] 🟢 Cloud write complete for workspace "${projectId}" (${safeFiles.length} files, ${safeTests.length} tests) by ${currentUser?.email || 'User'}`);
       } catch (error) {
         console.warn(`[Firebase] Failed to sync shared workspace ${projectId}:`, error.message);
       }
@@ -761,6 +762,11 @@ export const db = {
           const fullPayload = await readChunkedDocPayload('shared_workspaces', projectId, data);
           if (fullPayload) {
             const parsed = JSON.parse(fullPayload);
+            console.log(`[QA Sync] 📡 onSnapshot received for "${projectId}" from ${data.lastModifiedBy || 'Remote'}:`, {
+              files: parsed.files?.length || 0,
+              tests: parsed.tests?.length || 0,
+              bugs: parsed.bugs?.length || 0,
+            });
             onUpdate({
               ...parsed,
               updatedAt: data.updatedAt,

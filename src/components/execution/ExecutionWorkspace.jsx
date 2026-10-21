@@ -7,7 +7,7 @@ import {
   Flag, Trophy, DoorOpen, Play, FileText
 } from 'lucide-react';
 import { formatDate, getStatusConfig, getUserColor, getUserInitial } from '../../utils/formatters';
-import { getFileSharingMeta } from '../../utils/visibility';
+
 import { BugModal } from '../modals/BugModal';
 
 export const ExecutionWorkspace = ({ 
@@ -108,6 +108,7 @@ export const ExecutionWorkspace = ({
   const handleStatusUpdate = useCallback(
     (status) => {
       if (!currentTest) return;
+      console.log(`[QA Sync] ⚡ Test status updated: [${currentTest.externalId || currentTest.id}] -> "${status}" by ${currentUser?.email || 'Tester'}`);
       handleUpdate(currentTest.id, { 
         status,
         executedBy: currentUser?.email || 'Unknown',
@@ -611,26 +612,7 @@ export const ExecutionWorkspace = ({
                 {/* LEFT COLUMN: Test Specification (Steps + Expected) - 7 Columns */}
                 <div className="lg:col-span-7 space-y-5">
                   
-                  {/* Private Suite Creator Notice */}
-                  {(() => {
-                    const meta = getFileSharingMeta(currentFile, suiteTests, currentUser);
-                    if (meta.isCreator && !meta.isSharedWithTeam) {
-                      return (
-                        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-200 animate-fadeIn">
-                          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 shrink-0 mt-0.5">
-                            <Sparkles size={16} />
-                          </div>
-                          <div className="text-xs">
-                            <p className="font-bold text-amber-300">Draft Suite (Private to you)</p>
-                            <p className="text-amber-200/80 mt-0.5">
-                              This suite is currently invisible to Account B. Pass or Fail this test case to automatically share this entire suite with your team.
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+
 
                   {/* Card: Test Header */}
                   <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-xs space-y-3">

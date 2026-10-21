@@ -4,6 +4,7 @@ import { generateId, getTimestamp } from './utils/formatters';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import { Sidebar } from './components/layout/Sidebar';
+import { AppRail } from './components/layout/AppRail';
 import { MobileHeader } from './components/layout/MobileHeader';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { ProjectsView } from './components/projects/ProjectsView';
@@ -12,13 +13,16 @@ import { ExecutionWorkspace } from './components/execution/ExecutionWorkspace';
 import { TestFilesView } from './components/testFiles/TestFilesView';
 import { BugsView } from './components/bugs/BugsView';
 import { ReportsView } from './components/reports/ReportsView';
+import { AppLibraryView } from './components/hub/AppLibraryView';
+import { SalesManagerView } from './components/sales/SalesManagerView';
+import { HarveySettingsModal } from './components/sales/HarveySettingsModal';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { InviteMemberModal } from './components/modals/InviteMemberModal';
 import { InviteAcceptModal } from './components/modals/InviteAcceptModal';
 import { InvitationBanner } from './components/layout/InvitationBanner';
 import { LoginView } from './components/auth/LoginView';
-import { isFileVisibleToUser } from './utils/visibility';
 import { mergeTestCases, mergeBugs, mergeFiles, isExecuted } from './utils/workspaceMerger';
+import { salesService } from './services/salesService';
 
 // Helper to ensure projects have owner and member lists
 const normalizeProjects = (projs, userId, userEmail) => {
@@ -44,6 +48,17 @@ const normalizeProjects = (projs, userId, userEmail) => {
 function AuthenticatedWorkspace({ currentUser, logout }) {
   const userId = currentUser.uid;
 
+  const [activeApp, setActiveApp] = useState('hub'); // 'hub' | 'qa' | 'sales'
+  const [salesTab, setSalesTab] = useState('cockpit');
+  const [isHarveySettingsOpen, setIsHarveySettingsOpen] = useState(false);
+  const [salesSettings, setSalesSettings] = useState(() => salesService.getSettings());
+  const [pendingOutboxCount, setPendingOutboxCount] = useState(() => {
+    try {
+      return salesService.getOutbox().filter(o => o.status === 'pending_approval').length;
+    } catch {
+      return 2;
+    }
+  });
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState([]);
   const [files, setFiles] = useState([]);
@@ -100,8 +115,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(initialData.files) && initialData.files.length > 0) {
           setFiles((prev) => {
             const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
+            const currentWsFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
             const incomingMapped = initialData.files.map((f) => ({ ...f, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const merged = mergeFiles(currentWsFiles, incomingMapped);
+            const updated = [...others, ...merged];
             db.saveFiles(updated, userId, false);
             return updated;
           });
@@ -109,8 +126,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(initialData.tests) && initialData.tests.length > 0) {
           setTests((prev) => {
             const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
+            const currentWsTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
             const incomingMapped = initialData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const merged = mergeTestCases(currentWsTests, incomingMapped);
+            const updated = [...others, ...merged];
             db.saveTestCases(updated, userId, false);
             return updated;
           });
@@ -118,8 +137,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(initialData.bugs)) {
           setBugs((prev) => {
             const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
+            const currentWsBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
             const incomingMapped = initialData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const merged = mergeBugs(currentWsBugs, incomingMapped);
+            const updated = [...others, ...merged];
             db.saveBugs(updated, userId, false);
             return updated;
           });
@@ -132,6 +153,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             return updated;
           });
         }
+        console.log('[QA Sync] 📥 Initial workspace pull complete:', {
+          files: initialData.files?.length || 0,
+          tests: initialData.tests?.length || 0,
+        });
       })
       .catch((err) => console.warn('[Firebase] Initial workspace pull error:', err))
       .finally(() => {
@@ -159,12 +184,22 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           });
         }
 
+        console.log(`[QA Sync] 📡 Real-time update received for workspace:`, {
+          projectId: activeProjectId,
+          files: remoteData.files?.length || 0,
+          tests: remoteData.tests?.length || 0,
+          bugs: remoteData.bugs?.length || 0,
+          from: remoteData.lastModifiedBy,
+        });
+
         // Apply incoming files directly in real-time
         if (Array.isArray(remoteData.files) && remoteData.files.length > 0) {
           setFiles((prev) => {
             const others = prev.filter((f) => f.projectId && f.projectId !== activeProjectId);
+            const currentWsFiles = prev.filter((f) => !f.projectId || f.projectId === activeProjectId);
             const incomingMapped = remoteData.files.map((f) => ({ ...f, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const merged = mergeFiles(currentWsFiles, incomingMapped);
+            const updated = [...others, ...merged];
             db.saveFiles(updated, userId, false);
             return updated;
           });
@@ -174,8 +209,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(remoteData.tests) && remoteData.tests.length > 0) {
           setTests((prev) => {
             const others = prev.filter((t) => t.projectId && t.projectId !== activeProjectId);
+            const currentWsTests = prev.filter((t) => !t.projectId || t.projectId === activeProjectId);
             const incomingMapped = remoteData.tests.map((t) => ({ ...t, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const merged = mergeTestCases(currentWsTests, incomingMapped);
+            const updated = [...others, ...merged];
             db.saveTestCases(updated, userId, false);
             return updated;
           });
@@ -185,8 +222,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         if (Array.isArray(remoteData.bugs)) {
           setBugs((prev) => {
             const others = prev.filter((b) => b.projectId && b.projectId !== activeProjectId);
+            const currentWsBugs = prev.filter((b) => !b.projectId || b.projectId === activeProjectId);
             const incomingMapped = remoteData.bugs.map((b) => ({ ...b, projectId: activeProjectId }));
-            const updated = [...others, ...incomingMapped];
+            const merged = mergeBugs(currentWsBugs, incomingMapped);
+            const updated = [...others, ...merged];
             db.saveBugs(updated, userId, false);
             return updated;
           });
@@ -317,17 +356,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   const projectTests = tests.filter((t) => !t.projectId || t.projectId === activeProjectId);
   const projectBugs = bugs.filter((b) => !b.projectId || b.projectId === activeProjectId);
 
-  // Apply Account A / Account B visibility rule:
-  // When Account A and Account B are in the same project:
-  // A test file generated by Account A is INVISIBLE to Account B until Account A (or any tester)
-  // passes or fails at least 1 single test case in that file.
-  const visibleProjectFiles = projectFiles.filter((f) =>
-    isFileVisibleToUser(f, projectTests, currentUser)
-  );
-  const visibleFileIds = new Set(visibleProjectFiles.map((f) => f.id));
-  const visibleProjectTests = projectTests.filter(
-    (t) => !t.fileId || visibleFileIds.has(t.fileId)
-  );
+  // In collaborative QA workspaces, all test files and test cases belonging to the active project
+  // are immediately visible to all team members without hiding or drafting restrictions.
+  const visibleProjectFiles = projectFiles;
+  const visibleProjectTests = projectTests;
 
   const activeFile = visibleProjectFiles.find((f) => f.id === activeFileId) || null;
   const openBugsCount = projectBugs.filter((b) => ['Open', 'In Progress', 'Reopened'].includes(b.status)).length;
@@ -337,25 +369,20 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     if (!activeProjectId || !activeProject || !currentUser) return;
     if (!isInitialPullCompleteRef.current) return;
 
-    // Suppress auto-sync echo writes if we recently pulled or received a remote update
-    if (Date.now() < remoteUpdateCooldownRef.current) {
-      return;
-    }
+    // Resilient cooldown delay: Instead of silently dropping writes, schedule timer after cooldown expires
+    const remainingCooldown = Math.max(0, remoteUpdateCooldownRef.current - Date.now());
+    const syncDelay = Math.max(300, remainingCooldown);
 
     setSyncStatus('syncing');
     const timer = setTimeout(() => {
-      // Re-check cooldown before executing write
-      if (Date.now() < remoteUpdateCooldownRef.current) {
-        setSyncStatus('synced');
-        return;
-      }
-
       const currentFiles = files.filter((f) => !f.projectId || f.projectId === activeProjectId);
       const currentTests = tests
         .filter((t) => !t.projectId || t.projectId === activeProjectId)
         .map((t) => ({ ...t, projectId: activeProjectId }));
       const currentBugs = bugs.filter((b) => !b.projectId || b.projectId === activeProjectId);
       const currentReports = reports.filter((r) => r.projectId === activeProjectId);
+
+      console.log(`[QA Sync] 🔄 Auto-syncing workspace "${activeProject.name}" (${currentFiles.length} files, ${currentTests.length} tests, ${currentBugs.length} bugs)...`);
 
       db.syncSharedWorkspace(
         activeProjectId,
@@ -369,12 +396,15 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         currentUser,
         clientId
       )
-        .then(() => setSyncStatus('synced'))
+        .then(() => {
+          setSyncStatus('synced');
+          console.log(`[QA Sync] 🟢 Workspace "${activeProject.name}" successfully synced to Firestore`);
+        })
         .catch((err) => {
           console.warn('[Firebase] Auto sync failed:', err);
           setSyncStatus('error');
         });
-    }, 400);
+    }, syncDelay);
 
     return () => clearTimeout(timer);
   }, [activeProjectId, tests, bugs, files, reports, activeProject, currentUser, clientId]);
@@ -547,7 +577,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   // --- Test Suites / Files Management ---
-  const handleAddFile = (name, copyFromId) => {
+  const handleAddFile = (name, copyFromId, initialTests = []) => {
     const newFileId = `f${generateId()}`;
     const isOwner = activeProject?.ownerEmail?.toLowerCase() === currentUser?.email?.toLowerCase();
     const newFile = {
@@ -586,7 +616,26 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       updatedTests = [...tests, ...duplicatedTests];
       setTests(updatedTests);
       db.saveTestCases(updatedTests, userId);
+    } else if (Array.isArray(initialTests) && initialTests.length > 0) {
+      const mappedInitialTests = initialTests.map((t) => ({
+        ...t,
+        id: t.id || generateId(),
+        fileId: newFileId,
+        projectId: activeProjectId,
+        status: t.status || 'Not Run',
+        actualResult: t.actualResult || '',
+        testerNotes: t.testerNotes || '',
+        createdAt: t.createdAt || getTimestamp(),
+        updatedAt: t.updatedAt || getTimestamp(),
+        createdBy: t.createdBy || currentUser?.email || 'Unknown',
+        createdByName: t.createdByName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tester',
+      }));
+      updatedTests = [...tests, ...mappedInitialTests];
+      setTests(updatedTests);
+      db.saveTestCases(updatedTests, userId);
     }
+
+    console.log(`[QA Sync] 📁 Created new test suite: "${name}" (${newFileId}) with ${updatedTests.length - tests.length} test cases`);
 
     if (activeProjectId && activeProject && currentUser) {
       db.syncSharedWorkspace(
@@ -600,7 +649,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         },
         currentUser,
         clientId
-      ).catch((e) => console.warn('[Firebase] New suite sync error:', e));
+      )
+        .then(() => console.log(`[QA Sync] 🟢 Atomic cloud sync complete for suite: "${name}"`))
+        .catch((e) => console.warn('[Firebase] New suite sync error:', e));
     }
 
     return newFile;
@@ -761,7 +812,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
               executedByRole: null,
               executedAt: null,
             } : {});
-            return { ...t, ...updates, ...executionMeta, projectId: activeProjectId, updatedAt: getTimestamp() };
+            const updatedItem = { ...t, ...updates, ...executionMeta, projectId: activeProjectId, updatedAt: getTimestamp() };
+            console.log(`[QA Sync] ⚡ Test updated in state: [${updatedItem.externalId || id}] -> "${updatedItem.status}" by ${updatedItem.executedBy || 'Tester'}`);
+            return updatedItem;
           }
           return t;
         });
@@ -803,6 +856,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
   const handleImportTests = useCallback(
     (newTests, shouldNavigate = false) => {
+      console.log(`[QA Sync] 📥 Imported ${newTests?.length || 0} test cases into active workspace`);
       setTests((prev) => {
         const updated = [...prev, ...newTests];
         db.saveTestCases(updated, userId);
@@ -997,192 +1051,256 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   return (
     <div className="flex h-screen h-[100dvh] w-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
       
-      {/* Desktop Sidebar Navigation (hidden on mobile/tablet screens) */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        activeProject={activeProject}
-        activeProjectId={activeProjectId}
-        activeFile={activeFile}
-        onExitTestFile={handleExitTestFile}
-        openBugsCount={openBugsCount}
-        currentUser={currentUser}
-        onLogout={logout}
-        onExportBackup={handleExportBackup}
-        onImportBackup={handleImportBackup}
-        onExitProject={handleExitProject}
-        onOpenInviteModal={() => setIsInviteModalOpen(true)}
-        syncStatus={syncStatus}
-        onPullSync={handlePullSync}
-        onForcePushSync={handleForcePushSync}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 relative bg-white overflow-y-auto flex flex-col min-w-0 pb-dock-safe md:pb-0">
-        
-        {/* Mobile Header Bar (hidden on desktop) */}
-        <MobileHeader
+      {/* Desktop Sidebar Navigation (shown only when inside QA or Sales, hidden on Apps Library Hub) */}
+      {activeApp !== 'hub' && (
+        <Sidebar
+          activeApp={activeApp}
+          onReturnToHub={() => setActiveApp('hub')}
+          salesTab={salesTab}
+          setSalesTab={setSalesTab}
+          pendingOutboxCount={pendingOutboxCount}
+          onOpenHarveySettings={() => setIsHarveySettingsOpen(true)}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           activeProject={activeProject}
           activeProjectId={activeProjectId}
+          activeFile={activeFile}
+          onExitTestFile={handleExitTestFile}
+          openBugsCount={openBugsCount}
+          currentUser={currentUser}
+          onLogout={logout}
+          onExportBackup={handleExportBackup}
+          onImportBackup={handleImportBackup}
           onExitProject={handleExitProject}
           onOpenInviteModal={() => setIsInviteModalOpen(true)}
-          onSelectProjectsTab={() => {
-            setActiveProjectId(null);
-            setActiveFileId(null);
-            setActiveTab('projects');
-          }}
-          currentUser={currentUser}
-          onOpenOptionsSheet={() => setIsMobileOptionsOpen(true)}
+          syncStatus={syncStatus}
+          onPullSync={handlePullSync}
+          onForcePushSync={handleForcePushSync}
         />
+      )}
 
-        {/* Workspace Invitation Banner */}
-        <InvitationBanner
-          invitations={pendingInvitations}
-          onAccept={handleAcceptInvitation}
-          onDecline={handleDeclineInvitation}
-        />
-
-        {activeTab === 'projects' && (
-          <ProjectsView
-            projects={projects}
-            files={files}
-            tests={tests}
-            onAddProject={handleAddProject}
-            onDeleteProject={handleDeleteProject}
+      {/* Main Content Area */}
+      <main className={`flex-1 relative overflow-y-auto flex flex-col min-w-0 ${activeApp === 'hub' ? 'bg-slate-50' : 'bg-white pb-dock-safe md:pb-0'}`}>
+        
+        {/* Mobile Header Bar (hidden on desktop and hub) */}
+        {activeApp !== 'hub' && (
+          <MobileHeader
+            activeApp={activeApp}
+            setActiveApp={setActiveApp}
+            activeProject={activeProject}
             activeProjectId={activeProjectId}
-            onSelectProject={(id) => {
-              setActiveProjectId(id);
-              setActiveFileId(null);
-              setActiveTab('dashboard');
-            }}
-            pendingInvitations={pendingInvitations}
-            onAcceptInvitation={handleAcceptInvitation}
-            onDeclineInvitation={handleDeclineInvitation}
-          />
-        )}
-
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            tests={visibleProjectTests}
-            bugs={projectBugs}
-            project={activeProject}
-            files={visibleProjectFiles}
-            reports={reports.filter(r => r.projectId === activeProjectId)}
-            onNavigateToTab={(tab) => setActiveTab(tab)}
-            currentUser={currentUser}
+            onExitProject={handleExitProject}
             onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            onSelectProjectsTab={() => {
+              setActiveProjectId(null);
+              setActiveFileId(null);
+              setActiveTab('projects');
+            }}
+            currentUser={currentUser}
+            onOpenOptionsSheet={() => setIsMobileOptionsOpen(true)}
           />
         )}
 
-        {activeTab === 'execute' && (
-          <ExecutionWorkspace
-            tests={visibleProjectTests}
-            updateTest={handleUpdateTest}
-            project={activeProject}
-            files={visibleProjectFiles}
-            activeFileId={activeFileId}
-            onSelectFile={(id) => setActiveFileId(id)}
-            onExitTestFile={handleExitTestFile}
-            onAddBug={handleAddBug}
-            bugs={projectBugs}
-            onNavigateToBugs={() => setActiveTab('bugs')}
-            onNavigateToFiles={() => setActiveTab('files')}
-            onSubmitExecution={handleSubmitExecution}
+        {/* ======================================================== */}
+        {/* MODE 0: INFRATECHAI GAMES & APPS LIBRARY (HOME ON LOGIN) */}
+        {/* ======================================================== */}
+        {activeApp === 'hub' && (
+          <AppLibraryView
+            onLaunchApp={(appId) => setActiveApp(appId)}
+            projects={projects}
+            openBugsCount={openBugsCount}
+            pendingOutboxCount={pendingOutboxCount}
             currentUser={currentUser}
+            onLogout={logout}
+            onOpenSettings={() => setIsHarveySettingsOpen(true)}
           />
         )}
 
-        {activeTab === 'bugs' && (
-          <BugsView
-            bugs={projectBugs}
-            onAddBug={handleAddBug}
-            onUpdateBug={handleUpdateBug}
-            onDeleteBug={handleDeleteBug}
-            project={activeProject}
-            tests={visibleProjectTests}
+        {/* ======================================================== */}
+        {/* MODE 1: SALES MANAGER (HARVEY AUTONOMOUS AI SDR SUITE)   */}
+        {/* ======================================================== */}
+        {activeApp === 'sales' && (
+          <SalesManagerView 
             currentUser={currentUser}
-            triggerNewBugModal={triggerNewBugModal}
+            salesTab={salesTab}
+            setSalesTab={setSalesTab}
+            onOpenSettings={() => setIsHarveySettingsOpen(true)}
+            onUpdateOutboxCount={(count) => setPendingOutboxCount(count)}
           />
         )}
 
-        {(activeTab === 'files' || activeTab === 'import') && (
-          <TestFilesView
-            files={visibleProjectFiles}
-            tests={visibleProjectTests}
-            allTests={projectTests}
-            project={activeProject}
-            onAddFile={handleAddFile}
-            onDeleteFile={(id) => {
-              if (activeFileId === id) setActiveFileId(null);
-              handleDeleteFile(id);
-            }}
-            onAddTest={handleAddTestCase}
-            onDeleteTest={handleDeleteTest}
-            onUpdateTest={handleUpdateTest}
-            onBulkAssignSuite={handleBulkAssignSuite}
-            onImportTests={handleImportTests}
-            activeFileId={activeFileId}
-            onSelectFile={(id) => setActiveFileId(id)}
-            onExitTestFile={handleExitTestFile}
-            onNavigateToExecute={() => setActiveTab('execute')}
-            currentUser={currentUser}
-            triggerNewFileModal={triggerNewFileModal}
-          />
-        )}
+        {/* ======================================================== */}
+        {/* MODE 2: QA MANAGER SUITE                                 */}
+        {/* ======================================================== */}
+        {activeApp === 'qa' && (
+          <>
+            {/* Workspace Invitation Banner */}
+            <InvitationBanner
+              invitations={pendingInvitations}
+              onAccept={handleAcceptInvitation}
+              onDecline={handleDeclineInvitation}
+            />
 
-        {activeTab === 'reports' && (
-          <ReportsView
-            reports={reports.filter(r => r.projectId === activeProjectId)}
-            project={activeProject}
-            currentUser={currentUser}
-            onAddReport={(report) => {
-              setReports(prev => {
-                const updated = [report, ...prev];
-                db.saveReports(updated, userId);
-                return updated;
-              });
-            }}
-            onUpdateReport={(id, updates) => {
-              setReports(prev => {
-                const updated = prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r);
-                db.saveReports(updated, userId);
-                return updated;
-              });
-            }}
-            onDeleteReport={(id) => {
-              setReports(prev => {
-                const updated = prev.filter(r => r.id !== id);
-                db.saveReports(updated, userId);
-                return updated;
-              });
-            }}
-          />
+            {activeTab === 'projects' && (
+              <ProjectsView
+                projects={projects}
+                files={files}
+                tests={tests}
+                onAddProject={handleAddProject}
+                onDeleteProject={handleDeleteProject}
+                activeProjectId={activeProjectId}
+                onSelectProject={(id) => {
+                  setActiveProjectId(id);
+                  setActiveFileId(null);
+                  setActiveTab('dashboard');
+                }}
+                pendingInvitations={pendingInvitations}
+                onAcceptInvitation={handleAcceptInvitation}
+                onDeclineInvitation={handleDeclineInvitation}
+              />
+            )}
+
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                tests={visibleProjectTests}
+                bugs={projectBugs}
+                project={activeProject}
+                files={visibleProjectFiles}
+                reports={reports.filter(r => r.projectId === activeProjectId)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
+                currentUser={currentUser}
+                onOpenInviteModal={() => setIsInviteModalOpen(true)}
+              />
+            )}
+
+            {activeTab === 'execute' && (
+              <ExecutionWorkspace
+                tests={visibleProjectTests}
+                updateTest={handleUpdateTest}
+                project={activeProject}
+                files={visibleProjectFiles}
+                activeFileId={activeFileId}
+                onSelectFile={(id) => setActiveFileId(id)}
+                onExitTestFile={handleExitTestFile}
+                onAddBug={handleAddBug}
+                bugs={projectBugs}
+                onNavigateToBugs={() => setActiveTab('bugs')}
+                onNavigateToFiles={() => setActiveTab('files')}
+                onSubmitExecution={handleSubmitExecution}
+                currentUser={currentUser}
+              />
+            )}
+
+            {activeTab === 'bugs' && (
+              <BugsView
+                bugs={projectBugs}
+                onAddBug={handleAddBug}
+                onUpdateBug={handleUpdateBug}
+                onDeleteBug={handleDeleteBug}
+                project={activeProject}
+                tests={visibleProjectTests}
+                currentUser={currentUser}
+                triggerNewBugModal={triggerNewBugModal}
+              />
+            )}
+
+            {(activeTab === 'files' || activeTab === 'import') && (
+              <TestFilesView
+                files={visibleProjectFiles}
+                tests={visibleProjectTests}
+                allTests={projectTests}
+                project={activeProject}
+                onAddFile={handleAddFile}
+                onDeleteFile={(id) => {
+                  if (activeFileId === id) setActiveFileId(null);
+                  handleDeleteFile(id);
+                }}
+                onAddTest={handleAddTestCase}
+                onDeleteTest={handleDeleteTest}
+                onUpdateTest={handleUpdateTest}
+                onBulkAssignSuite={handleBulkAssignSuite}
+                onImportTests={handleImportTests}
+                activeFileId={activeFileId}
+                onSelectFile={(id) => setActiveFileId(id)}
+                onExitTestFile={handleExitTestFile}
+                onNavigateToExecute={() => setActiveTab('execute')}
+                currentUser={currentUser}
+                triggerNewFileModal={triggerNewFileModal}
+              />
+            )}
+
+            {activeTab === 'reports' && (
+              <ReportsView
+                reports={reports.filter(r => r.projectId === activeProjectId)}
+                project={activeProject}
+                currentUser={currentUser}
+                onAddReport={(report) => {
+                  setReports(prev => {
+                    const updated = [report, ...prev];
+                    db.saveReports(updated, userId);
+                    return updated;
+                  });
+                }}
+                onUpdateReport={(id, updates) => {
+                  setReports(prev => {
+                    const updated = prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r);
+                    db.saveReports(updated, userId);
+                    return updated;
+                  });
+                }}
+                onDeleteReport={(id) => {
+                  setReports(prev => {
+                    const updated = prev.filter(r => r.id !== id);
+                    db.saveReports(updated, userId);
+                    return updated;
+                  });
+                }}
+              />
+            )}
+          </>
         )}
       </main>
 
-      {/* Mobile Floating Glass Dock & Options Sheet */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        activeProjectId={activeProjectId}
-        activeProject={activeProject}
-        projects={projects}
-        onSelectProject={(id) => {
-          setActiveProjectId(id);
-          setActiveFileId(null);
+      {/* Mobile Floating Glass Dock & Options Sheet (shown when inside an app) */}
+      {activeApp !== 'hub' && (
+        <MobileBottomNav
+          activeApp={activeApp}
+          salesTab={salesTab}
+          setSalesTab={setSalesTab}
+          pendingOutboxCount={pendingOutboxCount}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          activeProjectId={activeProjectId}
+          activeProject={activeProject}
+          projects={projects}
+          onSelectProject={(id) => {
+            setActiveProjectId(id);
+            setActiveFileId(null);
+          }}
+          openBugsCount={openBugsCount}
+          isOptionsOpen={isMobileOptionsOpen}
+          setIsOptionsOpen={setIsMobileOptionsOpen}
+          onOpenInviteModal={() => setIsInviteModalOpen(true)}
+          onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
+          onExportBackup={handleExportBackup}
+          onImportBackup={handleImportBackup}
+          onExitProject={handleExitProject}
+          onLogout={logout}
+          currentUser={currentUser}
+          onTriggerNewFile={() => setTriggerNewFileModal(prev => !prev)}
+          onTriggerNewBug={() => setTriggerNewBugModal(prev => !prev)}
+        />
+      )}
+
+      {/* Harvey Engine Settings Modal */}
+      <HarveySettingsModal
+        isOpen={isHarveySettingsOpen}
+        onClose={() => setIsHarveySettingsOpen(false)}
+        settings={salesSettings}
+        onSave={(newS) => {
+          const saved = salesService.saveSettings(newS);
+          setSalesSettings(saved);
         }}
-        openBugsCount={openBugsCount}
-        isOptionsOpen={isMobileOptionsOpen}
-        setIsOptionsOpen={setIsMobileOptionsOpen}
-        onOpenInviteModal={() => setIsInviteModalOpen(true)}
-        onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)}
-        onExportBackup={handleExportBackup}
-        onImportBackup={handleImportBackup}
-        onExitProject={handleExitProject}
-        onLogout={logout}
-        currentUser={currentUser}
-        onTriggerNewFile={() => setTriggerNewFileModal(prev => !prev)}
-        onTriggerNewBug={() => setTriggerNewBugModal(prev => !prev)}
       />
 
       {/* Cloud & Firebase Modal */}

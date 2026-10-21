@@ -50,16 +50,21 @@ export const BulkImportView = ({ onImport, project, files, onAddFile }) => {
   const handleImport = () => {
     if (preview.length === 0) return;
 
-    let destinationFileId = targetFileId;
     if (isNewFileMode && newFileName.trim()) {
-      const createdFile = onAddFile(newFileName.trim());
-      destinationFileId = createdFile?.id || files[0]?.id;
+      const testCasesToSave = preview.map((t) => ({
+        ...t,
+        projectId: project?.id,
+      }));
+      onAddFile(newFileName.trim(), null, testCasesToSave);
+      setRawText('');
+      setPreview([]);
+      return;
     }
 
     // Attach destination file ID to preview items
     const testCasesToSave = preview.map((t) => ({
       ...t,
-      fileId: destinationFileId || t.fileId,
+      fileId: targetFileId || t.fileId,
       projectId: project?.id,
     }));
 

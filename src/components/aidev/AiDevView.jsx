@@ -5,7 +5,7 @@ import {
   Sparkles, Cpu, Volume2, VolumeX, Square,
   RotateCcw, ArrowRight, Activity, Building2, 
   CheckSquare, Bot, Copy, Check, ShieldAlert,
-  FileText
+  FileText, Phone, PhoneOff, Mic, MicOff, Radio
 } from 'lucide-react';
 import {
   Attachment01Icon,
@@ -40,6 +40,34 @@ export const AiDevView = ({
   const [selectedEffort, setSelectedEffort] = useState('Balanced');
   const messagesEndRef = useRef(null);
 
+  // ========================================================
+  // REAL-TIME TALKING / LIVE VOICE CALL MODE STATE
+  // ========================================================
+  const [isLiveCallActive, setIsLiveCallActive] = useState(false);
+  const [liveCallState, setLiveCallState] = useState('idle'); // 'connecting' | 'listening' | 'user_speaking' | 'thinking' | 'ai_speaking'
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [lastAiSpeech, setLastAiSpeech] = useState('');
+  const [isMicMuted, setIsMicMuted] = useState(false);
+
+  const isLiveCallActiveRef = useRef(false);
+  const liveCallStateRef = useRef('idle');
+  const isMicMutedRef = useRef(false);
+  const recognitionRef = useRef(null);
+  const silenceTimeoutRef = useRef(null);
+
+  // Sync refs with state
+  useEffect(() => {
+    isLiveCallActiveRef.current = isLiveCallActive;
+  }, [isLiveCallActive]);
+
+  useEffect(() => {
+    liveCallStateRef.current = liveCallState;
+  }, [liveCallState]);
+
+  useEffect(() => {
+    isMicMutedRef.current = isMicMuted;
+  }, [isMicMuted]);
+
   // Compute live system context
   const liveContext = useMemo(() => {
     return aiDevService.gatherLiveContext({
@@ -55,19 +83,19 @@ export const AiDevView = ({
     });
   }, [projects, files, tests, bugs, contracts, leads, outbox, currentUser, syncStatus]);
 
-  // Initial welcome message
+  // Initial welcome message addressing user as "Boss"
   const [messages, setMessages] = useState(() => {
-    const greetingSpoken = `Namaste ${currentUser?.displayName || 'Engineer'}! Main aapka AI Dev copilot hoon. Mere paas QA Manager, Sales Manager aur Business Command Center ki 100% real-time jaankari hai. Aap mujhse kisi bhi project, contract expiry ya bugs ke baare me pooch sakte hain.`;
+    const greetingSpoken = `Jai Hind Boss! Main aapka AI Dev copilot hoon. Mere paas QA Manager, Sales Manager aur Business Command Center ki 100% real-time jaankari hai. Boliye Boss, kis cheez ka direct update chahiye?`;
     
-    const greetingMd = `### 👋 Hello ${currentUser?.displayName || 'Engineer'}, I am AI DEV!
+    const greetingMd = `### 🫡 Jai Hind Boss! AI DEV Live on Duty
 
-I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **live, real-time telemetry** across the entire InfratechAI platform:
+I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **live, real-time telemetry** across the entire InfratechAI platform for **Boss**:
 
 - 🏢 **Business Command Center:** All **${liveContext.business.totalContracts} client contracts**, expiration deadlines, and **$${liveContext.business.totalMRR.toLocaleString()}/mo MRR**.
 - 🧪 **QA Manager:** **${liveContext.qa.projectsCount} workspaces**, **${liveContext.qa.totalTests} tests** (${liveContext.qa.passRate}% pass rate), and **${liveContext.qa.openBugsCount} open defects**.
 - 🤖 **Sales SDR (Harvey):** **${liveContext.sales.totalLeads} prospects** & **${liveContext.sales.pendingApprovalsCount} pending outbox drafts**.
 
-> 🎙️ **Voice is active!** Ask me in Hindi or English: *"Kiska contract kabtak hain?"*, *"Kaunse bugs critical hain?"*, or use the quick prompts and command bar below.`;
+> 🎙️ **Real-Time Voice Call is Active, Boss!** Click the **"Live Voice Call"** button to speak with me hands-free in real time, or ask me directly below!`;
 
     return [
       {
@@ -85,10 +113,13 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isThinking]);
 
-  // Clean up speech synthesis on unmount
+  // Clean up speech synthesis & speech recognition on unmount
   useEffect(() => {
     return () => {
       aiDevService.stopSpeaking();
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+      }
     };
   }, []);
 
@@ -133,6 +164,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     }
   };
 
+  // Process and send query
   const handleSend = useCallback((rawText, meta = {}) => {
     const query = (rawText || '').trim();
     if (!query && (!meta.attachments || meta.attachments.length === 0)) return;
@@ -167,8 +199,11 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Automatically speak aloud if voice output is enabled
-      if (isVoiceEnabled && response.spokenText) {
+      // If called from live call loop callback
+      if (meta.onResponseReady) {
+        meta.onResponseReady(response);
+      } else if (isVoiceEnabled && response.spokenText) {
+        // Automatically speak aloud if voice output is enabled
         setIsSpeaking(true);
         setCurrentSpeakingId(aiMessageId);
         aiDevService.speak(response.spokenText, {
@@ -189,7 +224,197 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     }, 450);
   }, [liveContext, isVoiceEnabled, selectedEffort]);
 
-  // Voice speech-to-text dictation integration
+  // ========================================================
+  // REAL-TIME CONTINUOUS TWO-WAY VOICE CALL LOOP (GEMINI LIVE)
+  // ========================================================
+  const startRecognitionLoop = useCallback(() => {
+    const SpeechRecognition = typeof window !== 'undefined' && 
+      (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    if (!SpeechRecognition) {
+      alert("Live voice calls require Google Chrome, Microsoft Edge, or Safari.");
+      setIsLiveCallActive(false);
+      return;
+    }
+
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+    }
+
+    if (isMicMutedRef.current) {
+      setLiveCallState('listening');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN'; // Robust support for Hindi, Indian English, and Hinglish
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognitionRef.current = recognition;
+
+      let accumulated = '';
+
+      recognition.onstart = () => {
+        if (isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
+          setLiveCallState('listening');
+        }
+      };
+
+      recognition.onresult = (e) => {
+        if (!isLiveCallActiveRef.current || liveCallStateRef.current === 'ai_speaking') return;
+
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const trans = e.results[i][0].transcript;
+          if (e.results[i].isFinal) {
+            accumulated += ' ' + trans;
+          } else {
+            interim += trans;
+          }
+        }
+
+        const currentWords = (accumulated + ' ' + interim).trim();
+        if (currentWords) {
+          setLiveTranscript(currentWords);
+          setLiveCallState('user_speaking');
+
+          // Reset silence timer on every speech event
+          if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+          
+          // Debounce: when Boss pauses speaking for 1.3 seconds, automatically trigger query!
+          silenceTimeoutRef.current = setTimeout(() => {
+            if (currentWords.trim() && isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
+              try { recognition.stop(); } catch {}
+              
+              const queryToSend = currentWords.trim();
+              setLiveCallState('thinking');
+              setLiveTranscript('');
+
+              // Send to AI Dev and loop back audio
+              handleSend(queryToSend, {
+                onResponseReady: (response) => {
+                  setLiveCallState('ai_speaking');
+                  setLastAiSpeech(response.spokenText);
+
+                  aiDevService.speak(response.spokenText, {
+                    onStart: () => {
+                      setLiveCallState('ai_speaking');
+                    },
+                    onEnd: () => {
+                      if (isLiveCallActiveRef.current) {
+                        setLiveCallState('listening');
+                        // Automatically restart listening for Boss's next command!
+                        setTimeout(() => {
+                          if (isLiveCallActiveRef.current) startRecognitionLoop();
+                        }, 250);
+                      }
+                    },
+                    onError: () => {
+                      if (isLiveCallActiveRef.current) {
+                        setLiveCallState('listening');
+                        startRecognitionLoop();
+                      }
+                    }
+                  });
+                }
+              });
+            }
+          }, 1300);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error !== 'aborted' && isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
+          setTimeout(() => {
+            if (isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
+              try { recognition.start(); } catch {}
+            }
+          }, 600);
+        }
+      };
+
+      recognition.onend = () => {
+        // If ended unexpectedly while call is active and not AI speaking, restart
+        if (isLiveCallActiveRef.current && liveCallStateRef.current === 'listening') {
+          setTimeout(() => {
+            if (isLiveCallActiveRef.current && liveCallStateRef.current === 'listening') {
+              try { recognition.start(); } catch {}
+            }
+          }, 300);
+        }
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.warn("Speech recognition initialization:", err);
+    }
+  }, [handleSend]);
+
+  // Start Real-Time Live Voice Call
+  const handleStartLiveCall = () => {
+    setIsLiveCallActive(true);
+    setLiveCallState('connecting');
+    setLiveTranscript('');
+    setLastAiSpeech('');
+
+    const greeting = "Jai Hind Boss! Live voice channel connected. Boliye Boss, main sun raha hoon.";
+    setLastAiSpeech(greeting);
+
+    aiDevService.speak(greeting, {
+      onStart: () => {
+        setLiveCallState('ai_speaking');
+      },
+      onEnd: () => {
+        if (isLiveCallActiveRef.current) {
+          setLiveCallState('listening');
+          startRecognitionLoop();
+        }
+      },
+      onError: () => {
+        if (isLiveCallActiveRef.current) {
+          setLiveCallState('listening');
+          startRecognitionLoop();
+        }
+      }
+    });
+  };
+
+  // End Real-Time Live Voice Call
+  const handleEndLiveCall = () => {
+    if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+    }
+    aiDevService.stopSpeaking();
+    setIsLiveCallActive(false);
+    setLiveCallState('idle');
+    setLiveTranscript('');
+  };
+
+  // Interrupt AI while speaking
+  const handleInterruptAi = () => {
+    aiDevService.stopSpeaking();
+    setLiveCallState('listening');
+    startRecognitionLoop();
+  };
+
+  // Toggle Mic mute during live call
+  const handleToggleMute = () => {
+    const next = !isMicMuted;
+    setIsMicMuted(next);
+    if (next) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+      }
+    } else {
+      if (liveCallState === 'listening') {
+        startRecognitionLoop();
+      }
+    }
+  };
+
+  // Single-shot Voice dictation into PromptBar input
   const handleDictate = () => {
     return new Promise((resolve) => {
       const SpeechRecognition = typeof window !== 'undefined' && 
@@ -202,7 +427,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
       try {
         const recognition = new SpeechRecognition();
-        recognition.lang = 'hi-IN'; // Dual Hindi / Indian English recognition
+        recognition.lang = 'hi-IN';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
@@ -361,10 +586,34 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
           </div>
         </div>
 
-        {/* Right: Audio Waveform & Controls */}
+        {/* Right: Audio Waveform, Live Call Trigger & Controls */}
         <div className="flex items-center gap-2.5">
+          
+          {/* Prominent Live Voice Call Button (Boss Mode) */}
+          <button
+            onClick={isLiveCallActive ? handleEndLiveCall : handleStartLiveCall}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+              isLiveCallActive
+                ? 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-600 animate-pulse shadow-rose-600/20'
+                : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white border border-indigo-600 shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98]'
+            }`}
+            title={isLiveCallActive ? 'Disconnect Live Voice Call' : 'Start Real-time Voice Call with Boss'}
+          >
+            {isLiveCallActive ? (
+              <>
+                <PhoneOff className="w-3.5 h-3.5" />
+                <span>End Call</span>
+              </>
+            ) : (
+              <>
+                <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-200" />
+                <span>Live Voice Call</span>
+              </>
+            )}
+          </button>
+
           {/* Animated Audio Equalizer when speaking */}
-          {isSpeaking && (
+          {isSpeaking && !isLiveCallActive && (
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-semibold animate-fadeIn shadow-2xs">
               <div className="flex items-end gap-0.5 h-3.5 w-5">
                 <span className="w-1 bg-cyan-600 animate-bounce h-2.5 rounded-full" />
@@ -391,14 +640,14 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
               isVoiceEnabled 
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/20 hover:bg-indigo-700' 
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' 
                 : 'bg-white text-slate-600 border-slate-200 hover:text-slate-900 shadow-2xs'
             }`}
             title={isVoiceEnabled ? 'Voice response enabled (Click to mute)' : 'Voice response disabled (Click to enable)'}
           >
             {isVoiceEnabled ? (
               <>
-                <Volume2 className="w-3.5 h-3.5 text-white animate-pulse" />
+                <Volume2 className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
                 <span className="text-[11px]">Voice: ON</span>
               </>
             ) : (
@@ -471,7 +720,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       {/* ======================================================== */}
       {/* 3. MAIN CHAT CONTAINER (CENTERED CHATGPT/GEMINI LAYOUT)   */}
       {/* ======================================================== */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 pb-44">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 pb-48">
         <div className="max-w-3xl mx-auto w-full space-y-6">
 
           {/* Gemini-Style Welcome Hero when starting fresh */}
@@ -481,10 +730,10 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                 <Sparkles className="w-8 h-8 text-indigo-600 animate-pulse" />
               </div>
               <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Hello, {currentUser?.displayName || 'Engineer'}
+                Command Center Ready, Boss
               </h2>
               <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto font-normal">
-                How can I assist your engineering and business operations today? I hold real-time live telemetry across all active apps.
+                Autonomous technical copilot with live real-time telemetry across Contracts, QA & Sales. Speak or type your command.
               </p>
 
               {/* Gemini 2x2 Suggestion Cards */}
@@ -557,7 +806,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-900">AI DEV</span>
                     <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.2 rounded-md font-semibold">
-                      Neural Copilot
+                      Boss Copilot
                     </span>
                     <span className="text-[10px] text-slate-400">• {msg.timestamp}</span>
                   </div>
@@ -609,7 +858,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                             ? 'text-indigo-600 font-bold' 
                             : 'hover:text-slate-700'
                         }`}
-                        title="Read aloud with Web Speech synthesis"
+                        title="Read aloud with strict authoritative voice"
                       >
                         {isSpeaking && currentSpeakingId === msg.id ? (
                           <>
@@ -656,7 +905,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
               </div>
               <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-2xs text-xs text-indigo-700 font-medium">
                 <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
-                <span>AI Dev is analyzing live telemetry across QA suites, client contracts & SDR outbox...</span>
+                <span>AI Dev is analyzing live platform telemetry for Boss...</span>
               </div>
             </div>
           )}
@@ -666,44 +915,268 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       </div>
 
       {/* ======================================================== */}
-      {/* 4. BOTTOM FLOATING PROMPTBAR DOCK (REACT BITS PROMPTBAR)  */}
+      {/* 4. REAL-TIME LIVE VOICE CALL OVERLAY (GEMINI LIVE STYLE) */}
+      {/* ======================================================== */}
+      {isLiveCallActive && (
+        <div className="absolute inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex flex-col justify-between items-center p-6 text-white animate-fadeIn">
+          
+          {/* Top Bar inside Live Call */}
+          <div className="w-full max-w-2xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                LIVE VOICE CALL • BOSS MODE
+              </span>
+            </div>
+
+            <button
+              onClick={handleEndLiveCall}
+              className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-white/10"
+            >
+              <PhoneOff className="w-3.5 h-3.5 text-rose-400" />
+              <span>End Call</span>
+            </button>
+          </div>
+
+          {/* Centerpiece: Animated Glowing Voice Orb & Live Waveform */}
+          <div className="flex flex-col items-center justify-center text-center space-y-6 my-auto">
+            
+            {/* The Orb */}
+            <div className="relative cursor-pointer" onClick={liveCallState === 'ai_speaking' ? handleInterruptAi : undefined}>
+              {/* Outer Pulsing Waves */}
+              <div className={`absolute -inset-6 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 opacity-30 blur-xl transition-all duration-500 ${
+                liveCallState === 'user_speaking' || liveCallState === 'ai_speaking'
+                  ? 'scale-125 opacity-50 animate-pulse'
+                  : 'scale-100 opacity-20'
+              }`} />
+
+              {/* Central Glowing Sphere */}
+              <div className={`w-36 h-36 md:w-44 md:h-44 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/50 relative border-2 border-white/20 transition-all duration-300 ${
+                liveCallState === 'ai_speaking'
+                  ? 'scale-105 ring-8 ring-indigo-400/30'
+                  : liveCallState === 'user_speaking'
+                    ? 'scale-110 ring-8 ring-cyan-400/40 animate-pulse'
+                    : 'scale-100'
+              }`}>
+                {liveCallState === 'user_speaking' ? (
+                  <Mic className="w-12 h-12 text-white animate-bounce" />
+                ) : liveCallState === 'ai_speaking' ? (
+                  <div className="flex items-end gap-1.5 h-8">
+                    <span className="w-1.5 bg-white animate-bounce h-5 rounded-full" />
+                    <span className="w-1.5 bg-white animate-bounce h-8 rounded-full [animation-delay:0.15s]" />
+                    <span className="w-1.5 bg-white animate-bounce h-4 rounded-full [animation-delay:0.3s]" />
+                    <span className="w-1.5 bg-white animate-bounce h-7 rounded-full [animation-delay:0.45s]" />
+                  </div>
+                ) : liveCallState === 'thinking' ? (
+                  <Sparkles className="w-12 h-12 text-white animate-spin" />
+                ) : (
+                  <Sparkles className="w-12 h-12 text-white/90 animate-pulse" />
+                )}
+              </div>
+            </div>
+
+            {/* Status Heading */}
+            <div className="space-y-2 max-w-lg px-4">
+              <h3 className="text-xl md:text-2xl font-black tracking-tight text-white">
+                {liveCallState === 'connecting' && "Connecting Live Channel..."}
+                {liveCallState === 'listening' && "🎙️ Listening to Boss..."}
+                {liveCallState === 'user_speaking' && "Boss is Speaking..."}
+                {liveCallState === 'thinking' && "⚡ Analyzing Telemetry for Boss..."}
+                {liveCallState === 'ai_speaking' && "🔊 AI Dev Speaking..."}
+              </h3>
+
+              {/* Live Subtitle Transcript */}
+              {liveTranscript && (
+                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 text-sm md:text-base text-cyan-200 font-medium max-w-md mx-auto shadow-inner">
+                  "{liveTranscript}"
+                </div>
+              )}
+
+              {/* Last Spoken AI Output */}
+              {liveCallState === 'ai_speaking' && lastAiSpeech && !liveTranscript && (
+                <div className="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 text-xs md:text-sm text-indigo-200 font-medium max-w-md mx-auto line-clamp-3">
+                  "{lastAiSpeech}"
+                </div>
+              )}
+
+              {liveCallState === 'listening' && !liveTranscript && (
+                <p className="text-xs text-white/60 font-normal">
+                  Speak anytime in Hindi or English. Main automatically sunkar turant bolkar update dunga Boss.
+                </p>
+              )}
+            </div>
+
+            {/* Quick Command Pills for Boss inside Call */}
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-md pt-2">
+              <button
+                onClick={() => {
+                  setLiveTranscript("Kiska contract kabtak hai?");
+                  setLiveCallState('thinking');
+                  handleSend("Kiska contract kabtak hain aur kab expire hoga?", {
+                    onResponseReady: (resp) => {
+                      setLiveCallState('ai_speaking');
+                      setLastAiSpeech(resp.spokenText);
+                      aiDevService.speak(resp.spokenText, {
+                        onEnd: () => {
+                          if (isLiveCallActiveRef.current) {
+                            setLiveCallState('listening');
+                            startRecognitionLoop();
+                          }
+                        }
+                      });
+                    }
+                  });
+                }}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white/90 transition-all cursor-pointer"
+              >
+                🏢 Contracts kab expire honge?
+              </button>
+
+              <button
+                onClick={() => {
+                  setLiveTranscript("Critical bugs dikhao");
+                  setLiveCallState('thinking');
+                  handleSend("Kitne bugs open hain aur critical bugs ki list do", {
+                    onResponseReady: (resp) => {
+                      setLiveCallState('ai_speaking');
+                      setLastAiSpeech(resp.spokenText);
+                      aiDevService.speak(resp.spokenText, {
+                        onEnd: () => {
+                          if (isLiveCallActiveRef.current) {
+                            setLiveCallState('listening');
+                            startRecognitionLoop();
+                          }
+                        }
+                      });
+                    }
+                  });
+                }}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white/90 transition-all cursor-pointer"
+              >
+                🚨 Critical bugs status
+              </button>
+
+              <button
+                onClick={() => {
+                  setLiveTranscript("Poora platform briefing do");
+                  setLiveCallState('thinking');
+                  handleSend("Pura platform ka comprehensive real-time briefing do", {
+                    onResponseReady: (resp) => {
+                      setLiveCallState('ai_speaking');
+                      setLastAiSpeech(resp.spokenText);
+                      aiDevService.speak(resp.spokenText, {
+                        onEnd: () => {
+                          if (isLiveCallActiveRef.current) {
+                            setLiveCallState('listening');
+                            startRecognitionLoop();
+                          }
+                        }
+                      });
+                    }
+                  });
+                }}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white/90 transition-all cursor-pointer"
+              >
+                ⚡ Executive summary
+              </button>
+            </div>
+
+          </div>
+
+          {/* Bottom Live Call Controls */}
+          <div className="w-full max-w-sm flex items-center justify-around pb-6 pt-4 border-t border-white/10">
+            {/* Mute Button */}
+            <button
+              onClick={handleToggleMute}
+              className={`p-4 rounded-full border transition-all cursor-pointer ${
+                isMicMuted
+                  ? 'bg-rose-500/20 border-rose-500 text-rose-400'
+                  : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
+              }`}
+              title={isMicMuted ? "Unmute Mic" : "Mute Mic"}
+            >
+              {isMicMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+            </button>
+
+            {/* Interrupt AI Button */}
+            {liveCallState === 'ai_speaking' && (
+              <button
+                onClick={handleInterruptAi}
+                className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
+                title="Interrupt AI Dev to speak now"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+                <span>Interrupt & Speak</span>
+              </button>
+            )}
+
+            {/* End Call Button */}
+            <button
+              onClick={handleEndLiveCall}
+              className="p-4 rounded-full bg-rose-600 hover:bg-rose-700 text-white transition-all cursor-pointer shadow-lg shadow-rose-600/30"
+              title="End Voice Call"
+            >
+              <PhoneOff className="w-6 h-6" />
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 5. BOTTOM FLOATING PROMPTBAR DOCK (REACT BITS PROMPTBAR)  */}
       {/* ======================================================== */}
       <div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-slate-50 via-slate-50/95 to-transparent pt-8 pb-4 px-4 flex flex-col items-center pointer-events-auto">
         <div className="w-full max-w-3xl flex flex-col items-center">
-          <PromptBar
-            placeholder="Ask anything about contracts, QA, bugs, or type / for commands..."
-            sources={promptSources}
-            commands={promptCommands}
-            models={promptModels}
-            defaultModel={selectedModel}
-            efforts={promptEfforts}
-            defaultEffort={selectedEffort}
-            onEffortChange={(eff) => setSelectedEffort(eff)}
-            busy={isThinking}
-            onSend={(text, meta) => handleSend(text, meta)}
-            onStop={() => {
-              handleStopSpeech();
-              setIsThinking(false);
-            }}
-            onAttach={handleAttach}
-            onDictate={handleDictate}
-            background="#ffffff"
-            color="#0f172a"
-            menuBackground="#ffffff"
-            sparkColor="#6366f1"
-            sparkBoost={1.2}
-            width={768}
-            radius={20}
-            maxRows={6}
-            morphDuration={240}
-            squash={0.12}
-            tilt={8}
-            pressScale={0.96}
-            className="w-full shadow-lg shadow-indigo-500/5"
-          />
+          
+          <div className="w-full flex items-center gap-2">
+            <div className="flex-1">
+              <PromptBar
+                placeholder="Ask anything about contracts, QA, bugs, or click Live Call to talk with Boss mode..."
+                sources={promptSources}
+                commands={promptCommands}
+                models={promptModels}
+                defaultModel={selectedModel}
+                efforts={promptEfforts}
+                defaultEffort={selectedEffort}
+                onEffortChange={(eff) => setSelectedEffort(eff)}
+                busy={isThinking}
+                onSend={(text, meta) => handleSend(text, meta)}
+                onStop={() => {
+                  handleStopSpeech();
+                  setIsThinking(false);
+                }}
+                onAttach={handleAttach}
+                onDictate={handleDictate}
+                background="#ffffff"
+                color="#0f172a"
+                menuBackground="#ffffff"
+                sparkColor="#6366f1"
+                sparkBoost={1.2}
+                width={768}
+                radius={20}
+                maxRows={6}
+                morphDuration={240}
+                squash={0.12}
+                tilt={8}
+                pressScale={0.96}
+                className="w-full shadow-lg shadow-indigo-500/5"
+              />
+            </div>
+
+            {/* Quick Call Pill right next to PromptBar */}
+            <button
+              onClick={handleStartLiveCall}
+              className="h-12 px-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95"
+              title="Start Real-time Voice Call with Boss"
+            >
+              <Phone className="w-4 h-4" />
+              <span className="hidden sm:inline">Live Talk</span>
+            </button>
+          </div>
 
           <p className="text-[11px] text-slate-400 mt-2 text-center">
-            AI Dev uses live in-memory telemetry across InfratechAI. Verify critical contract terms & QA sign-offs.
+            AI Dev references live in-memory telemetry across InfratechAI. Boss command channel active.
           </p>
         </div>
       </div>

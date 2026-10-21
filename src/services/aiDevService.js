@@ -2,7 +2,7 @@
  * InfratechAI AI Dev Service
  * Technical Lead & Autonomous Copilot with complete real-time awareness
  * of QA Manager, Sales Manager (Harvey), and Business Command Center.
- * Includes Web Speech synthesis audio engine to speak answers aloud in real-time.
+ * Configured with strict, proper authoritative executive persona addressing user as "Boss".
  */
 
 export const aiDevService = {
@@ -19,18 +19,54 @@ export const aiDevService = {
   },
 
   /**
-   * Speaks given text aloud using the best available voice (Hindi/English).
+   * Selects an authoritative, strict, disciplined voice.
+   * Prioritizes crisp Hindi / Indian English / authoritative clear male voices.
    */
-  speak(text, { onStart, onEnd, onError, rate = 1.05, pitch = 1.0, lang = 'hi-IN' } = {}) {
+  getAuthoritativeVoice() {
+    if (!this.isSpeechSupported()) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    // Search rules for strict, disciplined, commanding voice
+    const rules = [
+      // 1. Hindi crisp male/authoritative
+      v => (v.lang.includes('hi') || v.name.includes('Hindi')) && (v.name.includes('Male') || v.name.includes('Ravi') || v.name.includes('Hemant') || v.name.includes('Google')),
+      // 2. Any Hindi voice
+      v => v.lang.includes('hi') || v.name.includes('Hindi'),
+      // 3. Indian English male/authoritative
+      v => (v.lang.includes('en-IN') || v.name.includes('India')) && (v.name.includes('Male') || v.name.includes('Prabhat') || v.name.includes('Ravi')),
+      // 4. Any Indian English voice
+      v => v.lang.includes('en-IN') || v.name.includes('India'),
+      // 5. Authoritative English male voice (David, Mark, Guy, George)
+      v => (v.name.includes('Male') || v.name.includes('David') || v.name.includes('Mark') || v.name.includes('Guy')) && v.lang.startsWith('en'),
+      // 6. Natural English voices
+      v => v.name.includes('Natural') && v.lang.startsWith('en'),
+      // 7. Any English voice
+      v => v.lang.startsWith('en')
+    ];
+
+    for (const rule of rules) {
+      const match = voices.find(rule);
+      if (match) return match;
+    }
+
+    return voices[0] || null;
+  },
+
+  /**
+   * Speaks given text aloud with authoritative, strict executive tone.
+   * Uses deeper pitch and crisp military-grade pacing.
+   */
+  speak(text, { onStart, onEnd, onError, rate = 1.02, pitch = 0.88 } = {}) {
     if (!this.isSpeechSupported()) {
       if (onError) onError(new Error('Speech synthesis not supported in this browser'));
       return;
     }
 
-    // Cancel any previous speech
+    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
-    // Clean text of markdown characters for smooth speaking
+    // Clean text of markdown characters for crisp, natural delivery
     const cleanSpeechText = text
       .replace(/[*_#`~]/g, '')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
@@ -42,21 +78,12 @@ export const aiDevService = {
     if (!cleanSpeechText) return;
 
     const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
-    utterance.rate = rate;
-    utterance.pitch = pitch;
+    utterance.rate = rate;      // Crisp, disciplined delivery
+    utterance.pitch = pitch;    // Authoritative, deeper executive tone
 
-    // Pick best matching voice
-    const voices = window.speechSynthesis.getVoices();
-    const hindiVoice = voices.find(v => v.lang.includes('hi') || v.name.includes('Hindi'));
-    const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('India'));
-    const englishVoice = voices.find(v => v.lang.startsWith('en'));
-
-    if (hindiVoice) {
-      utterance.voice = hindiVoice;
-    } else if (indianVoice) {
-      utterance.voice = indianVoice;
-    } else if (englishVoice) {
-      utterance.voice = englishVoice;
+    const bestVoice = this.getAuthoritativeVoice();
+    if (bestVoice) {
+      utterance.voice = bestVoice;
     }
 
     utterance.onstart = () => {
@@ -142,7 +169,7 @@ export const aiDevService = {
     const approvedOutbox = outbox.filter(o => o.status === 'approved' || o.status === 'sent');
 
     return {
-      user: currentUser?.displayName || currentUser?.email || 'Engineer',
+      user: currentUser?.displayName || currentUser?.email || 'Boss',
       syncStatus,
       qa: {
         projectsCount: projects.length,
@@ -179,11 +206,47 @@ export const aiDevService = {
   },
 
   /**
-   * Evaluates query and generates comprehensive live response with spoken summary.
+   * Evaluates query and generates strict, authoritative response addressing user as "Boss".
    */
   processQuery(rawQuery, liveContext) {
-    const q = (rawQuery || '').toLowerCase();
+    const q = (rawQuery || '').toLowerCase().trim();
     const ctx = liveContext;
+
+    // GREETINGS & CASUAL RAPPORT ("hello", "hi", "helo", "hey", "namaste", "boss", "sun")
+    const isGreeting = 
+      q === 'helo' || 
+      q === 'hello' || 
+      q === 'hi' || 
+      q === 'hey' || 
+      q === 'namaste' || 
+      q === 'helo hi' || 
+      q === 'hello hi' || 
+      q === 'sun' || 
+      q === 'suno' || 
+      q === 'kya hal hai' ||
+      q === 'kaise ho' ||
+      q === 'boss' ||
+      q === 'ai dev';
+
+    if (isGreeting) {
+      const spokenText = `Jai Hind Boss! AI DEV ready hai aapke command ke liye. System telemetry 100% synchronized hai. Boliye Boss, contracts, QA test suites ya sales pipeline—kis cheez ka inspection karna hai?`;
+      
+      const markdown = `### 🫡 Jai Hind Boss! AI DEV Ready on Duty
+
+Direct executive command line active. Live telemetry is synchronized across all modules for **Boss**:
+
+- 🏢 **Business Command Center:** **${ctx.business.totalContracts} Active Contracts** ($${ctx.business.totalMRR.toLocaleString()}/mo MRR)
+- 🧪 **QA Manager:** **${ctx.qa.totalTests} Total Tests** (${ctx.qa.passRate}% pass rate, **${ctx.qa.openBugsCount} defects**)
+- 🤖 **Sales SDR (Harvey):** **${ctx.sales.totalLeads} Prospects** (**${ctx.sales.pendingApprovalsCount} pending outbox drafts**)
+
+> ⚡ **Direct Voice Call is Active, Boss!** Ask me in Hindi or English: *"Kiska contract kabtak hai?"*, *"Critical bugs dikhao"*, ya *"Poora platform status do"*. Main turant real-time bolkar update dunga!`;
+
+      return {
+        spokenText,
+        markdown,
+        type: 'greeting'
+      };
+    }
 
     // A. Query about Contracts, Expiration Dates, Renewals, Kiska contract kabtak hai
     if (
@@ -203,16 +266,16 @@ export const aiDevService = {
       let spokenText = '';
       if (expiringSoon.length > 0) {
         const topExp = expiringSoon[0];
-        spokenText = `Aapke total ${allContracts.length} active client contracts hain. Sabse urgent contract ${topExp.client} ka hai, jo agle ${topExp.daysRemaining} dino me, yaani ${topExp.endDate} ko expire ho raha hai. Total monthly run rate ${ctx.business.totalMRR.toLocaleString()} dollars hai.`;
+        spokenText = `Suniye Boss, contracts ka exact situation ye hai: Total ${allContracts.length} active client accounts hain. Alert Boss! Sabse urgent contract ${topExp.client} ka hai, jo agle ${topExp.daysRemaining} dino me, yaani ${topExp.endDate} ko expire ho raha hai. Total monthly run rate ${ctx.business.totalMRR.toLocaleString()} dollars hai. Immediate renewal outreach recommend karta hoon Boss!`;
       } else {
-        spokenText = `Aapke total ${allContracts.length} active client contracts hain aur filhaal koi bhi contract agle 30 dino me expire nahi ho raha hai. Total portfolio MRR ${ctx.business.totalMRR.toLocaleString()} dollars hai.`;
+        spokenText = `Boss, report clear hai! Aapke total ${allContracts.length} active client contracts hain aur filhaal koi bhi contract agle 30 dino me expire nahi ho raha hai. Total portfolio MRR ${ctx.business.totalMRR.toLocaleString()} dollars securely locked hai Boss.`;
       }
 
-      let markdown = `### 🏢 Real-Time Business Contracts & Renewal Deadlines\n\n`;
-      markdown += `*Live telemetry fetched across **${allContracts.length} Client Accounts** | Portfolio MRR: **$${ctx.business.totalMRR.toLocaleString()}/mo***\n\n`;
+      let markdown = `### 🏢 Real-Time Business Contracts Report for Boss\n\n`;
+      markdown += `*Live telemetry synchronized across **${allContracts.length} Client Accounts** | Portfolio MRR: **$${ctx.business.totalMRR.toLocaleString()}/mo***\n\n`;
 
       if (expiringSoon.length > 0) {
-        markdown += `> ⚠️ **Immediate Renewal Attention Required (${expiringSoon.length} Contracts < 30 Days):**\n\n`;
+        markdown += `> 🚨 **Critical Renewal Attention for Boss (${expiringSoon.length} Contracts < 30 Days):**\n\n`;
         expiringSoon.forEach(c => {
           markdown += `- **${c.client}** (${c.account}): Expires on **${c.endDate}** (**${c.daysRemaining} days left!**) — Value: **$${(c.value || 0).toLocaleString()}/${c.cycle}**\n`;
         });
@@ -231,7 +294,7 @@ export const aiDevService = {
         markdown += `| **${c.client}** | ${c.endDate} | ${badge} | $${(c.value || 0).toLocaleString()}/${c.cycle} | ${c.sla} |\n`;
       });
 
-      markdown += `\n**Project Descriptions & Scope:**\n`;
+      markdown += `\n**Project Scope & Descriptions:**\n`;
       allContracts.forEach(c => {
         markdown += `- **${c.client}**: ${c.description}\n`;
       });
@@ -241,7 +304,7 @@ export const aiDevService = {
         markdown,
         type: 'business',
         actionSuggestion: {
-          label: 'Open Business Command Center',
+          label: 'Launch Business Command Center',
           targetApp: 'business'
         }
       };
@@ -260,9 +323,9 @@ export const aiDevService = {
       q.includes('issue')
     ) {
       const qa = ctx.qa;
-      const spokenText = `QA Manager me filhaal ${qa.totalTests} total tests hain, jinme se pass rate ${qa.passRate} percent hai. Total ${qa.openBugsCount} open bugs hain, jinme se ${qa.criticalBugsCount} bugs critical severity ke hain.`;
+      const spokenText = `Attention Boss! QA telemetry report ready hai: Total ${qa.totalTests} tests hain aur current pass rate ${qa.passRate} percent hai. Alert Boss: Total ${qa.openBugsCount} open defects hain jinme se ${qa.criticalBugsCount} bugs critical severity ke hain! Engineering team ko immediate patch order dena padega Boss.`;
 
-      let markdown = `### 🧪 Live QA Manager Telemetry\n\n`;
+      let markdown = `### 🧪 QA Manager Defect & Execution Briefing for Boss\n\n`;
       markdown += `*Real-time inspection of **${qa.projectsCount} Workspaces** & **${qa.totalFiles} Test Suites***\n\n`;
       
       markdown += `| Metric | Count | Health Status |\n`;
@@ -274,12 +337,12 @@ export const aiDevService = {
       markdown += `| **Open Defects** | **${qa.openBugsCount}** | ${qa.criticalBugsCount} Critical/High |\n\n`;
 
       if (qa.openBugsList.length > 0) {
-        markdown += `#### 🚨 Active Open Bugs:\n`;
+        markdown += `#### 🚨 Priority Defects Requiring Boss's Attention:\n`;
         qa.openBugsList.forEach(b => {
           markdown += `- **[${b.severity}]** ${b.title} *(Project: ${b.project})*\n`;
         });
       } else {
-        markdown += `> ✨ *No active open bugs detected across workspaces! Quality index is optimal.*\n`;
+        markdown += `> ✨ *No active open defects detected across workspaces, Boss! Quality index is optimal.*\n`;
       }
 
       return {
@@ -287,7 +350,7 @@ export const aiDevService = {
         markdown,
         type: 'qa',
         actionSuggestion: {
-          label: 'Launch QA Manager',
+          label: 'Launch QA Test Workspace',
           targetApp: 'qa'
         }
       };
@@ -305,16 +368,16 @@ export const aiDevService = {
       q.includes('draft')
     ) {
       const sales = ctx.sales;
-      const spokenText = `Sales Manager me ${sales.totalLeads} prospects discovered hain. Harvey Decisions Desk me abhi ${sales.pendingApprovalsCount} personalized email drafts aapke human approval ke liye pending hain.`;
+      const spokenText = `Report on your desk, Boss! Sales SDR Harvey ke paas total ${sales.totalLeads} prospects discovered hain. Decisions desk me abhi ${sales.pendingApprovalsCount} personalized email drafts aapke human review ke liye pending hain Boss.`;
 
-      let markdown = `### 🤖 Autonomous Sales SDR (Harvey) Live Status\n\n`;
-      markdown += `*Anti-AI Fluff Policy Active | Zero API Cost Engine*\n\n`;
+      let markdown = `### 🤖 Autonomous Sales SDR Briefing for Boss\n\n`;
+      markdown += `*Anti-AI Fluff Policy Active | Autonomous SDR Harvey*\n\n`;
       markdown += `- **Total Prospects Discovered:** **${sales.totalLeads}**\n`;
       markdown += `- **Decisions Desk Approvals Pending:** **${sales.pendingApprovalsCount} Drafts** ${sales.pendingApprovalsCount > 0 ? '⚠️ *(Review with A/R hotkeys)*' : '✅ *(Clean outbox)*'}\n`;
       markdown += `- **Approved & Sent Emails:** **${sales.approvedCount}**\n\n`;
 
       if (sales.recentLeads.length > 0) {
-        markdown += `#### 🎯 Recent Target Accounts:\n`;
+        markdown += `#### 🎯 Recent Target Enterprise Accounts:\n`;
         sales.recentLeads.forEach(l => {
           markdown += `- **${l.name}** \`${l.domain}\`\n`;
         });
@@ -332,10 +395,10 @@ export const aiDevService = {
     }
 
     // D. General Platform Summary / Executive Briefing / Kya chal raha hai
-    const spokenText = `InfratechAI platform ka live update: QA me ${ctx.qa.totalTests} tests hain aur ${ctx.qa.openBugsCount} open defects hain. Business Command Center me ${ctx.business.totalContracts} active contracts hain jinka monthly run rate ${ctx.business.totalMRR.toLocaleString()} dollars hai, aur ${ctx.business.expiringSoonCount} contracts renewal ke close hain. Sales outbox me ${ctx.sales.pendingApprovalsCount} drafts review ke liye ready hain.`;
+    const spokenText = `Understood Boss! Poore platform ka direct real-time briefing: Business Command Center me ${ctx.business.totalContracts} active contracts aur ${ctx.business.totalMRR.toLocaleString()} dollars monthly run rate hai. QA Manager me ${ctx.qa.totalTests} tests aur ${ctx.qa.openBugsCount} open defects hain. Sales me ${ctx.sales.totalLeads} prospects discovered hain Boss.`;
 
-    let markdown = `### ⚡ InfratechAI Platform: Unified Real-Time Briefing\n\n`;
-    markdown += `*Live telemetry synchronized across all enterprise applications for **${ctx.user}***\n\n`;
+    let markdown = `### ⚡ InfratechAI Platform: Executive Briefing for Boss\n\n`;
+    markdown += `*Live unified telemetry synchronized across all apps for **Boss***\n\n`;
 
     markdown += `#### 1. 🏢 Business Command Center\n`;
     markdown += `- **Active Client Accounts:** ${ctx.business.totalContracts}\n`;
@@ -351,7 +414,7 @@ export const aiDevService = {
     markdown += `- **Discovered Prospects:** ${ctx.sales.totalLeads}\n`;
     markdown += `- **Decisions Desk Pending:** **${ctx.sales.pendingApprovalsCount} email drafts**\n\n`;
 
-    markdown += `> 💡 *Ask me specific questions like: "Kiska contract kab expire ho raha hai?", "Critical bugs dikhao", ya "Sales pipeline status". Main real-time fetch karke bolkar bataunga!*`;
+    markdown += `> 🫡 *Direct command line active, Boss! Kisi bhi metric ya contract ki detail ke liye bas command kijiye.*`;
 
     return {
       spokenText,

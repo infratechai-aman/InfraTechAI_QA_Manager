@@ -1,15 +1,16 @@
 import React from 'react';
 import { 
   CheckSquare, Bot, Sparkles, Sliders, LogOut, 
-  HelpCircle, ShieldCheck, Flame, Layers
+  HelpCircle, ShieldCheck, Flame, Layers, Building2, Cpu
 } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
 
 export const AppRail = ({
-  activeApp = 'qa', // 'qa' | 'sales'
+  activeApp = 'qa', // 'qa' | 'sales' | 'business' | 'aidev'
   setActiveApp,
   openBugsCount = 0,
   pendingOutboxCount = 0,
+  contractsExpiringSoon = 0,
   currentUser,
   onLogout
 }) => {
@@ -115,6 +116,50 @@ export const AppRail = ({
             {/* Hover Tooltip */}
             <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
               Sales Manager (Harvey)
+            </span>
+          </button>
+
+          {/* APP 3: BUSINESS COMMAND CENTER */}
+          <button
+            onClick={() => setActiveApp('business')}
+            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+              activeApp === 'business'
+                ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+            title="Business Command Center — Contracts & Scopes"
+          >
+            {activeApp === 'business' && (
+              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-emerald-400 rounded-r-full shadow-sm" />
+            )}
+            <Building2 className="w-5 h-5 transition-transform group-hover:scale-110" />
+            {contractsExpiringSoon > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-sm border border-slate-950 animate-pulse">
+                {contractsExpiringSoon}
+              </span>
+            )}
+            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              Business Command Center
+            </span>
+          </button>
+
+          {/* APP 4: AI DEV (AUTONOMOUS TECHNICAL COPILOT) */}
+          <button
+            onClick={() => setActiveApp('aidev')}
+            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+              activeApp === 'aidev'
+                ? 'bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/40 ring-1 ring-cyan-400/50'
+                : 'text-slate-400 hover:text-cyan-400 hover:bg-slate-900'
+            }`}
+            title="AI DEV — Autonomous Real-Time Voice Copilot"
+          >
+            {activeApp === 'aidev' && (
+              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-cyan-400 rounded-r-full shadow-sm" />
+            )}
+            <Cpu className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
+            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-cyan-300 text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              AI DEV (Voice Copilot)
             </span>
           </button>
 

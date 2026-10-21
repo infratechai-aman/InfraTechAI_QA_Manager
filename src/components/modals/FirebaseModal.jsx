@@ -3,10 +3,11 @@ import { Cloud, CheckCircle, AlertTriangle, Copy, Check, ExternalLink, XCircle, 
 import { isFirebaseConfigured, firebaseConfig } from '../../config/firebase';
 
 export const FirebaseModal = ({ isOpen, onClose, onPullSync }) => {
-  if (!isOpen) return null;
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+
+  if (!isOpen) return null;
 
   const envSnippet = `# Firebase Configuration (add to .env.local or Vercel Environment Variables)
 VITE_FIREBASE_API_KEY=your_api_key_here

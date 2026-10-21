@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Bug as BugIcon, Plus, Search, Filter, Trash2, 
   ChevronDown, ChevronUp, RefreshCw, RotateCcw,
-  History, Calendar, AlertTriangle, X, User, Shield,
+  History, Calendar, X, User, Shield,
   UserCheck, Paperclip, Image as ImageIcon, Eye, UploadCloud, Loader2
 } from 'lucide-react';
 import { 

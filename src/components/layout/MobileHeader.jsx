@@ -34,26 +34,46 @@ export const MobileHeader = ({
 
         {/* Mobile App Switcher Capsule */}
         {setActiveApp && (
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs shrink-0">
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs shrink-0 overflow-x-auto max-w-[220px]">
             <button
               onClick={() => setActiveApp('qa')}
-              className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all ${
+              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all whitespace-nowrap ${
                 activeApp === 'qa' 
                   ? 'bg-indigo-600 text-white shadow-2xs' 
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              QA Suite
+              QA
             </button>
             <button
               onClick={() => setActiveApp('sales')}
-              className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold transition-all ${
+              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all whitespace-nowrap ${
                 activeApp === 'sales' 
                   ? 'bg-amber-500 text-slate-950 shadow-2xs' 
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Sales (Harvey)
+              Sales
+            </button>
+            <button
+              onClick={() => setActiveApp('business')}
+              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all whitespace-nowrap ${
+                activeApp === 'business' 
+                  ? 'bg-emerald-600 text-white shadow-2xs' 
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Business
+            </button>
+            <button
+              onClick={() => setActiveApp('aidev')}
+              className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all whitespace-nowrap ${
+                activeApp === 'aidev' 
+                  ? 'bg-cyan-600 text-white shadow-2xs' 
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              AI Dev
             </button>
           </div>
         )}

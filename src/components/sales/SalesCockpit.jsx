@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bot, Sparkles, CheckCircle2, Clock, Mail, Users, ArrowUpRight, 
-  Send, AlertCircle, RefreshCw, Sliders, ShieldCheck, Zap,
-  Play, Pause, Flame, Terminal, Eye, ExternalLink
+  RefreshCw, Sliders, ShieldCheck, Zap, Flame, Terminal, Plus
 } from 'lucide-react';
 
 export const SalesCockpit = ({ 
@@ -14,7 +13,7 @@ export const SalesCockpit = ({
   onOpenSettings,
   onRunHeartbeat
 }) => {
-  const [countdown, setCountdown] = useState(8 * 60 + 42); // 8m 42s countdown
+  const [countdown, setCountdown] = useState(15 * 60);
   const [isRunningCycle, setIsRunningCycle] = useState(false);
 
   useEffect(() => {
@@ -42,9 +41,10 @@ export const SalesCockpit = ({
   const pendingApprovals = outbox.filter(o => o.status === 'pending_approval');
   const verifiedLeads = leads.filter(l => l.emailStatus === 'verified');
   const activeConversations = conversations.length;
+  const readyToBookCount = conversations.filter(c => ['ready_to_book', 'closed_won', 'negotiating'].includes(c.stage)).length;
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fadeIn">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-fadeIn">
       
       {/* Top Banner / Harvey SDR Status Bar */}
       <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-indigo-500/20">
@@ -64,7 +64,7 @@ export const SalesCockpit = ({
                   </h1>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Online & Closing
+                    Clean Engine Active
                   </span>
                 </div>
                 <p className="text-xs md:text-sm text-slate-300">
@@ -119,6 +119,28 @@ export const SalesCockpit = ({
         </div>
       </div>
 
+      {/* Clean Pipeline Callout when 0 leads */}
+      {leads.length === 0 && (
+        <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-white rounded-2xl p-4 sm:p-5 border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-sm">Clean Production Sales Workspace</span>
+              <span className="text-slate-500 text-xs">All mock data removed. Add your real prospects, import a CSV list, or run AI Lead Discovery.</span>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigateTab('leads')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs shrink-0 cursor-pointer transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Real Prospects</span>
+          </button>
+        </div>
+      )}
+
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
@@ -135,8 +157,12 @@ export const SalesCockpit = ({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900">{pendingApprovals.length}</span>
-            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-              Needs Your 'A'
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+              pendingApprovals.length > 0 
+                ? 'text-amber-600 bg-amber-50 border-amber-200' 
+                : 'text-slate-500 bg-slate-50 border-slate-200'
+            }`}>
+              {pendingApprovals.length > 0 ? "Needs Your 'A'" : 'Clean Desk'}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
@@ -182,7 +208,7 @@ export const SalesCockpit = ({
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900">{activeConversations}</span>
             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              1 Ready to Book
+              {readyToBookCount > 0 ? `${readyToBookCount} Ready to Book` : `${activeConversations} Active Threads`}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
@@ -239,12 +265,23 @@ export const SalesCockpit = ({
           </div>
 
           {pendingApprovals.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-              <h3 className="font-bold text-slate-800">All Outbox Emails Drained</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                No drafts are waiting on your approval. Harvey will scout new prospects during the next heartbeat cycle.
-              </p>
+            <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="font-bold text-slate-800 text-sm">All Outbox Emails Drained</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {leads.length > 0 
+                    ? "No drafts are awaiting your approval. You can draft sequences for any prospect in your pipeline." 
+                    : "No drafts waiting. Add prospects to your pipeline to queue hyper-personalized cold outreach."}
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigateTab('leads')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                <span>{leads.length > 0 ? 'Draft Outreach from Prospects' : 'Add Prospects to Pipeline'}</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -302,7 +339,11 @@ export const SalesCockpit = ({
                   <div className="font-bold text-slate-800">Scout Agent</div>
                   <div className="text-slate-500 text-[11px]">Finds companies & extracts tech stack</div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Idle</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  leads.length > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {leads.length > 0 ? `${leads.length} Profiled` : 'Ready to Scout'}
+                </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
@@ -310,7 +351,11 @@ export const SalesCockpit = ({
                   <div className="font-bold text-slate-800">Writer Agent</div>
                   <div className="text-slate-500 text-[11px]">Drafts 3-stage sequences (&lt;75 words)</div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">Active</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  pendingApprovals.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {pendingApprovals.length > 0 ? `${pendingApprovals.length} In Outbox` : 'Standby'}
+                </span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
@@ -318,7 +363,11 @@ export const SalesCockpit = ({
                   <div className="font-bold text-slate-800">Handler Agent</div>
                   <div className="text-slate-500 text-[11px]">Polls inbox & applies LAARC objection logic</div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Listening</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  activeConversations > 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {activeConversations > 0 ? `${activeConversations} Dialogues` : 'Listening'}
+                </span>
               </div>
             </div>
 

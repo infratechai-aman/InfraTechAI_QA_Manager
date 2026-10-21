@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
-  Bug as BugIcon, XCircle, AlertCircle, UploadCloud, Image as ImageIcon, 
+  Bug as BugIcon, XCircle, UploadCloud, 
   Trash2, Eye, UserCheck, Paperclip, Loader2 
 } from 'lucide-react';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
@@ -108,7 +108,8 @@ export const BugModal = ({
     const handlePaste = async (e) => {
       // Don't intercept paste if user is pasting text into an input or textarea
       const targetTag = e.target?.tagName?.toLowerCase();
-      const isInput = targetTag === 'input' || targetTag === 'textarea';
+      const hasImage = Array.from(e.clipboardData?.items || []).some(item => item.type && item.type.startsWith('image/'));
+      if ((targetTag === 'input' || targetTag === 'textarea') && !hasImage) return;
 
       const items = e.clipboardData?.items;
       if (!items) return;

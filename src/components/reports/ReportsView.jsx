@@ -3,10 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import mermaid from 'mermaid';
 import {
-  Plus, FileText, Trash2, Save, X,
+  Plus, FileText, Trash2, Save,
   Eye, Edit3, Calendar, ChevronRight, BookOpen,
-  ArrowLeft, Copy, Check, Table2, GitBranch,
-  Network, BarChart3, AlignLeft, ChevronDown, Shield, User, Filter
+  ArrowLeft, Table2, GitBranch,
+  Network, BarChart3, AlignLeft, ChevronDown, Shield
 } from 'lucide-react';
 import { formatDate, generateId, getTimestamp, getUserColor, getUserInitial } from '../../utils/formatters';
 

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Play, Bot, CheckSquare, Sparkles, Shield, ArrowRight, 
   Layers, CheckCircle2, Cpu, Globe, Sliders, LogOut,
-  ChevronRight, RefreshCw, Briefcase, Zap, Flame, ExternalLink
+  ChevronRight, RefreshCw, Briefcase, Zap, Flame, ExternalLink,
+  Building2
 } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
 
@@ -11,15 +12,62 @@ export const AppLibraryView = ({
   projects = [],
   openBugsCount = 0,
   pendingOutboxCount = 0,
+  contractsCount = 4,
+  contractsExpiringSoon = 2,
+  contractsMRR = 123000,
   currentUser,
   onLogout,
   onOpenSettings
 }) => {
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'qa' | 'sales'
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'business' | 'aidev' | 'qa' | 'sales'
   const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
   const userColor = getUserColor(currentUser?.email || 'user');
 
   const apps = [
+    {
+      id: 'business',
+      name: 'Business Command Center',
+      category: 'Executive Operations & Revenue',
+      description: 'Full active enterprise client portfolios, contract expiration tracking, renewal countdowns, SLA guarantees, retainers/MRR, and detailed technical project scopes.',
+      icon: Building2,
+      iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+      badge: 'Live Portfolio Active',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      metrics: [
+        { label: 'Active Accounts', value: `${contractsCount} Contracts` },
+        { label: 'Portfolio MRR', value: `$${contractsMRR.toLocaleString()}` },
+        { label: 'Expiring Soon', value: `${contractsExpiringSoon} Accounts`, highlight: contractsExpiringSoon > 0 }
+      ],
+      features: [
+        'Contract Expiration Countdown & Renewal Timeline',
+        'Project Scopes & Deliverables Checklist',
+        'Enterprise SLA Tiers & Retainer Tracking'
+      ],
+      ctaText: 'Launch Command Center',
+      isReady: true
+    },
+    {
+      id: 'aidev',
+      name: 'AI DEV (Autonomous Copilot)',
+      category: 'Unified Voice Intelligence',
+      description: 'Autonomous technical lead with 100% real-time awareness across QA test suites, open defects, sales outbox, and contracts. Fetches live data and speaks aloud via Web Speech synthesis.',
+      icon: Cpu,
+      iconBg: 'bg-cyan-50 text-cyan-600 border border-cyan-100',
+      badge: 'Real-Time Voice Active',
+      badgeClass: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      metrics: [
+        { label: 'Audio Engine', value: 'Live Web Speech' },
+        { label: 'Platform Telemetry', value: '100% Real-Time' },
+        { label: 'Model Cost', value: '$0.00' }
+      ],
+      features: [
+        'Live Web Speech Synthesis (Answers spoken aloud in real-time)',
+        'Full Multi-App Telemetry Inspector across QA, Sales & Business',
+        'Natural Language Comprehension (Hinglish & English)'
+      ],
+      ctaText: 'Launch AI Dev',
+      isReady: true
+    },
     {
       id: 'qa',
       name: 'InfratechAI QA Manager',
@@ -69,7 +117,7 @@ export const AppLibraryView = ({
       name: 'DevOps Release Sentinel',
       category: 'CI/CD & Deployment',
       description: 'Continuous staging regression analysis, automated canary rollouts verification, and deployment readiness scoring before promoting builds.',
-      icon: Cpu,
+      icon: Shield,
       iconBg: 'bg-slate-100 text-slate-500 border border-slate-200',
       badge: 'Roadmap Preview',
       badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
@@ -89,6 +137,8 @@ export const AppLibraryView = ({
   ];
 
   const filteredApps = apps.filter(app => {
+    if (activeFilter === 'business') return app.id === 'business';
+    if (activeFilter === 'aidev') return app.id === 'aidev';
     if (activeFilter === 'qa') return app.id === 'qa';
     if (activeFilter === 'sales') return app.id === 'sales';
     return true;
@@ -181,6 +231,26 @@ export const AppLibraryView = ({
               All Modules ({apps.length})
             </button>
             <button
+              onClick={() => setActiveFilter('business')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeFilter === 'business'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Business Operations
+            </button>
+            <button
+              onClick={() => setActiveFilter('aidev')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeFilter === 'aidev'
+                  ? 'bg-cyan-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              AI Dev Copilot
+            </button>
+            <button
               onClick={() => setActiveFilter('qa')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeFilter === 'qa'
@@ -194,7 +264,7 @@ export const AppLibraryView = ({
               onClick={() => setActiveFilter('sales')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeFilter === 'sales'
-                  ? 'bg-indigo-600 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >

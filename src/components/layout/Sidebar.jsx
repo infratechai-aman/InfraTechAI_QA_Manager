@@ -4,7 +4,8 @@ import {
   Bug as BugIcon, Upload, List,
   Download, UploadCloud, LogOut, DoorOpen, BookOpen,
   FileText, UserPlus, Users, RefreshCw, Bot, Mail,
-  Layers, MessageSquare, Sliders, Sparkles, ShieldCheck
+  Layers, MessageSquare, Sliders, Sparkles, ShieldCheck,
+  Building2, Cpu, Volume2, Activity, Calendar
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -95,9 +96,21 @@ export const Sidebar = ({
               InfratechAI
             </span>
             <span className={`text-[11px] font-semibold tracking-wider uppercase ${
-              activeApp === 'sales' ? 'text-amber-600' : 'text-indigo-600'
+              activeApp === 'sales' 
+                ? 'text-amber-600' 
+                : activeApp === 'business' 
+                  ? 'text-emerald-600' 
+                  : activeApp === 'aidev' 
+                    ? 'text-cyan-600' 
+                    : 'text-indigo-600'
             }`}>
-              {activeApp === 'sales' ? 'Sales SDR (Harvey)' : 'QA Manager'}
+              {activeApp === 'sales' 
+                ? 'Sales SDR (Harvey)' 
+                : activeApp === 'business' 
+                  ? 'Business Command' 
+                  : activeApp === 'aidev' 
+                    ? 'AI Dev Copilot' 
+                    : 'QA Manager'}
             </span>
           </div>
         </div>
@@ -123,6 +136,81 @@ export const Sidebar = ({
       {/* Nav List */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
         
+        {/* === MODE C: BUSINESS COMMAND CENTER NAVIGATION === */}
+        {activeApp === 'business' && (
+          <div className="space-y-4">
+            <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200/80 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Portfolio Engine</span>
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Sync
+                </span>
+              </div>
+              <p className="text-xs font-black text-slate-800">Business Command Center</p>
+              <p className="text-[10px] text-slate-500">Enterprise accounts, retainers & SLAs</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                Operations Desk
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-slate-900">
+                  <Building2 size={16} className="text-emerald-600" />
+                  <span>Enterprise Portfolio</span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Active contracts, renewal expiration countdowns, SLA matrix, and detailed technical project scopes.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === MODE D: AI DEV COPILOT NAVIGATION === */}
+        {activeApp === 'aidev' && (
+          <div className="space-y-4">
+            <div className="p-3 bg-gradient-to-r from-cyan-50 to-indigo-50 rounded-xl border border-cyan-200/80 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Technical Copilot</span>
+                <span className="flex items-center gap-1 text-[10px] font-bold text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                  Voice Ready
+                </span>
+              </div>
+              <p className="text-xs font-black text-slate-800">AI DEV Technical Lead</p>
+              <p className="text-[10px] text-slate-500">Real-time speech & full platform knowledge</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                Live Knowledge Feeds
+              </div>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
+                    <CheckSquare size={13} className="text-indigo-600" /> QA Test Suites
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600">Connected</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
+                    <Building2 size={13} className="text-emerald-600" /> Contracts & Deadlines
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600">Connected</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
+                    <Bot size={13} className="text-amber-600" /> Sales Engine
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600">Connected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* === MODE A: SALES MANAGER (HARVEY) NAVIGATION === */}
         {activeApp === 'sales' && (
           <div className="space-y-4">

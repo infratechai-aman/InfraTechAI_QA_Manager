@@ -22,6 +22,15 @@ export const InviteMemberModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const loadProjectInvites = async () => {
+    try {
+      const invites = await db.getProjectInvitations(project?.id);
+      setPendingInvites(invites.filter(i => i.status === 'pending'));
+    } catch (err) {
+      console.warn('Error loading project invites:', err);
+    }
+  };
+
   // Load project's pending invites on open and ensure workspace is synced
   useEffect(() => {
     if (!isOpen || !project?.id) return;
@@ -36,15 +45,6 @@ export const InviteMemberModal = ({
       }, currentUser);
     }
   }, [isOpen, project?.id]);
-
-  const loadProjectInvites = async () => {
-    try {
-      const invites = await db.getProjectInvitations(project.id);
-      setPendingInvites(invites.filter(i => i.status === 'pending'));
-    } catch (err) {
-      console.warn('Error loading project invites:', err);
-    }
-  };
 
   if (!isOpen || !project) return null;
 

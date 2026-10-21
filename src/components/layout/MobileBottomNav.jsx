@@ -3,7 +3,7 @@ import {
   Briefcase, LayoutDashboard, Play, Bug as BugIcon, 
   List, Plus, Sparkles, X, ChevronRight, UserPlus, 
   CloudRain, Download, UploadCloud, LogOut, FileText,
-  Shield, BookOpen, Layers, RefreshCw, Mail, Users, MessageSquare, Bot
+  BookOpen, Layers, Mail, Users, MessageSquare
 } from 'lucide-react';
 
 export const MobileBottomNav = ({

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Check, X, Edit3, Send, Sparkles, AlertCircle, 
-  ArrowLeft, ArrowRight, CornerDownLeft, ShieldAlert,
-  Building, User, Mail, Zap, RefreshCw, Copy, ExternalLink
+  Check, X, Edit3, Sparkles, User, Mail, Zap, 
+  Copy, ExternalLink, Trash2 
 } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 
@@ -10,7 +9,9 @@ export const OutboxReviewDesk = ({
   outbox = [], 
   onApprove, 
   onReject, 
+  onDeleteDraft,
   onUpdateDraft,
+  onNavigateTab,
   leads = [],
   settings = {}
 }) => {
@@ -90,6 +91,15 @@ export const OutboxReviewDesk = ({
     if (!activeItem) return;
     if (onReject) onReject(activeItem.id);
     showToast(`❌ Rejected draft for ${activeItem.companyName}`);
+    if (selectedIndex >= pendingList.length - 1 && selectedIndex > 0) {
+      setSelectedIndex(prev => prev - 1);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!activeItem) return;
+    if (onDeleteDraft) onDeleteDraft(activeItem.id);
+    showToast(`🗑️ Deleted draft for ${activeItem.companyName}`);
     if (selectedIndex >= pendingList.length - 1 && selectedIndex > 0) {
       setSelectedIndex(prev => prev - 1);
     }
@@ -176,8 +186,16 @@ export const OutboxReviewDesk = ({
           </div>
           <h2 className="text-xl font-bold text-slate-900">Your Outbox is 100% Cleared!</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            All generated sales emails have been reviewed. When the next Harvey heartbeat triggers (or when you scout new prospects), fresh hyper-personalized drafts will queue up here.
+            All generated sales emails have been reviewed. When you scout or add real prospects in the pipeline, you can draft hyper-personalized sequences to review here.
           </p>
+          {onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab('leads')}
+              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              Go to Prospects & Signals →
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -326,6 +344,15 @@ export const OutboxReviewDesk = ({
                 </div>
 
                 <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-600 hover:text-rose-700 font-bold text-xs rounded-xl cursor-pointer transition-all active:scale-95"
+                    title="Delete Draft completely"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </button>
+
                   <button
                     onClick={handleReject}
                     className="flex items-center gap-2 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs rounded-xl cursor-pointer transition-all active:scale-95"

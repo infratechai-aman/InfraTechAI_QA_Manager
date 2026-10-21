@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { 
-  X, Check, Sparkles, Bot, ShieldCheck, Mail, 
-  Key, Globe, ExternalLink, Zap, Sliders, CheckCircle2 
+  X, Sparkles, Bot, Key, ExternalLink, Briefcase, Trash2
 } from 'lucide-react';
 
-export const HarveySettingsModal = ({ isOpen, onClose, settings = {}, onSave }) => {
+export const HarveySettingsModal = ({ isOpen, onClose, settings = {}, onSave, onClearData }) => {
   const [formData, setFormData] = useState({ ...settings });
   const [toast, setToast] = useState(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   if (!isOpen) return null;
 
@@ -281,6 +281,56 @@ export const HarveySettingsModal = ({ isOpen, onClose, settings = {}, onSave }) 
                 onChange={(e) => handleChange('requireApproval', e.target.checked)}
                 className="w-5 h-5 text-indigo-600 rounded cursor-pointer accent-indigo-600"
               />
+            </div>
+          </div>
+
+          {/* SECTION 4: Pipeline Data Management */}
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <label className="font-bold text-slate-900 uppercase tracking-wider text-[11px] block flex items-center justify-between">
+              <span>Pipeline Data & Storage</span>
+              <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Clean Production State
+              </span>
+            </label>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                All mock seeds (ApexFlow, PulseCare, OmniCart, KiteWave) have been permanently removed. To reset your pipeline and start 100% fresh, use the reset option below.
+              </p>
+              {showClearConfirm ? (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
+                  <span className="text-xs font-bold text-rose-900 block">
+                    Are you sure? This will remove all local prospects, outbox drafts, and conversations.
+                  </span>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      className="px-3 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onClearData) onClearData();
+                        setShowClearConfirm(false);
+                        setToast('All sales data reset successfully!');
+                        setTimeout(() => setToast(null), 2500);
+                      }}
+                      className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer shadow-xs"
+                    >
+                      Yes, Clear Everything
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Clear All Sales Pipeline Data</span>
+                </button>
+              )}
             </div>
           </div>
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Bot, LayoutDashboard, Mail, Users, Layers, MessageSquare, 
-  Sliders, RefreshCw, Sparkles, CheckCircle2 
+  LayoutDashboard, Mail, Users, Layers, MessageSquare, Sliders
 } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 import { SalesCockpit } from './SalesCockpit';
@@ -18,61 +17,88 @@ export const SalesManagerView = ({
   onOpenSettings,
   onUpdateOutboxCount
 }) => {
+  const userId = currentUser?.uid;
+
   const [internalSalesTab, setInternalSalesTab] = useState('cockpit');
   const salesTab = externalSalesTab || internalSalesTab;
   const setSalesTab = externalSetSalesTab || setInternalSalesTab;
 
-  const [leads, setLeads] = useState([]);
-  const [outbox, setOutbox] = useState([]);
-  const [conversations, setConversations] = useState([]);
-  const [settings, setSettings] = useState({});
+  // Initial clean state with lazy initializers
+  const [settings, setSettings] = useState(() => salesService.getSettings(userId));
+  const [leads, setLeads] = useState(() => salesService.getLeads(userId));
+  const [outbox, setOutbox] = useState(() => salesService.getOutbox(userId));
+  const [conversations, setConversations] = useState(() => salesService.getConversations(userId));
+  
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [notification, setNotification] = useState(null);
 
-  // Load initial data
+  // Re-sync if user changes
   useEffect(() => {
-    setSettings(salesService.getSettings());
-    const l = salesService.getLeads();
-    const o = salesService.getOutbox();
-    const c = salesService.getConversations();
+    if (!userId) return;
+    setSettings(salesService.getSettings(userId));
+    const l = salesService.getLeads(userId);
+    const o = salesService.getOutbox(userId);
+    const c = salesService.getConversations(userId);
     setLeads(l);
     setOutbox(o);
     setConversations(c);
+  }, [userId]);
 
-    const pending = o.filter(item => item.status === 'pending_approval').length;
+  // Sync outbox badge count
+  useEffect(() => {
+    const pending = outbox.filter(item => item.status === 'pending_approval').length;
     if (onUpdateOutboxCount) onUpdateOutboxCount(pending);
-  }, []);
+  }, [outbox, onUpdateOutboxCount]);
 
   const showNotification = (msg) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3500);
   };
 
+  // Decisions Desk Handlers
   const handleApprove = (outboxId) => {
-    const updated = salesService.approveEmail(outboxId);
+    const updated = salesService.approveEmail(outboxId, userId);
     setOutbox(updated);
-    const pending = updated.filter(item => item.status === 'pending_approval').length;
-    if (onUpdateOutboxCount) onUpdateOutboxCount(pending);
   };
 
   const handleReject = (outboxId) => {
-    const updated = salesService.rejectEmail(outboxId);
+    const updated = salesService.rejectEmail(outboxId, 'Rejected', userId);
     setOutbox(updated);
-    const pending = updated.filter(item => item.status === 'pending_approval').length;
-    if (onUpdateOutboxCount) onUpdateOutboxCount(pending);
+  };
+
+  const handleDeleteDraft = (outboxId) => {
+    const updated = salesService.deleteOutboxItem(outboxId, userId);
+    setOutbox(updated);
+    showNotification('🗑️ Draft removed from Outbox');
   };
 
   const handleUpdateDraft = (outboxId, newBody, newSubject) => {
-    const updated = salesService.updateEmailDraft(outboxId, newBody, newSubject);
+    const updated = salesService.updateEmailDraft(outboxId, newBody, newSubject, userId);
     setOutbox(updated);
   };
 
+  // Leads Handlers
   const handleAddLead = (newLead) => {
-    const lead = salesService.addLead(newLead);
-    setLeads(salesService.getLeads());
-    showNotification(`🎯 Discovered & profiled new prospect: ${lead.companyName}`);
+    const lead = salesService.addLead(newLead, userId);
+    const updated = salesService.getLeads(userId);
+    setLeads(updated);
+    showNotification(`🎯 Added real prospect to pipeline: ${lead.companyName}`);
   };
 
+  const handleAddLeads = (newLeads) => {
+    salesService.addLeads(newLeads, userId);
+    const updated = salesService.getLeads(userId);
+    setLeads(updated);
+    showNotification(`🎯 Added ${newLeads.length} prospects to pipeline!`);
+  };
+
+  const handleDeleteLead = (leadId) => {
+    const updated = salesService.deleteLead(leadId, userId);
+    setLeads(updated);
+    showNotification('🗑️ Prospect removed from pipeline');
+  };
+
+  // Draft cold email sequence for a lead
   const handleDraftEmailForLead = async (lead) => {
     showNotification(`⚡ Drafting cold email sequence for ${lead.companyName}...`);
     try {
@@ -82,7 +108,6 @@ export const SalesManagerView = ({
       });
 
       const newOutboxItem = {
-        id: 'outbox-' + Math.random().toString(36).substring(2, 9),
         leadId: lead.id,
         companyName: lead.companyName,
         recipientName: lead.contactName,
@@ -98,27 +123,82 @@ export const SalesManagerView = ({
         createdAt: 'Just now'
       };
 
-      const updatedOutbox = [newOutboxItem, ...outbox];
-      salesService.saveOutbox(updatedOutbox);
+      salesService.addToOutbox(newOutboxItem, userId);
+      const updatedOutbox = salesService.getOutbox(userId);
       setOutbox(updatedOutbox);
       setSalesTab('outbox');
-      showNotification(`📬 Email drafted and queued in Decisions Desk!`);
+      showNotification(`📬 Outreach email drafted for ${lead.companyName} and queued in Decisions Desk!`);
     } catch (err) {
       showNotification(`Failed to draft: ${err.message}`);
     }
   };
 
+  // Conversations Handlers
+  const handleAddConversation = (newConv) => {
+    const conv = salesService.addConversation(newConv, userId);
+    setConversations(salesService.getConversations(userId));
+    return conv;
+  };
+
+  const handleDeleteConversation = (convId) => {
+    const updated = salesService.deleteConversation(convId, userId);
+    setConversations(updated);
+    showNotification('🗑️ Conversation thread deleted');
+  };
+
+  const handleSendReply = (convId, sentMsg) => {
+    const convs = salesService.getConversations(userId);
+    const updated = convs.map(c => {
+      if (c.id === convId) {
+        const filteredMessages = (c.messages || []).filter(m => m.sender !== 'harvey_draft');
+        return {
+          ...c,
+          lastReplyTime: 'Just now',
+          messages: [...filteredMessages, sentMsg]
+        };
+      }
+      return c;
+    });
+    salesService.saveConversations(updated, userId);
+    setConversations(updated);
+  };
+
+  // Reset & Clear All Data
+  const handleClearAllData = () => {
+    salesService.clearAllSalesData(userId);
+    setLeads([]);
+    setOutbox([]);
+    setConversations([]);
+    showNotification('🧹 All sales pipeline data reset to clean state.');
+  };
+
+  // Settings
   const handleSaveSettings = (newSettings) => {
-    const saved = salesService.saveSettings(newSettings);
+    const saved = salesService.saveSettings(newSettings, userId);
     setSettings(saved);
   };
 
+  // Heartbeat Cycle
   const handleRunHeartbeat = async () => {
-    // Deterministic Harvey loop: scout -> profile -> write -> outbox
     showNotification('⚡ Harvey heartbeat cycle started...');
-    setTimeout(() => {
-      showNotification('✅ Cycle complete: 1 new business profiled, 0 API bill incurred.');
-    }, 1500);
+    
+    // Check if there are uncontacted leads without active drafts
+    const draftedLeadIds = new Set(outbox.map(o => o.leadId));
+    const nextLead = leads.find(l => !draftedLeadIds.has(l.id));
+
+    if (nextLead) {
+      setTimeout(() => {
+        handleDraftEmailForLead(nextLead);
+      }, 1000);
+    } else {
+      setTimeout(() => {
+        showNotification(
+          leads.length === 0
+            ? '✅ Cycle complete: 0 prospects in pipeline. Add real leads to enable auto-drafting.'
+            : '✅ Cycle complete: All current prospects in pipeline have active drafts or outreach queued.'
+        );
+      }, 1200);
+    }
   };
 
   const pendingCount = outbox.filter(o => o.status === 'pending_approval').length;
@@ -126,7 +206,7 @@ export const SalesManagerView = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 overflow-y-auto">
       
-      {/* Toast */}
+      {/* Toast Notification */}
       {notification && (
         <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700 animate-slideDown">
           {notification}
@@ -178,6 +258,11 @@ export const SalesManagerView = ({
           >
             <Users className="w-4 h-4" />
             <span>Prospects & Signals</span>
+            {leads.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                {leads.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -202,6 +287,11 @@ export const SalesManagerView = ({
           >
             <MessageSquare className="w-4 h-4" />
             <span>Inbound & Replies</span>
+            {conversations.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                {conversations.length}
+              </span>
+            )}
           </button>
 
         </div>
@@ -235,7 +325,9 @@ export const SalesManagerView = ({
             outbox={outbox}
             onApprove={handleApprove}
             onReject={handleReject}
+            onDeleteDraft={handleDeleteDraft}
             onUpdateDraft={handleUpdateDraft}
+            onNavigateTab={(t) => setSalesTab(t)}
             leads={leads}
             settings={settings}
           />
@@ -245,6 +337,8 @@ export const SalesManagerView = ({
           <LeadsPipelineView
             leads={leads}
             onAddLead={handleAddLead}
+            onAddLeads={handleAddLeads}
+            onDeleteLead={handleDeleteLead}
             onDraftEmailForLead={handleDraftEmailForLead}
             onNavigateTab={(t) => setSalesTab(t)}
           />
@@ -257,6 +351,10 @@ export const SalesManagerView = ({
         {salesTab === 'conversations' && (
           <ConversationsView
             conversations={conversations}
+            onSendReply={handleSendReply}
+            onAddConversation={handleAddConversation}
+            onDeleteConversation={handleDeleteConversation}
+            leads={leads}
           />
         )}
       </div>
@@ -267,6 +365,7 @@ export const SalesManagerView = ({
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSave={handleSaveSettings}
+        onClearData={handleClearAllData}
       />
 
     </div>

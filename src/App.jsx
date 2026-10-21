@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { db } from './services/db';
 import { generateId, getTimestamp } from './utils/formatters';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-import { Sidebar } from './components/layout/Sidebar';
 import { AppRail } from './components/layout/AppRail';
+import { Sidebar } from './components/layout/Sidebar';
 import { MobileHeader } from './components/layout/MobileHeader';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { ProjectsView } from './components/projects/ProjectsView';
@@ -15,6 +15,8 @@ import { BugsView } from './components/bugs/BugsView';
 import { ReportsView } from './components/reports/ReportsView';
 import { AppLibraryView } from './components/hub/AppLibraryView';
 import { SalesManagerView } from './components/sales/SalesManagerView';
+import { BusinessCommandCenterView } from './components/business/BusinessCommandCenterView';
+import { AiDevView } from './components/aidev/AiDevView';
 import { HarveySettingsModal } from './components/sales/HarveySettingsModal';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { InviteMemberModal } from './components/modals/InviteMemberModal';
@@ -23,6 +25,7 @@ import { InvitationBanner } from './components/layout/InvitationBanner';
 import { LoginView } from './components/auth/LoginView';
 import { mergeTestCases, mergeBugs, mergeFiles, isExecuted } from './utils/workspaceMerger';
 import { salesService } from './services/salesService';
+import { businessService } from './services/businessService';
 
 // Helper to ensure projects have owner and member lists
 const normalizeProjects = (projs, userId, userEmail) => {
@@ -48,17 +51,25 @@ const normalizeProjects = (projs, userId, userEmail) => {
 function AuthenticatedWorkspace({ currentUser, logout }) {
   const userId = currentUser.uid;
 
-  const [activeApp, setActiveApp] = useState('hub'); // 'hub' | 'qa' | 'sales'
+  const [activeApp, setActiveApp] = useState('hub'); // 'hub' | 'qa' | 'sales' | 'business' | 'aidev'
   const [salesTab, setSalesTab] = useState('cockpit');
   const [isHarveySettingsOpen, setIsHarveySettingsOpen] = useState(false);
   const [salesSettings, setSalesSettings] = useState(() => salesService.getSettings());
   const [pendingOutboxCount, setPendingOutboxCount] = useState(() => {
     try {
-      return salesService.getOutbox().filter(o => o.status === 'pending_approval').length;
+      return salesService.getOutbox(userId).filter(o => o.status === 'pending_approval').length;
     } catch {
-      return 2;
+      return 0;
     }
   });
+  const [contracts, setContracts] = useState(() => {
+    try {
+      return businessService.getContracts(userId);
+    } catch {
+      return [];
+    }
+  });
+  const contractMetrics = useMemo(() => businessService.getPortfolioMetrics(contracts), [contracts]);
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState([]);
   const [files, setFiles] = useState([]);
@@ -1051,6 +1062,19 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   return (
     <div className="flex h-screen h-[100dvh] w-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
       
+      {/* Desktop App Rail Dock (Linear/Slack Style Multi-App Switcher) */}
+      {activeApp !== 'hub' && (
+        <AppRail
+          activeApp={activeApp}
+          setActiveApp={setActiveApp}
+          openBugsCount={openBugsCount}
+          pendingOutboxCount={pendingOutboxCount}
+          contractsExpiringSoon={contractMetrics.expiringSoonCount}
+          currentUser={currentUser}
+          onLogout={logout}
+        />
+      )}
+
       {/* Desktop Sidebar Navigation (shown only when inside QA or Sales, hidden on Apps Library Hub) */}
       {activeApp !== 'hub' && (
         <Sidebar
@@ -1110,6 +1134,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             projects={projects}
             openBugsCount={openBugsCount}
             pendingOutboxCount={pendingOutboxCount}
+            contractsCount={contractMetrics.totalContracts}
+            contractsExpiringSoon={contractMetrics.expiringSoonCount}
+            contractsMRR={contractMetrics.totalMRR}
             currentUser={currentUser}
             onLogout={logout}
             onOpenSettings={() => setIsHarveySettingsOpen(true)}
@@ -1259,10 +1286,47 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             )}
           </>
         )}
+
+        {/* ======================================================== */}
+        {/* MODE 3: BUSINESS COMMAND CENTER                         */}
+        {/* ======================================================== */}
+        {activeApp === 'business' && (
+          <BusinessCommandCenterView
+            currentUser={currentUser}
+            qaProjects={projects}
+            qaBugs={bugs}
+            qaTests={tests}
+            onNavigateToQA={(projectId) => {
+              setActiveApp('qa');
+              if (projectId) {
+                setActiveProjectId(projectId);
+                setActiveTab('dashboard');
+              }
+            }}
+          />
+        )}
+
+        {/* ======================================================== */}
+        {/* MODE 4: AI DEV (AUTONOMOUS TECHNICAL COPILOT)           */}
+        {/* ======================================================== */}
+        {activeApp === 'aidev' && (
+          <AiDevView
+            currentUser={currentUser}
+            projects={projects}
+            files={files}
+            tests={tests}
+            bugs={bugs}
+            contracts={contracts}
+            leads={salesService.getLeads(userId)}
+            outbox={salesService.getOutbox(userId)}
+            syncStatus={syncStatus}
+            onSwitchApp={(targetApp) => setActiveApp(targetApp)}
+          />
+        )}
       </main>
 
-      {/* Mobile Floating Glass Dock & Options Sheet (shown when inside an app) */}
-      {activeApp !== 'hub' && (
+      {/* Mobile Floating Glass Dock & Options Sheet (shown when inside QA or Sales) */}
+      {(activeApp === 'qa' || activeApp === 'sales') && (
         <MobileBottomNav
           activeApp={activeApp}
           salesTab={salesTab}
@@ -1298,8 +1362,12 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         onClose={() => setIsHarveySettingsOpen(false)}
         settings={salesSettings}
         onSave={(newS) => {
-          const saved = salesService.saveSettings(newS);
+          const saved = salesService.saveSettings(newS, userId);
           setSalesSettings(saved);
+        }}
+        onClearData={() => {
+          salesService.clearAllSalesData(userId);
+          setPendingOutboxCount(0);
         }}
       />
 

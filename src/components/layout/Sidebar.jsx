@@ -5,7 +5,7 @@ import {
   Download, UploadCloud, LogOut, DoorOpen, BookOpen,
   FileText, UserPlus, Users, RefreshCw, Bot, Mail,
   Layers, MessageSquare, Sliders, Sparkles, ShieldCheck,
-  Building2, Cpu, Volume2, Activity, Calendar
+  Building2, Cpu, Volume2, Activity, Calendar, CheckSquare
 } from 'lucide-react';
 
 export const Sidebar = ({ 

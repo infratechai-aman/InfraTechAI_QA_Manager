@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J.A.R.V.I.S. // MK_VII — Dynamic Vocal Interface</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;600&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #00e5ff;
+      --primary-rgb: 0, 229, 255;
+      --secondary: #0891b2;
+      --secondary-rgb: 8, 145, 178;
+      --danger: #f43f5e;
+      --danger-rgb: 244, 63, 94;
+      --bg-deep: #020609;
+      --bg-core: #05161e;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-deep);
+      font-family: 'JetBrains Mono', monospace;
+      color: #cbd5e1;
+    }
+
+    /* Atmospheric Background Layering matching MK_VII reference */
+    .bg-atmosphere {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--secondary-rgb), 0.06) 28%, rgba(4, 14, 20, 0.92) 62%, #020508 100%),
+        radial-gradient(circle at 65% 72%, rgba(190, 24, 93, 0.045) 0%, transparent 45%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Fine Tactical Grid Overlay */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(var(--primary-rgb), 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(var(--primary-rgb), 0.025) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.25) 85%);
+      -webkit-mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.25) 85%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Subtle Scanlines */
+    .bg-scanlines {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.16) 3px
+      );
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.5;
+    }
+
+    /* Corner HUD Brackets */
+    .hud-bracket-left {
+      position: relative;
+      padding-top: 12px;
+      padding-left: 16px;
+    }
+    .hud-bracket-left::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 145px;
+      height: 112px;
+      border-top: 1.5px solid rgba(var(--primary-rgb), 0.55);
+      border-left: 1.5px solid rgba(var(--primary-rgb), 0.55);
+      box-shadow: -2px -2px 12px rgba(var(--primary-rgb), 0.15);
+      pointer-events: none;
+    }
+
+    .hud-bracket-right {
+      position: relative;
+      padding-top: 12px;
+      padding-right: 16px;
+      text-align: right;
+    }
+    .hud-bracket-right::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 145px;
+      height: 96px;
+      border-top: 1.5px solid rgba(var(--primary-rgb), 0.55);
+      border-right: 1.5px solid rgba(var(--primary-rgb), 0.55);
+      box-shadow: 2px -2px 12px rgba(var(--primary-rgb), 0.15);
+      pointer-events: none;
+    }
+
+    /* Glowing Text Utilities */
+    .glow-cyan {
+      color: var(--primary);
+      text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.65);
+    }
+
+    .glow-danger {
+      color: var(--danger);
+      text-shadow: 0 0 12px rgba(var(--danger-rgb), 0.55);
+    }
+
+    /* Equalizer Bars Top Right */
+    .eq-bar {
+      width: 6px;
+      height: 26px;
+      background: rgba(var(--primary-rgb), 0.16);
+      border: 1px solid rgba(var(--primary-rgb), 0.28);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.12s ease;
+    }
+    .eq-bar-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+      transition: height 0.08s ease-out, opacity 0.15s ease;
+    }
+
+    /* Terminate / Action Prompt Button */
+    .terminate-btn {
+      letter-spacing: 0.36em;
+      font-size: 0.68rem;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .terminate-btn:hover {
+      letter-spacing: 0.42em;
+      filter: brightness(1.25);
+    }
+
+    /* Vocal Status Text */
+    .status-track {
+      letter-spacing: 0.38em;
+      font-size: 0.68rem;
+    }
+
+    /* Glassmorphic Minimal Control Dock */
+    .hud-dock {
+      background: rgba(3, 12, 18, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(var(--primary-rgb), 0.22);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--primary-rgb), 0.07);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dock-btn {
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      padding: 6px 12px;
+      border: 1px solid rgba(var(--primary-rgb), 0.2);
+      background: rgba(var(--primary-rgb), 0.04);
+      color: #94a3b8;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .dock-btn:hover {
+      border-color: rgba(var(--primary-rgb), 0.55);
+      color: #f8fafc;
+      background: rgba(var(--primary-rgb), 0.12);
+      box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.2);
+    }
+    .dock-btn.active {
+      border-color: var(--primary);
+      background: rgba(var(--primary-rgb), 0.18);
+      color: var(--primary);
+      box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.3);
+    }
+    .dock-btn.danger-active {
+      border-color: var(--danger);
+      background: rgba(var(--danger-rgb), 0.18);
+      color: #fda4af;
+      box-shadow: 0 0 14px rgba(var(--danger-rgb), 0.3);
+    }
+
+    /* Custom Range Slider */
+    input[type="range"].hud-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 72px;
+      height: 3px;
+      background: rgba(var(--primary-rgb), 0.25);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type="range"].hud-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+      cursor: pointer;
+    }
+
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 0.85; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3.2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="relative select-none">
+
+  <!-- Background Layers -->
+  <div class="bg-atmosphere"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-scanlines"></div>
+
+  <!-- Fullscreen Interactive Canvas for Particles, Orbital Geometry & J.A.R.V.I.S. Vocal Core -->
+  <canvas id="jarvisCanvas" class="fixed inset-0 w-full h-full z-10 cursor-pointer" title="Click Core to Toggle Voice / Speak"></canvas>
+
+  <!-- HUD Overlay Layer -->
+  <div class="relative z-20 w-full h-full flex flex-col justify-between p-5 sm:p-8 pointer-events-none">
+
+    <!-- TOP HUD ROW -->
+    <div class="flex items-start justify-between w-full">
+
+      <!-- Top-Left Telemetry Bracket (Exact match to reference image) -->
+      <div class="hud-bracket-left pointer-events-auto">
+        <div class="relative flex flex-col">
+          <!-- Layered Header like MK_VII screenshot -->
+          <div class="flex items-baseline gap-2">
+            <span class="text-[11px] sm:text-xs tracking-[0.28em] text-slate-400/80 font-normal">
+              &bull; J.A.R.V.I.S. // MK_VII
+            </span>
+          </div>
+          <div id="sysCorpTag" class="text-[10px] tracking-[0.18em] glow-cyan font-medium -mt-2.5 ml-1">
+            SYS.CORP.MK7
+          </div>
+
+          <!-- Horizontal Tactical Rule -->
+          <div class="w-28 h-[1px] bg-cyan-400/35 my-2.5 shadow-[0_0_6px_rgba(0,229,255,0.4)]"></div>
+
+          <!-- Uplink & Mic Status -->
+          <div id="uplinkText" class="text-[10px] tracking-[0.16em] glow-cyan font-medium">
+            UPLINK: ESTABLISHED
+          </div>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span id="micDot" class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00e5ff]"></span>
+            <span id="micStatusText" class="text-[10px] tracking-[0.18em] text-cyan-400/65">
+              MIC ACTIVE
+            </span>
+          </div>
+
+          <!-- Live Frequency / Harmonic Sub-readout -->
+          <div id="freqReadout" class="text-[9px] tracking-[0.2em] text-slate-500/80 mt-1.5 font-light">
+            FREQ: 000 Hz // 0.0 dB
+          </div>
+        </div>
+      </div>
+
+      <!-- Top-Right Telemetry Bracket (Exact match to reference image) -->
+      <div class="hud-bracket-right pointer-events-auto">
+        <div class="flex flex-col items-end">
+          <div class="flex items-center gap-2">
+            <span id="topRightStateLabel" class="text-[11px] sm:text-xs tracking-[0.28em] text-slate-400/80">
+              STANDBY
+            </span>
+            <span id="statusBeacon" class="w-2 h-2 rounded-full bg-white shadow-[0_0_10px_#ffffff,0_0_18px_#00e5ff]"></span>
+          </div>
+          <div id="memReadout" class="text-[10px] tracking-[0.16em] glow-cyan font-medium -mt-1.5 mr-3">
+            MEM: 44.2 TB
+          </div>
+
+          <!-- 4 Equalizer Telemetry Bars -->
+          <div class="flex items-end gap-2 mt-3 mr-1" id="eqContainer">
+            <div class="eq-bar"><div class="eq-bar-fill" id="eqBar0" style="height: 65%; opacity: 0.55;"></div></div>
+            <div class="eq-bar"><div class="eq-bar-fill" id="eqBar1" style="height: 85%; opacity: 0.95;"></div></div>
+            <div class="eq-bar"><div class="eq-bar-fill" id="eqBar2" style="height: 50%; opacity: 0.4;"></div></div>
+            <div class="eq-bar"><div class="eq-bar-fill" id="eqBar3" style="height: 60%; opacity: 0.45;"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CENTER-BOTTOM VOCAL STATUS & PROMPTS -->
+    <div class="flex flex-col items-center justify-end flex-1 pb-4 sm:pb-6">
+
+      <!-- Spacer pushing labels below the central orb -->
+      <div class="h-[46vh] sm:h-[48vh] pointer-events-none"></div>
+
+      <!-- TAP TO TERMINATE / ACTION TRIGGER -->
+      <button
+        id="terminateBtn"
+        type="button"
+        class="terminate-btn glow-danger uppercase font-medium py-2 px-5 rounded pointer-events-auto focus:outline-none"
+      >
+        TAP TO TERMINATE
+      </button>
+
+      <!-- Dynamic Vocal Subtitle / Live Dialogue Wave -->
+      <div class="mt-10 sm:mt-14 flex flex-col items-center text-center max-w-lg px-4">
+        <div
+          id="vocalStatePrompt"
+          class="status-track text-slate-400/65 uppercase transition-all duration-300"
+        >
+          AWAITING VOCAL INPUT
+        </div>
+        <div
+          id="liveTranscriptText"
+          class="mt-2.5 text-[11px] sm:text-xs tracking-[0.16em] text-cyan-300/80 font-light min-h-[1.25rem] transition-opacity duration-300 opacity-0"
+        >
+          "Good evening, Sir. Mark VII vocal interface online."
+        </div>
+      </div>
+
+      <!-- Minimal Collapsible Interactive Control Bar (For testing Mic, Jarvis Voice, Cadence & Themes) -->
+      <div
+        id="controlDockWrapper"
+        class="mt-6 pointer-events-auto transition-all duration-300"
+      >
+        <div id="hudDock" class="hud-dock rounded-md px-3 py-2 flex flex-wrap items-center justify-center gap-2">
+          <button id="modeStandbyBtn" type="button" class="dock-btn" data-mode="standby">
+            STANDBY
+          </button>
+          <button id="modeJarvisBtn" type="button" class="dock-btn active" data-mode="jarvis">
+            J.A.R.V.I.S. SPEAKING
+          </button>
+          <button id="modeMicBtn" type="button" class="dock-btn" data-mode="mic">
+            LIVE MIC / BAAT KARO
+          </button>
+          <button id="modeConverseBtn" type="button" class="dock-btn" data-mode="converse">
+            AUTO CONVERSE
+          </button>
+
+          <div class="h-4 w-[1px] bg-cyan-500/20 mx-1 hidden sm:block"></div>
+
+          <!-- Trigger Next Jarvis Voice Line with Synth Audio -->
+          <button id="triggerSpeechBtn" type="button" class="dock-btn" title="Play synthesized J.A.R.V.I.S. voice response">
+            &#9654; VOICE PULSE
+          </button>
+
+          <!-- Sound Effects / Vocal Synth Mute Toggle -->
+          <button id="audioToggleBtn" type="button" class="dock-btn active" title="Toggle Sci-Fi Vocal Synth & HUD Audio">
+            SFX: ON
+          </button>
+
+          <!-- Gain / Reactivity Slider -->
+          <div class="flex items-center gap-1.5 px-1.5" title="Voice Animation Reactivity">
+            <span class="text-[9px] tracking-[0.14em] text-slate-400">GAIN</span>
+            <input id="gainSlider" type="range" min="0.5" max="2.5" step="0.1" value="1.4" class="hud-slider" />
+          </div>
+
+          <!-- Theme Palette Cycber Button -->
+          <button id="themeCycleBtn" type="button" class="dock-btn" title="Switch HUD Color Matrix">
+            PALETTE: MK_VII
+          </button>
+
+          <!-- Hide Dock for Pure Screenshot / Minimal Mode -->
+          <button id="hideDockBtn" type="button" class="dock-btn" title="Hide controls for pure minimal HUD (Press H to restore)">
+            MINIMAL HUD
+          </button>
+        </div>
+      </div>
+
+      <!-- Restore Minimal HUD subtle button when dock is hidden -->
+      <button
+        id="restoreDockBtn"
+        type="button"
+        class="hidden mt-4 pointer-events-auto text-[9px] tracking-[0.3em] text-cyan-400/35 hover:text-cyan-400/80 uppercase py-1 px-3 transition-opacity"
+      >
+        [ + HUD CONTROLS ]
+      </button>
+
+      <!-- Bottom Branding Watermark matching reference image -->
+      <div class="mt-5 text-[9px] sm:text-[10px] tracking-[0.38em] text-slate-500/50 uppercase">
+        AI STUDIO POWERED
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // ==========================================
+      // 1. STATE & CONFIGURATION
+      // ==========================================
+      const canvas = document.getElementById('jarvisCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // UI Elements
+      const terminateBtn = document.getElementById('terminateBtn');
+      const vocalStatePrompt = document.getElementById('vocalStatePrompt');
+      const liveTranscriptText = document.getElementById('liveTranscriptText');
+      const topRightStateLabel = document.getElementById('topRightStateLabel');
+      const statusBeacon = document.getElementById('statusBeacon');
+      const uplinkText = document.getElementById('uplinkText');
+      const micStatusText = document.getElementById('micStatusText');
+      const micDot = document.getElementById('micDot');
+      const freqReadout = document.getElementById('freqReadout');
+      const memReadout = document.getElementById('memReadout');
+      const eqBars = [
+        document.getElementById('eqBar0'),
+        document.getElementById('eqBar1'),
+        document.getElementById('eqBar2'),
+        document.getElementById('eqBar3')
+      ];
+
+      const modeButtons = {
+        standby: document.getElementById('modeStandbyBtn'),
+        jarvis: document.getElementById('modeJarvisBtn'),
+        mic: document.getElementById('modeMicBtn'),
+        converse: document.getElementById('modeConverseBtn')
+      };
+      const triggerSpeechBtn = document.getElementById('triggerSpeechBtn');
+      const audioToggleBtn = document.getElementById('audioToggleBtn');
+      const gainSlider = document.getElementById('gainSlider');
+      const themeCycleBtn = document.getElementById('themeCycleBtn');
+      const hideDockBtn = document.getElementById('hideDockBtn');
+      const restoreDockBtn = document.getElementById('restoreDockBtn');
+      const controlDockWrapper = document.getElementById('controlDockWrapper');
+
+      // Color Palettes (Default matches uploaded MK_VII image)
+      const PALETTES = [
+        {
+          name: 'MK_VII',
+          primary: '#00e5ff',
+          primaryRgb: '0, 229, 255',
+          secondary: '#0891b2',
+          secondaryRgb: '8, 145, 178',
+          danger: '#f43f5e',
+          dangerRgb: '244, 63, 94'
+        },
+        {
+          name: 'ARC_BLUE',
+          primary: '#38bdf8',
+          primaryRgb: '56, 189, 248',
+          secondary: '#2563eb',
+          secondaryRgb: '37, 99, 235',
+          danger: '#fb7185',
+          dangerRgb: '251, 113, 133'
+        },
+        {
+          name: 'STARK_GOLD',
+          primary: '#fbbf24',
+          primaryRgb: '251, 191, 36',
+          secondary: '#06b6d4',
+          secondaryRgb: '6, 182, 212',
+          danger: '#ef4444',
+          dangerRgb: '239, 68, 68'
+        },
+        {
+          name: 'OVERRIDE_RED',
+          primary: '#f43f5e',
+          primaryRgb: '244, 63, 94',
+          secondary: '#be123c',
+          secondaryRgb: '190, 18, 60',
+          danger: '#00e5ff',
+          dangerRgb: '0, 229, 255'
+        }
+      ];
+      let currentPaletteIdx = 0;
+
+      // Jarvis Dialogue Lines for realistic syllable cadence & display
+      const JARVIS_LINES = [
+        "Good evening, Sir. Mark VII vocal telemetry is online and calibrated.",
+        "Scanning acoustic frequencies. All neural pathways are operating at peak efficiency.",
+        "Uplink established with Stark orbital grid. Awaiting your vocal command.",
+        "Voiceprint verified. Harmonic dampers engaged and ready for real-time synthesis.",
+        "I have compiled the diagnostic protocols. Shall I initiate the core sequence?"
+      ];
+      const USER_SIM_LINES = [
+        "Jarvis, run a full diagnostic on the Mark VII vocal interface.",
+        "Check uplink stability and calibrate harmonic frequency rings.",
+        "Switch display matrix to dynamic vocal resonance mode."
+      ];
+      let lineIndex = 0;
+
+      // Core State
+      const state = {
+        mode: 'jarvis', // 'standby' | 'jarvis' | 'mic' | 'converse' | 'terminated'
+        sfxEnabled: true,
+        gain: 1.4,
+        micActive: false,
+        micStream: null,
+        audioCtx: null,
+        analyser: null,
+        freqData: new Uint8Array(128),
+        timeData: new Uint8Array(128),
+        // Smoothed audio metrics (0..1)
+        energy: 0,
+        bass: 0,
+        mid: 0,
+        treble: 0,
+        pitchHz: 148,
+        // Animation accumulators
+        time: 0,
+        radarAngle: -0.35,
+        ringRot1: 0,
+        ringRot2: 0,
+        ringRot3: 0,
+        shockwaves: [],
+        lastShockwaveTime: 0,
+        converseTimer: 0,
+        converseSubState: 'jarvis', // 'user' | 'processing' | 'jarvis'
+        pointerX: 0,
+        pointerY: 0,
+        isPointerDown: false
+      };
+
+      // ==========================================
+      // 2. CANVAS RESIZE & FLOATING PARTICLES
+      // ==========================================
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const particles = [];
+      const PARTICLE_COUNT = 52;
+
+      function initParticles() {
+        particles.length = 0;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.22,
+            vy: (Math.random() - 0.5) * 0.22,
+            size: Math.random() * 1.9 + 0.6,
+            alpha: Math.random() * 0.55 + 0.12,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.02 + 0.008
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (particles.length === 0) initParticles();
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      // ==========================================
+      // 3. WEB AUDIO API: REAL MIC & SCI-FI SYNTH
+      // ==========================================
+      function ensureAudioContext() {
+        if (!state.audioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            state.audioCtx = new AudioCtx();
+          }
+        }
+        if (state.audioCtx && state.audioCtx.state === 'suspended') {
+          state.audioCtx.resume().catch(() => {});
+        }
+      }
+
+      // Subtle Sci-Fi HUD Chirp / Vocal Formant Pulse
+      function playHudBeep(freq = 880, duration = 0.09, type = 'sine') {
+        if (!state.sfxEnabled) return;
+        try {
+          ensureAudioContext();
+          if (!state.audioCtx) return;
+          const now = state.audioCtx.currentTime;
+          const osc = state.audioCtx.createOscillator();
+          const gain = state.audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + duration);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(state.audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (e) {}
+      }
+
+      // Speak a J.A.R.V.I.S. line using Web Speech API (if supported) + harmonic envelope
+      function speakJarvisPhrase(text) {
+        liveTranscriptText.textContent = `"${text}"`;
+        liveTranscriptText.style.opacity = '1';
+
+        if (!state.sfxEnabled) return;
+        try {
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.pitch = 0.88;
+            utter.rate = 1.02;
+            utter.volume = 0.65;
+            const voices = window.speechSynthesis.getVoices();
+            const britishOrMale = voices.find(v =>
+              /en-GB|Daniel|Google UK English Male|Arthur|Oliver/i.test(v.name + ' ' + v.lang)
+            );
+            if (britishOrMale) utter.voice = britishOrMale;
+            window.speechSynthesis.speak(utter);
+          }
+        } catch (e) {}
+      }
+
+      // Connect Real Microphone for "Live Mic / Baat Karo"
+      async function startMicrophone() {
+        try {
+          ensureAudioContext();
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Mic API unavailable');
+          }
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+          state.micStream = stream;
+          const source = state.audioCtx.createMediaStreamSource(stream);
+          state.analyser = state.audioCtx.createAnalyser();
+          state.analyser.fftSize = 256;
+          state.analyser.smoothingTimeConstant = 0.78;
+          source.connect(state.analyser);
+          state.freqData = new Uint8Array(state.analyser.frequencyBinCount);
+          state.timeData = new Uint8Array(state.analyser.frequencyBinCount);
+          state.micActive = true;
+          micStatusText.textContent = 'LIVE MIC STREAM';
+          liveTranscriptText.textContent = 'Speak now — UI is reacting to your live microphone audio...';
+          liveTranscriptText.style.opacity = '1';
+        } catch (err) {
+          // Graceful fallback in sandbox/iframe if mic permission is blocked
+          state.micActive = false;
+          micStatusText.textContent = 'MIC SIMULATOR ACTIVE';
+          liveTranscriptText.textContent = `"${USER_SIM_LINES[lineIndex % USER_SIM_LINES.length]}" (Move cursor or hold Space to modulate voice)`;
+          liveTranscriptText.style.opacity = '1';
+        }
+      }
+
+      function stopMicrophone() {
+        if (state.micStream) {
+          state.micStream.getTracks().forEach(t => t.stop());
+          state.micStream = null;
+        }
+        state.micActive = false;
+      }
+
+      // ==========================================
+      // 4. MODE SWITCHING & UI STATE UPDATES
+      // ==========================================
+      function setMode(newMode) {
+        if (state.mode === 'mic' && newMode !== 'mic') {
+          stopMicrophone();
+        }
+        state.mode = newMode;
+        playHudBeep(newMode === 'terminated' ? 320 : 940, 0.08);
+
+        // Update dock button highlights
+        Object.entries(modeButtons).forEach(([key, btn]) => {
+          if (key === newMode) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        if (newMode === 'standby') {
+          topRightStateLabel.textContent = 'STANDBY';
+          uplinkText.textContent = 'UPLINK: ESTABLISHED';
+          micStatusText.textContent = 'MIC ACTIVE';
+          micDot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00e5ff]';
+          vocalStatePrompt.textContent = 'AWAITING VOCAL INPUT';
+          liveTranscriptText.style.opacity = '0';
+          terminateBtn.textContent = 'TAP TO TERMINATE';
+          terminateBtn.className = 'terminate-btn glow-danger uppercase font-medium py-2 px-5 rounded pointer-events-auto focus:outline-none';
+        } else if (newMode === 'jarvis') {
+          topRightStateLabel.textContent = 'VOCALIZING';
+          uplinkText.textContent = 'UPLINK: ACTIVE STREAM';
+          micStatusText.textContent = 'SYNTHESIS ONLINE';
+          micDot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping';
+          vocalStatePrompt.textContent = 'J.A.R.V.I.S. VOCAL STREAM ACTIVE';
+          const phrase = JARVIS_LINES[lineIndex % JARVIS_LINES.length];
+          lineIndex++;
+          speakJarvisPhrase(phrase);
+          terminateBtn.textContent = 'TAP TO TERMINATE';
+          terminateBtn.className = 'terminate-btn glow-danger uppercase font-medium py-2 px-5 rounded pointer-events-auto focus:outline-none';
+        } else if (newMode === 'mic') {
+          topRightStateLabel.textContent = 'LISTENING';
+          uplinkText.textContent = 'UPLINK: DUPLEX AUDIO';
+          micDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_10px_#f43f5e] animate-pulse';
+          vocalStatePrompt.textContent = 'RECEIVING VOCAL INPUT // SPEAK NOW';
+          terminateBtn.textContent = 'TAP TO TERMINATE';
+          terminateBtn.className = 'terminate-btn glow-danger uppercase font-medium py-2 px-5 rounded pointer-events-auto focus:outline-none';
+          startMicrophone();
+        } else if (newMode === 'converse') {
+          state.converseTimer = 0;
+          state.converseSubState = 'user';
+          topRightStateLabel.textContent = 'DUPLEX SYNC';
+          uplinkText.textContent = 'UPLINK: BI-DIRECTIONAL';
+          micStatusText.textContent = 'AUTO CONVERSE';
+          vocalStatePrompt.textContent = 'USER VOCAL INPUT DETECTED';
+          liveTranscriptText.textContent = `"${USER_SIM_LINES[lineIndex % USER_SIM_LINES.length]}"`;
+          liveTranscriptText.style.opacity = '1';
+          terminateBtn.textContent = 'TAP TO TERMINATE';
+        } else if (newMode === 'terminated') {
+          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+          topRightStateLabel.textContent = 'OFFLINE';
+          uplinkText.textContent = 'UPLINK: SUSPENDED';
+          micStatusText.textContent = 'MIC MUTED';
+          micDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
+          vocalStatePrompt.textContent = 'SYSTEM IN HIBERNATION // TAP CORE TO WAKE';
+          liveTranscriptText.style.opacity = '0';
+          terminateBtn.textContent = 'TAP TO INITIALIZE';
+          terminateBtn.className = 'terminate-btn glow-cyan uppercase font-medium py-2 px-5 rounded pointer-events-auto focus:outline-none';
+        }
+      }
+
+      // ==========================================
+      // 5. AUDIO ENVELOPE & PROCEDURAL SPEECH CADENCE
+      // ==========================================
+      function updateAudioMetrics(dt) {
+        const g = state.gain;
+
+        if (state.mode === 'terminated') {
+          state.energy += (0 - state.energy) * 0.1;
+          state.bass += (0 - state.bass) * 0.1;
+          state.mid += (0 - state.mid) * 0.1;
+          state.treble += (0 - state.treble) * 0.1;
+          return;
+        }
+
+        if (state.mode === 'standby') {
+          // Subtle idle breathing pulse
+          const idlePulse = 0.04 + 0.025 * Math.sin(state.time * 2.2);
+          state.energy += (idlePulse - state.energy) * 0.12;
+          state.bass = state.energy * 0.8;
+          state.mid = state.energy * 0.6;
+          state.treble = state.energy * 0.4;
+          state.pitchHz = 110 + Math.round(Math.sin(state.time * 0.9) * 8);
+          for (let i = 0; i < 64; i++) {
+            state.freqData[i] = Math.max(4, Math.floor(14 * Math.sin(i * 0.25 + state.time * 2)));
+          }
+          return;
+        }
+
+        // If real microphone is connected and active
+        if (state.mode === 'mic' && state.micActive && state.analyser) {
+          state.analyser.getByteFrequencyData(state.freqData);
+          let bassSum = 0, midSum = 0, trebleSum = 0;
+          for (let i = 1; i < 12; i++) bassSum += state.freqData[i];
+          for (let i = 12; i < 40; i++) midSum += state.freqData[i];
+          for (let i = 40; i < 80; i++) trebleSum += state.freqData[i];
+
+          const rawBass = Math.min(1, (bassSum / (11 * 255)) * g * 1.35);
+          const rawMid = Math.min(1, (midSum / (28 * 255)) * g * 1.5);
+          const rawTreble = Math.min(1, (trebleSum / (40 * 255)) * g * 1.6);
+          const rawEnergy = Math.min(1, rawBass * 0.45 + rawMid * 0.4 + rawTreble * 0.15);
+
+          state.bass += (rawBass - state.bass) * 0.28;
+          state.mid += (rawMid - state.mid) * 0.28;
+          state.treble += (rawTreble - state.treble) * 0.28;
+          state.energy += (rawEnergy - state.energy) * 0.28;
+          state.pitchHz = Math.round(95 + state.mid * 240 + state.treble * 110);
+          return;
+        }
+
+        // Handle Auto-Converse Mode cycling
+        if (state.mode === 'converse') {
+          state.converseTimer += dt;
+          if (state.converseTimer > 4.2 && state.converseSubState === 'user') {
+            state.converseSubState = 'processing';
+            state.converseTimer = 0;
+            vocalStatePrompt.textContent = 'NEURAL MATRIX PROCESSING...';
+            liveTranscriptText.textContent = 'ANALYZING ACOUSTIC TELEMETRY // 99.8% CONFIDENCE';
+            playHudBeep(1240, 0.06);
+          } else if (state.converseTimer > 1.4 && state.converseSubState === 'processing') {
+            state.converseSubState = 'jarvis';
+            state.converseTimer = 0;
+            vocalStatePrompt.textContent = 'J.A.R.V.I.S. VOCALIZING RESPONSE';
+            const phrase = JARVIS_LINES[lineIndex % JARVIS_LINES.length];
+            lineIndex++;
+            speakJarvisPhrase(phrase);
+          } else if (state.converseTimer > 5.0 && state.converseSubState === 'jarvis') {
+            state.converseSubState = 'user';
+            state.converseTimer = 0;
+            vocalStatePrompt.textContent = 'USER VOCAL INPUT DETECTED';
+            liveTranscriptText.textContent = `"${USER_SIM_LINES[lineIndex % USER_SIM_LINES.length]}"`;
+            playHudBeep(720, 0.06);
+          }
+
+          if (state.converseSubState === 'processing') {
+            const procPulse = 0.22 + 0.15 * Math.sin(state.time * 14);
+            state.energy += (procPulse - state.energy) * 0.25;
+            state.bass = state.energy * 0.5;
+            state.mid = state.energy * 1.1;
+            state.treble = state.energy * 1.3;
+            state.pitchHz = 420 + Math.round(Math.sin(state.time * 18) * 90);
+            return;
+          }
+        }
+
+        // Realistic Procedural Vocal Cadence Generator (Syllable Envelopes + Formant Harmonics)
+        const t = state.time;
+        // Syllable rhythm (~3.5 to 5 syllables per second with natural micro-pauses)
+        const phraseGate = Math.sin(t * 1.15) > -0.65 ? 1 : 0.12;
+        const syllableWave =
+          0.45 * Math.max(0, Math.sin(t * 11.2)) +
+          0.35 * Math.max(0, Math.sin(t * 7.4 + 1.3)) +
+          0.25 * Math.max(0, Math.cos(t * 17.8 - 0.7));
+
+        const pointerBoost = state.isPointerDown ? 0.35 : 0;
+        const targetEnergy = Math.min(1, (0.12 + syllableWave * 0.72 * phraseGate + pointerBoost) * (g * 0.78));
+
+        const targetBass = Math.min(1, targetEnergy * (0.85 + 0.25 * Math.sin(t * 8.5)));
+        const targetMid = Math.min(1, targetEnergy * (0.95 + 0.3 * Math.cos(t * 14.2)));
+        const targetTreble = Math.min(1, targetEnergy * (0.7 + 0.4 * Math.sin(t * 23.1)));
+
+        state.energy += (targetEnergy - state.energy) * 0.24;
+        state.bass += (targetBass - state.bass) * 0.22;
+        state.mid += (targetMid - state.mid) * 0.26;
+        state.treble += (targetTreble - state.treble) * 0.3;
+        state.pitchHz = Math.round(118 + state.mid * 185 + state.treble * 95);
+
+        // Populate synthetic FFT spectrum bins for radial needles & wave rings
+        for (let i = 0; i < 64; i++) {
+          const norm = i / 64;
+          const formant1 = Math.exp(-Math.pow((norm - 0.18) / 0.11, 2));
+          const formant2 = Math.exp(-Math.pow((norm - 0.46) / 0.14, 2));
+          const formant3 = Math.exp(-Math.pow((norm - 0.75) / 0.12, 2));
+          const wave =
+            formant1 * state.bass * 230 +
+            formant2 * state.mid * 245 +
+            formant3 * state.treble * 210;
+          const flutter = 1 + 0.28 * Math.sin(t * 19 + i * 0.65);
+          state.freqData[i] = Math.min(255, Math.max(6, Math.floor(wave * flutter)));
+        }
+      }
+
+      // ==========================================
+      // 6. TELEMETRY DOM UPDATES
+      // ==========================================
+      let lastDomUpdate = 0;
+      function updateTelemetryDom(now) {
+        if (now - lastDomUpdate < 75) return;
+        lastDomUpdate = now;
+
+        const e = state.energy;
+        const db = e > 0.02 ? (20 * Math.log10(e) + 64).toFixed(1) : '0.0';
+        const hz = state.mode === 'terminated' ? '000' : String(state.pitchHz).padStart(3, '0');
+        freqReadout.textContent = `FREQ: ${hz} Hz // ${db} dB`;
+
+        // Dynamic MEM fluctuation when active
+        const memVal = (44.2 + e * 0.6).toFixed(1);
+        memReadout.textContent = `MEM: ${memVal} TB`;
+
+        // Update Top-Right 4 Equalizer Bars
+        const b0 = Math.min(100, Math.round(28 + state.bass * 72));
+        const b1 = Math.min(100, Math.round(45 + state.energy * 55));
+        const b2 = Math.min(100, Math.round(22 + state.mid * 78));
+        const b3 = Math.min(100, Math.round(30 + state.treble * 70));
+
+        const heights = state.mode === 'standby'
+          ? [65, 85, 45, 55]
+          : state.mode === 'terminated'
+          ? [12, 12, 12, 12]
+          : [b0, b1, b2, b3];
+
+        heights.forEach((h, idx) => {
+          eqBars[idx].style.height = `${h}%`;
+          eqBars[idx].style.opacity = state.mode === 'terminated'
+            ? '0.2'
+            : (0.35 + (h / 100) * 0.65).toFixed(2);
+        });
+      }
+
+      // ==========================================
+      // 7. HOLOGRAPHIC CANVAS RENDERER (MK_VII CORE)
+      // ==========================================
+      function render(timestamp) {
+        const dt = 0.016;
+        state.time += dt;
+
+        updateAudioMetrics(dt);
+        updateTelemetryDom(timestamp);
+
+        const pal = PALETTES[currentPaletteIdx];
+        const rgb = pal.primaryRgb;
+        const secRgb = pal.secondaryRgb;
+        const dangerRgb = pal.dangerRgb;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Center of the J.A.R.V.I.S. Orb (positioned at ~34% from top, matching screenshot proportions)
+        const cx = width * 0.5;
+        const cy = height * 0.34;
+        const baseRadius = Math.min(width, height) * 0.145;
+        const clampedRadius = Math.max(92, Math.min(155, baseRadius));
+
+        const e = state.energy;
+        const isSpeaking = e > 0.08 && state.mode !== 'standby' && state.mode !== 'terminated';
+
+        // Spawn expanding shockwave rings on strong vocal syllables
+        if (isSpeaking && e > 0.42 && state.time - state.lastShockwaveTime > 0.26) {
+          state.shockwaves.push({
+            r: clampedRadius * 1.05,
+            alpha: 0.45 * e,
+            speed: 1.8 + e * 2.2
+          });
+          state.lastShockwaveTime = state.time;
+        }
+
+        // ------------------------------------------
+        // LAYER A: Off-Center Faint Orbital Construction Circles (From Reference Image)
+        // ------------------------------------------
+        ctx.save();
+        ctx.strokeStyle = `rgba(${rgb}, ${0.045 + e * 0.03})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx + clampedRadius * 0.65, cy + clampedRadius * 1.85, clampedRadius * 2.25, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(${rgb}, 0.028)`;
+        ctx.setLineDash([4, 8]);
+        ctx.beginPath();
+        ctx.arc(cx + clampedRadius * 0.65, cy + clampedRadius * 1.85, clampedRadius * 1.45, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // ------------------------------------------
+        // LAYER B: Bioluminescent Floating Dust Particles
+        // ------------------------------------------
+        ctx.save();
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const speedMult = 1 + e * 3.2;
+          p.x += p.vx * speedMult;
+          p.y += p.vy * speedMult;
+          p.phase += p.speed * speedMult;
+
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+
+          const twinkle = 0.5 + 0.5 * Math.sin(p.phase);
+          const alpha = p.alpha * twinkle * (state.mode === 'terminated' ? 0.25 : (0.8 + e * 0.5));
+
+          ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
+          ctx.shadowColor = `rgba(${rgb}, 0.8)`;
+          ctx.shadowBlur = p.size * 4;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * (1 + e * 0.35), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // ------------------------------------------
+        // LAYER C: Ambient Radial Core Bloom
+        // ------------------------------------------
+        const bloomRadius = clampedRadius * (1.85 + e * 0.65);
+        const bloomGrad = ctx.createRadialGradient(cx, cy, clampedRadius * 0.1, cx, cy, bloomRadius);
+        bloomGrad.addColorStop(0, `rgba(${rgb}, ${0.18 + e * 0.22})`);
+        bloomGrad.addColorStop(0.45, `rgba(${secRgb}, ${0.09 + e * 0.12})`);
+        bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = bloomGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, bloomRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ------------------------------------------
+        // LAYER D: Expanding Vocal Shockwave Ripples
+        // ------------------------------------------
+        ctx.save();
+        for (let i = state.shockwaves.length - 1; i >= 0; i--) {
+          const sw = state.shockwaves[i];
+          sw.r += sw.speed;
+          sw.alpha *= 0.965;
+          if (sw.alpha <= 0.01) {
+            state.shockwaves.splice(i, 1);
+            continue;
+          }
+          ctx.strokeStyle = `rgba(${rgb}, ${sw.alpha})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, sw.r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Advance rotation angles (accelerate smoothly while speaking)
+        const rotSpeed = state.mode === 'terminated' ? 0.001 : (0.006 + e * 0.032);
+        state.radarAngle += rotSpeed * 1.35;
+        state.ringRot1 += rotSpeed * 0.8;
+        state.ringRot2 -= rotSpeed * 1.1;
+        state.ringRot3 += rotSpeed * 1.6;
+
+        // ------------------------------------------
+        // LAYER E: Outer Containment Ring & Translucent Band (Exact Reference Structure)
+        // ------------------------------------------
+        const outerR = clampedRadius * (1.0 + state.bass * 0.08);
+        const midBandR = clampedRadius * (0.87 + state.energy * 0.05);
+        const innerR = clampedRadius * (0.74 + state.mid * 0.06);
+
+        ctx.save();
+        // Outer Crisp Cyan Ring with Glow
+        ctx.strokeStyle = `rgba(${rgb}, ${0.52 + e * 0.38})`;
+        ctx.lineWidth = 1.6;
+        ctx.shadowColor = `rgba(${rgb}, 0.65)`;
+        ctx.shadowBlur = 14 + e * 16;
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Thick Translucent Ring Band between outerR and innerR
+        ctx.strokeStyle = `rgba(${rgb}, ${0.07 + e * 0.08})`;
+        ctx.lineWidth = (outerR - innerR) * 0.72;
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(cx, cy, (outerR + innerR) * 0.5, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner Solid Boundary Ring
+        ctx.strokeStyle = `rgba(${rgb}, ${0.38 + e * 0.35})`;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // ------------------------------------------
+        // LAYER F: Counter-Rotating Dashed Technical Ring & Segmented HUD Arcs
+        // ------------------------------------------
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.ringRot2);
+        ctx.strokeStyle = `rgba(${rgb}, ${0.42 + e * 0.4})`;
+        ctx.lineWidth = 1.25;
+        ctx.setLineDash([5, 6]);
+        ctx.beginPath();
+        ctx.arc(0, 0, innerR * 0.93, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Segmented Jarvis Arc Brackets that expand when speaking
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.ringRot1);
+        ctx.strokeStyle = `rgba(${rgb}, ${0.25 + e * 0.55})`;
+        ctx.lineWidth = 2.2;
+        const arcR = outerR * (1.06 + e * 0.06);
+        for (let k = 0; k < 3; k++) {
+          const startA = (k * Math.PI * 2) / 3;
+          const spanA = 0.42 + e * 0.35;
+          ctx.beginPath();
+          ctx.arc(0, 0, arcR, startA, startA + spanA);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // ------------------------------------------
+        // LAYER G: Rotating Radar Sweep Wedge (Signature detail from screenshot)
+        // ------------------------------------------
+        if (state.mode !== 'terminated') {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(state.radarAngle);
+
+          const sweepSpan = 0.52 + e * 0.25;
+          const sweepSteps = 28;
+          for (let s = 0; s < sweepSteps; s++) {
+            const frac = s / sweepSteps;
+            const a0 = -sweepSpan * (1 - frac);
+            const a1 = -sweepSpan * (1 - (s + 1) / sweepSteps) + 0.005;
+            const sliceAlpha = Math.pow(frac, 1.8) * (0.22 + e * 0.26);
+
+            ctx.fillStyle = `rgba(${rgb}, ${sliceAlpha})`;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, outerR * 0.99, a0, a1);
+            ctx.closePath();
+            ctx.fill();
+          }
+
+          // Leading edge radar line
+          ctx.strokeStyle = `rgba(${rgb}, ${0.45 + e * 0.45})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(outerR * 0.99, 0);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // ------------------------------------------
+        // LAYER H: 360° Radial Frequency Spectrum Bars (Active Vocal Equalizer)
+        // ------------------------------------------
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.ringRot3 * 0.25);
+        const numBars = 64;
+        for (let i = 0; i < numBars; i++) {
+          const angle = (i / numBars) * Math.PI * 2;
+          const binVal = state.freqData[i % 48] / 255;
+          const barLen = 2 + Math.pow(binVal, 1.35) * (clampedRadius * 0.38) * (0.2 + e * 1.4);
+
+          const rStart = innerR * 0.98;
+          const rEnd = rStart + barLen;
+
+          const x1 = Math.cos(angle) * rStart;
+          const y1 = Math.sin(angle) * rStart;
+          const x2 = Math.cos(angle) * rEnd;
+          const y2 = Math.sin(angle) * rEnd;
+
+          ctx.strokeStyle = binVal > 0.62 && state.mode === 'mic'
+            ? `rgba(${dangerRgb}, ${0.5 + binVal * 0.45})`
+            : `rgba(${rgb}, ${0.18 + binVal * 0.72})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // ------------------------------------------
+        // LAYER I: Dynamic Harmonic Liquid Waveform Rings (Jarvis Speaking Core)
+        // ------------------------------------------
+        if (e > 0.03) {
+          ctx.save();
+          ctx.translate(cx, cy);
+
+          const waveLayers = [
+            { radius: innerR * 0.72, amp: clampedRadius * 0.16 * state.bass, freq1: 3, freq2: 7, speed: 4.2, alpha: 0.75, width: 1.8, useSecondary: false },
+            { radius: innerR * 0.56, amp: clampedRadius * 0.14 * state.mid, freq1: 5, freq2: 9, speed: -5.6, alpha: 0.55, width: 1.4, useSecondary: true },
+            { radius: innerR * 0.40, amp: clampedRadius * 0.11 * state.treble, freq1: 4, freq2: 12, speed: 7.1, alpha: 0.65, width: 1.2, useSecondary: false }
+          ];
+
+          waveLayers.forEach((wl) => {
+            ctx.beginPath();
+            const points = 120;
+            for (let j = 0; j <= points; j++) {
+              const theta = (j / points) * Math.PI * 2;
+              const harmonic =
+                Math.sin(theta * wl.freq1 + state.time * wl.speed) * 0.6 +
+                Math.cos(theta * wl.freq2 - state.time * wl.speed * 1.3) * 0.4;
+              const r = wl.radius + harmonic * wl.amp;
+              const px = Math.cos(theta) * r;
+              const py = Math.sin(theta) * r;
+              if (j === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            const strokeRgb = wl.useSecondary ? secRgb : rgb;
+            ctx.strokeStyle = `rgba(${strokeRgb}, ${wl.alpha * Math.min(1, e * 1.8)})`;
+            ctx.lineWidth = wl.width;
+            ctx.shadowColor = `rgba(${rgb}, 0.7)`;
+            ctx.shadowBlur = 10 * e;
+            ctx.stroke();
+          });
+
+          ctx.restore();
+        }
+
+        // ------------------------------------------
+        // LAYER J: Inner Vocal Nucleus & Micro-Telemetry Nodes
+        // ------------------------------------------
+        ctx.save();
+        // Glowing vocal nucleus
+        const nucleusR = Math.max(2.5, clampedRadius * (0.03 + e * 0.14));
+        const nucGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, nucleusR * 2.5);
+        nucGrad.addColorStop(0, `rgba(255, 255, 255, ${0.4 + e * 0.6})`);
+        nucGrad.addColorStop(0.4, `rgba(${rgb}, ${0.35 + e * 0.55})`);
+        nucGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = nucGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, nucleusR * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Orbiting bright blip nodes inside the radar (just like the reference image)
+        const node1Angle = state.ringRot1 * 0.7 + 1.1;
+        const node1R = innerR * 0.54;
+        ctx.fillStyle = `rgba(${rgb}, 0.85)`;
+        ctx.shadowColor = `rgba(${rgb}, 1)`;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(node1Angle) * node1R, cy + Math.sin(node1Angle) * node1R, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        const node2Angle = state.ringRot2 * 0.9 + 0.85;
+        const node2R = innerR * 0.93;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(node2Angle) * node2R, cy + Math.sin(node2Angle) * node2R, 2.0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        requestAnimationFrame(render);
+      }
+
+      // ==========================================
+      // 8. EVENT LISTENERS & CONTROLS
+      // ==========================================
+      // Mode Buttons
+      Object.entries(modeButtons).forEach(([modeName, btn]) => {
+        btn.addEventListener('click', () => {
+          ensureAudioContext();
+          setMode(modeName);
+        });
+      });
+
+      // Clicking the central canvas orb cycles or wakes the assistant
+      canvas.addEventListener('click', (e) => {
+        ensureAudioContext();
+        const cx = width * 0.5;
+        const cy = height * 0.34;
+        const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+        if (dist < 220) {
+          if (state.mode === 'terminated' || state.mode === 'standby') {
+            setMode('jarvis');
+          } else if (state.mode === 'jarvis') {
+            setMode('mic');
+          } else {
+            setMode('standby');
+          }
+        }
+      });
+
+      canvas.addEventListener('pointerdown', () => {
+        state.isPointerDown = true;
+      });
+      window.addEventListener('pointerup', () => {
+        state.isPointerDown = false;
+      });
+
+      // Hold Spacebar to boost vocal modulation in any mode
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && document.activeElement.tagName !== 'BUTTON') {
+          state.isPointerDown = true;
+        } else if (e.key === 'h' || e.key === 'H') {
+          toggleMinimalHud();
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          state.isPointerDown = false;
+        }
+      });
+
+      // TAP TO TERMINATE / INITIALIZE Button
+      terminateBtn.addEventListener('click', () => {
+        ensureAudioContext();
+        if (state.mode === 'terminated') {
+          setMode('jarvis');
+        } else {
+          setMode('terminated');
+        }
+      });
+
+      // Trigger Next Jarvis Voice Pulse
+      triggerSpeechBtn.addEventListener('click', () => {
+        ensureAudioContext();
+        if (state.mode === 'terminated' || state.mode === 'standby') {
+          setMode('jarvis');
+        } else {
+          playHudBeep(1040, 0.08);
+          const phrase = JARVIS_LINES[lineIndex % JARVIS_LINES.length];
+          lineIndex++;
+          speakJarvisPhrase(phrase);
+          state.shockwaves.push({ r: 105, alpha: 0.65, speed: 3.4 });
+        }
+      });
+
+      // Toggle SFX / Speech Synthesis
+      audioToggleBtn.addEventListener('click', () => {
+        state.sfxEnabled = !state.sfxEnabled;
+        audioToggleBtn.textContent = state.sfxEnabled ? 'SFX: ON' : 'SFX: MUTED';
+        audioToggleBtn.classList.toggle('active', state.sfxEnabled);
+        if (!state.sfxEnabled && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        } else {
+          playHudBeep(880, 0.07);
+        }
+      });
+
+      // Gain Slider
+      gainSlider.addEventListener('input', (e) => {
+        state.gain = parseFloat(e.target.value);
+      });
+
+      // Theme Palette Switcher
+      themeCycleBtn.addEventListener('click', () => {
+        currentPaletteIdx = (currentPaletteIdx + 1) % PALETTES.length;
+        const pal = PALETTES[currentPaletteIdx];
+        const root = document.documentElement;
+        root.style.setProperty('--primary', pal.primary);
+        root.style.setProperty('--primary-rgb', pal.primaryRgb);
+        root.style.setProperty('--secondary', pal.secondary);
+        root.style.setProperty('--secondary-rgb', pal.secondaryRgb);
+        root.style.setProperty('--danger', pal.danger);
+        root.style.setProperty('--danger-rgb', pal.dangerRgb);
+        themeCycleBtn.textContent = `PALETTE: ${pal.name}`;
+        playHudBeep(1120, 0.06);
+      });
+
+      // Hide / Restore Minimal HUD Dock
+      function toggleMinimalHud(forceHide) {
+        const isHidden = controlDockWrapper.classList.contains('hidden');
+        const shouldHide = typeof forceHide === 'boolean' ? forceHide : !isHidden;
+        if (shouldHide) {
+          controlDockWrapper.classList.add('hidden');
+          restoreDockBtn.classList.remove('hidden');
+        } else {
+          controlDockWrapper.classList.remove('hidden');
+          restoreDockBtn.classList.add('hidden');
+        }
+      }
+      hideDockBtn.addEventListener('click', () => toggleMinimalHud(true));
+      restoreDockBtn.addEventListener('click', () => toggleMinimalHud(false));
+
+      // Start in active J.A.R.V.I.S. Speaking mode so the user immediately sees the live talking animation
+      setMode('jarvis');
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>

@@ -1,1 +1,199 @@
-/* Custom application styles */
+/* ========================================================
+   J.A.R.V.I.S. // MK_VII HOLOGRAPHIC VOCAL INTERFACE STYLES
+   Direct match to Stark Industries Iron Man aesthetic
+   ======================================================== */
+:root {
+  --primary: #00e5ff;
+  --primary-rgb: 0, 229, 255;
+  --secondary: #0891b2;
+  --secondary-rgb: 8, 145, 178;
+  --danger: #f43f5e;
+  --danger-rgb: 244, 63, 94;
+  --bg-deep: #020609;
+  --bg-core: #05161e;
+  --friday-primary: #f43f5e;
+  --friday-primary-rgb: 244, 63, 94;
+}
+
+/* Atmospheric Background Layering */
+.bg-atmosphere {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(var(--primary-rgb), 0.14) 0%, rgba(var(--secondary-rgb), 0.06) 28%, rgba(4, 14, 20, 0.92) 62%, #020508 100%),
+    radial-gradient(circle at 65% 72%, rgba(190, 24, 93, 0.045) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Atmospheric Background Layering for Friday */
+.bg-atmosphere-friday {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(244, 63, 94, 0.14) 0%, rgba(190, 18, 60, 0.06) 28%, rgba(15, 5, 10, 0.92) 62%, #080204 100%),
+    radial-gradient(circle at 35% 72%, rgba(0, 229, 255, 0.045) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Fine Tactical Grid Overlay */
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(var(--primary-rgb), 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--primary-rgb), 0.035) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.25) 85%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.25) 85%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Subtle Scanlines */
+.bg-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.16) 3px
+  );
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.5;
+}
+
+/* Corner HUD Brackets */
+.hud-bracket-left {
+  position: relative;
+  padding-top: 12px;
+  padding-left: 16px;
+}
+.hud-bracket-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 145px;
+  height: 112px;
+  border-top: 1.5px solid rgba(var(--primary-rgb), 0.55);
+  border-left: 1.5px solid rgba(var(--primary-rgb), 0.55);
+  box-shadow: -2px -2px 12px rgba(var(--primary-rgb), 0.15);
+  pointer-events: none;
+}
+
+.hud-bracket-right {
+  position: relative;
+  padding-top: 12px;
+  padding-right: 16px;
+  text-align: right;
+}
+.hud-bracket-right::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 145px;
+  height: 96px;
+  border-top: 1.5px solid rgba(var(--primary-rgb), 0.55);
+  border-right: 1.5px solid rgba(var(--primary-rgb), 0.55);
+  box-shadow: 2px -2px 12px rgba(var(--primary-rgb), 0.15);
+  pointer-events: none;
+}
+
+/* Glowing Text Utilities */
+.glow-cyan {
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.65);
+}
+
+.glow-danger {
+  color: var(--danger);
+  text-shadow: 0 0 12px rgba(var(--danger-rgb), 0.55);
+}
+
+.glow-friday {
+  color: #fb7185;
+  text-shadow: 0 0 10px rgba(244, 63, 94, 0.65);
+}
+
+/* Equalizer Bars */
+.eq-bar {
+  width: 6px;
+  height: 26px;
+  background: rgba(var(--primary-rgb), 0.16);
+  border: 1px solid rgba(var(--primary-rgb), 0.28);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.12s ease;
+}
+.eq-bar-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+  transition: height 0.08s ease-out, opacity 0.15s ease;
+}
+
+/* Terminate / Action Prompt Button */
+.terminate-btn {
+  letter-spacing: 0.36em;
+  font-size: 0.72rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.terminate-btn:hover {
+  letter-spacing: 0.42em;
+  filter: brightness(1.25);
+}
+
+/* Vocal Status Text */
+.status-track {
+  letter-spacing: 0.38em;
+  font-size: 0.7rem;
+}
+
+/* Glassmorphic Minimal Control Dock */
+.hud-dock {
+  background: rgba(3, 12, 18, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(var(--primary-rgb), 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(var(--primary-rgb), 0.1);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dock-btn {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  padding: 6px 12px;
+  border: 1px solid rgba(var(--primary-rgb), 0.22);
+  background: rgba(var(--primary-rgb), 0.05);
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.dock-btn:hover {
+  border-color: rgba(var(--primary-rgb), 0.55);
+  color: #f8fafc;
+  background: rgba(var(--primary-rgb), 0.14);
+  box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.25);
+}
+.dock-btn.active {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.22);
+  color: var(--primary);
+  box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.35);
+}
+
+/* Font family orbitron helper */
+.font-orbitron {
+  font-family: 'Orbitron', 'JetBrains Mono', monospace;
+}

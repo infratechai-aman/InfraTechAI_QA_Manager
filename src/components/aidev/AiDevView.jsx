@@ -5,7 +5,8 @@ import {
   Sparkles, Cpu, Volume2, VolumeX, Square,
   RotateCcw, ArrowRight, Activity, Building2, 
   CheckSquare, Bot, Copy, Check, ShieldAlert,
-  FileText, Phone, PhoneOff, Mic, MicOff, Radio
+  FileText, Phone, PhoneOff, Mic, MicOff, Radio,
+  Globe
 } from 'lucide-react';
 import {
   Attachment01Icon,
@@ -17,6 +18,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import PromptBar from '../ui/PromptBar';
 import { aiDevService } from '../../services/aiDevService';
+import JarvisVocalCore from './JarvisVocalCore';
 
 export const AiDevView = ({
   currentUser,
@@ -30,6 +32,10 @@ export const AiDevView = ({
   syncStatus = 'synced',
   onSwitchApp
 }) => {
+  // Voice Agent Selection: 'jarvis' (Male) | 'friday' (Female)
+  const [agentVoice, setAgentVoice] = useState('jarvis');
+  const [speechLang, setSpeechLang] = useState('hi-IN'); // 'hi-IN' | 'en-US'
+
   // Speech & Voice State
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -52,6 +58,8 @@ export const AiDevView = ({
   const isLiveCallActiveRef = useRef(false);
   const liveCallStateRef = useRef('idle');
   const isMicMutedRef = useRef(false);
+  const agentVoiceRef = useRef('jarvis');
+  const speechLangRef = useRef('hi-IN');
   const recognitionRef = useRef(null);
   const silenceTimeoutRef = useRef(null);
 
@@ -67,6 +75,14 @@ export const AiDevView = ({
   useEffect(() => {
     isMicMutedRef.current = isMicMuted;
   }, [isMicMuted]);
+
+  useEffect(() => {
+    agentVoiceRef.current = agentVoice;
+  }, [agentVoice]);
+
+  useEffect(() => {
+    speechLangRef.current = speechLang;
+  }, [speechLang]);
 
   // Compute live system context
   const liveContext = useMemo(() => {
@@ -85,17 +101,19 @@ export const AiDevView = ({
 
   // Initial welcome message addressing user as "Boss"
   const [messages, setMessages] = useState(() => {
-    const greetingSpoken = `Jai Hind Boss! Main aapka AI Dev copilot hoon. Mere paas QA Manager, Sales Manager aur Business Command Center ki 100% real-time jaankari hai. Boliye Boss, kis cheez ka direct update chahiye?`;
+    const isFriday = agentVoice === 'friday';
+    const personaTitle = isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.';
+    const greetingSpoken = `Systems online, Boss! ${personaTitle} command channel fully active. Telemetry 100% synchronized across Contracts, QA defect radar, aur sales pipeline. Boliye Boss, kya command hai?`;
     
-    const greetingMd = `### 🫡 Jai Hind Boss! AI DEV Live on Duty
+    const greetingMd = `### ⚡ ${personaTitle} // MK_VII Telemetry Matrix Online
 
-I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **live, real-time telemetry** across the entire InfratechAI platform for **Boss**:
+Autonomous Executive Technical Lead & Intelligence Copilot active. Live unified telemetry is synchronized across all modules for **Boss**:
 
 - 🏢 **Business Command Center:** All **${liveContext.business.totalContracts} client contracts**, expiration deadlines, and **$${liveContext.business.totalMRR.toLocaleString()}/mo MRR**.
 - 🧪 **QA Manager:** **${liveContext.qa.projectsCount} workspaces**, **${liveContext.qa.totalTests} tests** (${liveContext.qa.passRate}% pass rate), and **${liveContext.qa.openBugsCount} open defects**.
 - 🤖 **Sales SDR (Harvey):** **${liveContext.sales.totalLeads} prospects** & **${liveContext.sales.pendingApprovalsCount} pending outbox drafts**.
 
-> 🎙️ **Real-Time Voice Call is Active, Boss!** Click the **"Live Voice Call"** button to speak with me hands-free in real time, or ask me directly below!`;
+> 🎙️ **Dual-Voice Agent Active:** Switch between **⚡ J.A.R.V.I.S. (Male)** and **✨ F.R.I.D.A.Y. (Female)** anytime using the top center toggle. Launch **"Live Talk"** for dynamic Iron Man HUD voice calling!`;
 
     return [
       {
@@ -135,6 +153,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     setIsSpeaking(true);
     setCurrentSpeakingId(msgId);
     aiDevService.speak(spokenText, {
+      agent: agentVoice,
       onStart: () => {
         setIsSpeaking(true);
         setCurrentSpeakingId(msgId);
@@ -156,12 +175,12 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     setCurrentSpeakingId(null);
   };
 
+  // Copy response markdown to clipboard
   const handleCopy = (id, text) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   // Process and send query
@@ -169,8 +188,9 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     const query = (rawText || '').trim();
     if (!query && (!meta.attachments || meta.attachments.length === 0)) return;
 
+    const userMessageId = `msg_user_${Date.now()}`;
     const userMessage = {
-      id: `msg_user_${Date.now()}`,
+      id: userMessageId,
       sender: 'user',
       text: query,
       attachments: meta.attachments || [],
@@ -185,7 +205,8 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     try {
       const response = await aiDevService.processQuery(query, liveContext, {
         model: selectedModel,
-        effort: selectedEffort
+        effort: selectedEffort,
+        agent: meta.agent || agentVoiceRef.current
       });
       setIsThinking(false);
 
@@ -201,32 +222,19 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // If called from live call loop callback
       if (meta.onResponseReady) {
         meta.onResponseReady(response);
-      } else if (isVoiceEnabled && response.spokenText) {
-        // Automatically speak aloud if voice output is enabled
-        setIsSpeaking(true);
-        setCurrentSpeakingId(aiMessageId);
-        aiDevService.speak(response.spokenText, {
-          onStart: () => {
-            setIsSpeaking(true);
-            setCurrentSpeakingId(aiMessageId);
-          },
-          onEnd: () => {
-            setIsSpeaking(false);
-            setCurrentSpeakingId(null);
-          },
-          onError: () => {
-            setIsSpeaking(false);
-            setCurrentSpeakingId(null);
-          }
-        });
+      }
+
+      if (isVoiceEnabled && response.spokenText && !isLiveCallActiveRef.current) {
+        handleSpeakText(aiMessageId, response.spokenText);
       }
     } catch (err) {
       console.error("AI Dev processing error:", err);
       setIsThinking(false);
-      const fallback = aiDevService.processFallbackQuery(query, liveContext);
+      const fallback = aiDevService.processFallbackQuery(query, liveContext, {
+        agent: meta.agent || agentVoiceRef.current
+      });
       const aiMessageId = `msg_ai_${Date.now()}`;
       const aiMessage = {
         id: aiMessageId,
@@ -257,17 +265,23 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
+      try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onstart = null;
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
     }
 
-    if (isMicMutedRef.current) {
-      setLiveCallState('listening');
+    if (isMicMutedRef.current || !isLiveCallActiveRef.current) {
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN'; // Robust support for Hindi, Indian English, and Hinglish
+      recognition.lang = speechLangRef.current || 'hi-IN'; // Robust support for Hindi, Hinglish, or English
       recognition.continuous = true;
       recognition.interimResults = true;
       recognitionRef.current = recognition;
@@ -277,11 +291,19 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       recognition.onstart = () => {
         if (isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
           setLiveCallState('listening');
+          liveCallStateRef.current = 'listening';
         }
       };
 
       recognition.onresult = (e) => {
-        if (!isLiveCallActiveRef.current || liveCallStateRef.current === 'ai_speaking') return;
+        if (!isLiveCallActiveRef.current) return;
+
+        // Auto-interrupt if AI is speaking and user starts talking!
+        if (liveCallStateRef.current === 'ai_speaking') {
+          aiDevService.stopSpeaking();
+          liveCallStateRef.current = 'user_speaking';
+          setLiveCallState('user_speaking');
+        }
 
         let interim = '';
         for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -297,6 +319,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
         if (currentWords) {
           setLiveTranscript(currentWords);
           setLiveCallState('user_speaking');
+          liveCallStateRef.current = 'user_speaking';
 
           // Reset silence timer on every speech event
           if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
@@ -314,12 +337,14 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
               // Send to AI Dev and loop back audio
               handleSend(queryToSend, {
+                agent: agentVoiceRef.current,
                 onResponseReady: (response) => {
                   liveCallStateRef.current = 'ai_speaking';
                   setLiveCallState('ai_speaking');
                   setLastAiSpeech(response.spokenText);
 
                   aiDevService.speak(response.spokenText, {
+                    agent: agentVoiceRef.current,
                     onStart: () => {
                       liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
@@ -331,14 +356,16 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                         // Automatically restart listening for Boss's next command!
                         setTimeout(() => {
                           if (isLiveCallActiveRef.current) startRecognitionLoop();
-                        }, 250);
+                        }, 200);
                       }
                     },
                     onError: () => {
                       if (isLiveCallActiveRef.current) {
                         liveCallStateRef.current = 'listening';
                         setLiveCallState('listening');
-                        startRecognitionLoop();
+                        setTimeout(() => {
+                          if (isLiveCallActiveRef.current) startRecognitionLoop();
+                        }, 200);
                       }
                     }
                   });
@@ -352,27 +379,27 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       recognition.onerror = (e) => {
         if (e.error !== 'aborted' && isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
           setTimeout(() => {
-            if (isLiveCallActiveRef.current && liveCallStateRef.current !== 'ai_speaking') {
+            if (isLiveCallActiveRef.current && liveCallStateRef.current === 'listening') {
               try { recognition.start(); } catch {}
             }
-          }, 600);
+          }, 500);
         }
       };
 
       recognition.onend = () => {
-        // If ended unexpectedly while call is active and not AI speaking, restart
+        // If ended unexpectedly while call is active and in listening mode, restart
         if (isLiveCallActiveRef.current && liveCallStateRef.current === 'listening') {
           setTimeout(() => {
             if (isLiveCallActiveRef.current && liveCallStateRef.current === 'listening') {
               try { recognition.start(); } catch {}
             }
-          }, 300);
+          }, 250);
         }
       };
 
       recognition.start();
     } catch (err) {
-      console.warn("Speech recognition initialization:", err);
+      console.warn("Speech recognition initialization error:", err);
     }
   }, [handleSend]);
 
@@ -383,22 +410,30 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     setLiveTranscript('');
     setLastAiSpeech('');
 
-    const greeting = "Systems online, Boss! JARVIS live command channel connected. At your service Boss, what are your orders?";
+    const isFriday = agentVoice === 'friday';
+    const greeting = isFriday
+      ? "Systems calibrated, Boss! F.R.I.D.A.Y. dynamic vocal interface online. At your service Boss, what are your orders?"
+      : "Systems online, Boss! J.A.R.V.I.S. dynamic vocal interface online. At your service Boss, what are your orders?";
+
     setLastAiSpeech(greeting);
 
     aiDevService.speak(greeting, {
+      agent: agentVoice,
       onStart: () => {
         setLiveCallState('ai_speaking');
+        liveCallStateRef.current = 'ai_speaking';
       },
       onEnd: () => {
         if (isLiveCallActiveRef.current) {
           setLiveCallState('listening');
+          liveCallStateRef.current = 'listening';
           startRecognitionLoop();
         }
       },
       onError: () => {
         if (isLiveCallActiveRef.current) {
           setLiveCallState('listening');
+          liveCallStateRef.current = 'listening';
           startRecognitionLoop();
         }
       }
@@ -409,21 +444,50 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
   const handleEndLiveCall = () => {
     if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
     if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
+      try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
     }
     aiDevService.stopSpeaking();
     setIsLiveCallActive(false);
     setLiveCallState('idle');
+    liveCallStateRef.current = 'idle';
     setLiveTranscript('');
   };
 
-  // Interrupt AI while speaking
-  const handleInterruptAi = () => {
+  // Interrupt AI while speaking - foolproof instant restart
+  const handleInterruptAi = useCallback(() => {
     aiDevService.stopSpeaking();
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+
     liveCallStateRef.current = 'listening';
     setLiveCallState('listening');
-    startRecognitionLoop();
-  };
+    setLiveTranscript('');
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onstart = null;
+        recognitionRef.current.abort();
+      } catch {}
+      recognitionRef.current = null;
+    }
+
+    setTimeout(() => {
+      if (isLiveCallActiveRef.current) {
+        startRecognitionLoop();
+      }
+    }, 60);
+  }, [startRecognitionLoop]);
 
   // Toggle Mic mute during live call
   const handleToggleMute = () => {
@@ -440,7 +504,42 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     }
   };
 
-  // Single-shot Voice dictation into PromptBar input
+  // Switch Voice Agent
+  const handleToggleAgentVoice = (newAgent) => {
+    setAgentVoice(newAgent);
+    agentVoiceRef.current = newAgent;
+    if (isLiveCallActive) {
+      const notice = newAgent === 'friday'
+        ? "F.R.I.D.A.Y. vocal core online. Listening Boss."
+        : "J.A.R.V.I.S. vocal core online. Listening Boss.";
+      setLastAiSpeech(notice);
+      aiDevService.speak(notice, {
+        agent: newAgent,
+        onStart: () => {
+          setLiveCallState('ai_speaking');
+          liveCallStateRef.current = 'ai_speaking';
+        },
+        onEnd: () => {
+          if (isLiveCallActiveRef.current) {
+            setLiveCallState('listening');
+            liveCallStateRef.current = 'listening';
+            startRecognitionLoop();
+          }
+        }
+      });
+    }
+  };
+
+  // Switch Language
+  const handleToggleLanguage = (newLang) => {
+    setSpeechLang(newLang);
+    speechLangRef.current = newLang;
+    if (isLiveCallActive && liveCallState === 'listening') {
+      startRecognitionLoop();
+    }
+  };
+
+  // Mic dictation helper for PromptBar
   const handleDictate = () => {
     return new Promise((resolve) => {
       const SpeechRecognition = typeof window !== 'undefined' && 
@@ -453,7 +552,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
       try {
         const recognition = new SpeechRecognition();
-        recognition.lang = 'hi-IN';
+        recognition.lang = speechLang;
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
@@ -550,113 +649,164 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
   // Reasoning efforts for PromptBar slider
   const promptEfforts = ['Instant', 'Fast', 'Balanced', 'Deep Think', 'Max Reasoning'];
 
-  // Gemini-style quick suggestion cards
+  // Stark HUD style suggestion cards
   const suggestionCards = [
     {
-      icon: <Building2 className="w-5 h-5 text-emerald-600" />,
+      icon: <Building2 className="w-5 h-5 text-cyan-400" />,
       title: 'Kiska contract kabtak hai?',
-      desc: 'Check all client contracts, expiration deadlines, and monthly MRR',
+      desc: 'Check all client accounts, renewal dates, and MRR cash flow',
       query: 'Kiska contract kabtak hain aur kab expire hoga?'
     },
     {
-      icon: <ShieldAlert className="w-5 h-5 text-amber-600" />,
+      icon: <ShieldAlert className="w-5 h-5 text-amber-400" />,
       title: 'Contracts expiring in 30 days',
-      desc: 'Find imminent renewals and immediate retainer deadlines',
+      desc: 'Detect imminent renewal deadlines and SLA obligations',
       query: 'Konsa contract agle 30 din me expire ho raha hai?'
     },
     {
-      icon: <CheckSquare className="w-5 h-5 text-indigo-600" />,
+      icon: <CheckSquare className="w-5 h-5 text-emerald-400" />,
       title: 'QA test execution & pass rate',
-      desc: 'Inspect workspaces, total test cases, and live pass rate',
+      desc: 'Inspect test suites, passed vs failed count, and execution health',
       query: 'QA test execution aur pass rate ka live status do'
     },
     {
-      icon: <Bot className="w-5 h-5 text-purple-600" />,
+      icon: <Bot className="w-5 h-5 text-rose-400" />,
       title: 'Critical defects & open bugs',
-      desc: 'Break down all open defects by workspace and severity level',
+      desc: 'Break down all open bugs by workspace with critical defect list',
       query: 'Kitne bugs open hain aur critical bugs ki list do'
     }
   ];
 
   const isOnlyWelcome = messages.length === 1;
+  const isFriday = agentVoice === 'friday';
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
+    <div className="w-full h-full flex flex-col bg-[#020609] font-mono text-slate-200 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-hidden relative">
       
+      {/* Background Cyber Layering matching Iron Man MK VII */}
+      <div className={isFriday ? "bg-atmosphere-friday" : "bg-atmosphere"} />
+      <div className="bg-grid" />
+      <div className="bg-scanlines" />
+
       {/* ======================================================== */}
-      {/* 1. TOP HEADER (CHATGPT / GEMINI MINIMAL BAR)             */}
+      {/* 1. TOP STARK HUD HEADER BAR                             */}
       {/* ======================================================== */}
-      <header className="px-6 py-3 border-b border-slate-200/80 bg-white/90 backdrop-blur-md shrink-0 flex items-center justify-between gap-4 z-30 shadow-2xs">
+      <header className="px-5 py-3 border-b border-cyan-500/20 bg-[#030d14]/90 backdrop-blur-xl shrink-0 flex items-center justify-between gap-4 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
         
-        {/* Left: Model & Agent Branding */}
+        {/* Left: Stark MK VII Branding */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/20">
-              <Sparkles className="w-4 h-4" />
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-black font-black text-xs shadow-lg transition-colors ${
+              isFriday 
+                ? 'bg-gradient-to-tr from-rose-500 to-pink-400 shadow-rose-500/30' 
+                : 'bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-cyan-500/30'
+            }`}>
+              <Sparkles className="w-5 h-5 text-black" />
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-black flex items-center justify-center">
               <span className="w-1 h-1 rounded-full bg-white animate-ping" />
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-slate-900 tracking-tight">AI DEV</span>
-            <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Cpu className="w-3 h-3 text-indigo-600" />
-              <span>{promptModels.find(m => m.key === selectedModel)?.name || 'Neural 4.5'}</span>
-            </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Realtime Telemetry
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black tracking-[0.2em] font-orbitron text-white">
+                {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'}
+              </span>
+              <span className="text-[9px] font-bold tracking-widest px-1.5 py-0.2 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
+                MK_VII
+              </span>
+            </div>
+            <span className="text-[10px] tracking-wider text-slate-400 -mt-0.5">
+              AUTONOMOUS VOCAL COPILOT • BOSS MODE
             </span>
           </div>
         </div>
 
-        {/* Right: Audio Waveform, Live Call Trigger & Controls */}
+        {/* Center: DUAL VOICE AGENT TOGGLE (MALE JARVIS vs FEMALE FRIDAY) */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center p-1 rounded-xl bg-black/70 border border-cyan-500/30 backdrop-blur-md shadow-inner">
+            <button
+              onClick={() => handleToggleAgentVoice('jarvis')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-orbitron transition-all flex items-center gap-1.5 cursor-pointer ${
+                agentVoice === 'jarvis'
+                  ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/40 font-black'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Switch to J.A.R.V.I.S. (High-Energy Male Voice)"
+            >
+              <span>⚡ J.A.R.V.I.S.</span>
+              <span className="text-[9px] opacity-80">(Male)</span>
+            </button>
+
+            <button
+              onClick={() => handleToggleAgentVoice('friday')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-orbitron transition-all flex items-center gap-1.5 cursor-pointer ${
+                agentVoice === 'friday'
+                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/40 font-black'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Switch to F.R.I.D.A.Y. (Razor-Sharp Female Voice)"
+            >
+              <span>✨ F.R.I.D.A.Y.</span>
+              <span className="text-[9px] opacity-80">(Female)</span>
+            </button>
+          </div>
+
+          {/* Hindi / English Language Switcher */}
+          <div className="hidden sm:flex items-center p-1 rounded-xl bg-black/70 border border-cyan-500/30 backdrop-blur-md text-[11px]">
+            <button
+              onClick={() => handleToggleLanguage('hi-IN')}
+              className={`px-2 py-1 rounded-lg font-bold transition-all ${
+                speechLang === 'hi-IN'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Listen & speak in Hindi / Hinglish"
+            >
+              🇮🇳 HI
+            </button>
+            <button
+              onClick={() => handleToggleLanguage('en-US')}
+              className={`px-2 py-1 rounded-lg font-bold transition-all ${
+                speechLang === 'en-US'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Listen & speak in English"
+            >
+              🌐 EN
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Live Talk Button & Voice Audio Controls */}
         <div className="flex items-center gap-2.5">
           
-          {/* Prominent Live Voice Call Button (Boss Mode) */}
+          {/* Prominent Live Voice Call Button (MK VII Dynamic HUD) */}
           <button
             onClick={isLiveCallActive ? handleEndLiveCall : handleStartLiveCall}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+            className={`px-4 py-2 rounded-xl text-xs font-black font-orbitron tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg ${
               isLiveCallActive
-                ? 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-600 animate-pulse shadow-rose-600/20'
-                : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white border border-indigo-600 shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98]'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-400 animate-pulse shadow-rose-600/30'
+                : isFriday
+                  ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 text-white border border-rose-400 shadow-rose-600/30 hover:scale-105 active:scale-95'
+                  : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-cyan-600 hover:from-cyan-400 text-black border border-cyan-300 shadow-cyan-500/30 hover:scale-105 active:scale-95'
             }`}
-            title={isLiveCallActive ? 'Disconnect Live Voice Call' : 'Start Real-time Voice Call with Boss'}
+            title={isLiveCallActive ? 'Disconnect Dynamic Vocal Interface' : 'Launch Iron Man Dynamic Vocal Interface'}
           >
             {isLiveCallActive ? (
               <>
-                <PhoneOff className="w-3.5 h-3.5" />
-                <span>End Call</span>
+                <PhoneOff className="w-4 h-4" />
+                <span>TERMINATE</span>
               </>
             ) : (
               <>
-                <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-200" />
-                <span>Live Voice Call</span>
+                <Radio className="w-4 h-4 animate-pulse" />
+                <span>LIVE TALK</span>
               </>
             )}
           </button>
-
-          {/* Animated Audio Equalizer when speaking */}
-          {isSpeaking && !isLiveCallActive && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-semibold animate-fadeIn shadow-2xs">
-              <div className="flex items-end gap-0.5 h-3.5 w-5">
-                <span className="w-1 bg-cyan-600 animate-bounce h-2.5 rounded-full" />
-                <span className="w-1 bg-cyan-600 animate-bounce h-3.5 rounded-full [animation-delay:0.15s]" />
-                <span className="w-1 bg-cyan-600 animate-bounce h-1.5 rounded-full [animation-delay:0.3s]" />
-                <span className="w-1 bg-cyan-600 animate-bounce h-3 rounded-full [animation-delay:0.45s]" />
-              </div>
-              <span className="text-[11px] ml-0.5">Speaking</span>
-              <button
-                onClick={handleStopSpeech}
-                className="ml-1 p-0.5 rounded hover:bg-cyan-100 text-cyan-900 transition-colors cursor-pointer"
-                title="Stop Speaking"
-              >
-                <Square className="w-3 h-3 fill-current" />
-              </button>
-            </div>
-          )}
 
           {/* Voice Output Toggle */}
           <button
@@ -666,32 +816,32 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
               isVoiceEnabled 
-                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' 
-                : 'bg-white text-slate-600 border-slate-200 hover:text-slate-900 shadow-2xs'
+                ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/40 hover:bg-cyan-900/40' 
+                : 'bg-black/60 text-slate-500 border-slate-800 hover:text-slate-300'
             }`}
-            title={isVoiceEnabled ? 'Voice response enabled (Click to mute)' : 'Voice response disabled (Click to enable)'}
+            title={isVoiceEnabled ? 'Voice output enabled' : 'Voice output muted'}
           >
             {isVoiceEnabled ? (
               <>
-                <Volume2 className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
-                <span className="text-[11px]">Voice: ON</span>
+                <Volume2 className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span className="text-[11px]">AUDIO ON</span>
               </>
             ) : (
               <>
-                <VolumeX className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[11px]">Voice: OFF</span>
+                <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-[11px]">MUTED</span>
               </>
             )}
           </button>
 
-          {/* Reset / New Chat */}
+          {/* Reset Conversation */}
           <button
             onClick={() => {
               handleStopSpeech();
               setMessages(messages.slice(0, 1));
             }}
-            className="p-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200 transition-colors cursor-pointer shadow-2xs"
-            title="Start New Chat"
+            className="p-2 rounded-xl bg-black/60 hover:bg-cyan-950/40 text-slate-400 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 transition-colors cursor-pointer"
+            title="Reboot Conversation Stream"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -701,86 +851,90 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       {/* ======================================================== */}
       {/* 2. SUB-BAR: LIVE PLATFORM TELEMETRY PILLS               */}
       {/* ======================================================== */}
-      <div className="px-6 py-2 bg-white/70 border-b border-slate-200/60 flex items-center gap-3 text-xs overflow-x-auto shrink-0 select-none backdrop-blur-xs">
-        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 shrink-0">
-          <Activity className="w-3.5 h-3.5 text-indigo-600" /> Telemetry:
+      <div className="px-5 py-2 bg-[#03090e]/80 border-b border-cyan-500/15 flex items-center gap-3 text-xs overflow-x-auto shrink-0 select-none backdrop-blur-md z-20">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] font-orbitron glow-cyan flex items-center gap-1.5 shrink-0">
+          <Activity className="w-3.5 h-3.5 text-cyan-400 animate-pulse" /> TELEMETRY:
         </span>
 
         {/* Business Feed */}
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-50/90 border border-emerald-200 text-emerald-800 shrink-0 text-[11px]">
-          <Building2 className="w-3 h-3 text-emerald-600" />
-          <span className="font-semibold">Contracts:</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/30 border border-cyan-500/25 text-cyan-200 shrink-0 text-[11px]">
+          <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-bold text-white">Contracts:</span>
           <span>{liveContext.business.totalContracts} Active</span>
-          <span className="text-emerald-300">•</span>
-          <span className="font-semibold">${liveContext.business.totalMRR.toLocaleString()}/mo</span>
+          <span className="text-cyan-500/50">•</span>
+          <span className="font-bold text-cyan-300">${liveContext.business.totalMRR.toLocaleString()}/mo MRR</span>
           {liveContext.business.expiringSoonCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 font-bold text-[9px] border border-amber-200">
+            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px] border border-amber-500/40 animate-pulse">
               {liveContext.business.expiringSoonCount} Expiring
             </span>
           )}
         </div>
 
         {/* QA Feed */}
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-indigo-50/90 border border-indigo-200 text-indigo-800 shrink-0 text-[11px]">
-          <CheckSquare className="w-3 h-3 text-indigo-600" />
-          <span className="font-semibold">QA:</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/30 border border-cyan-500/25 text-cyan-200 shrink-0 text-[11px]">
+          <CheckSquare className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-bold text-white">QA Suites:</span>
           <span>{liveContext.qa.totalTests} Tests</span>
-          <span className="text-indigo-300">•</span>
-          <span className="font-semibold">{liveContext.qa.passRate}% Pass</span>
-          <span className="text-indigo-300">•</span>
-          <span className={`font-semibold ${liveContext.qa.openBugsCount > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
-            {liveContext.qa.openBugsCount} Defects
+          <span className="text-cyan-500/50">•</span>
+          <span className="font-bold text-emerald-400">{liveContext.qa.passRate}% Pass Rate</span>
+          <span className="text-cyan-500/50">•</span>
+          <span className={`font-bold ${liveContext.qa.openBugsCount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            {liveContext.qa.openBugsCount} Defects ({liveContext.qa.criticalBugsCount} Critical)
           </span>
         </div>
 
         {/* Sales Feed */}
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-50/90 border border-amber-200 text-amber-800 shrink-0 text-[11px]">
-          <Bot className="w-3 h-3 text-amber-600" />
-          <span className="font-semibold">Sales:</span>
-          <span>{liveContext.sales.totalLeads} Leads</span>
-          <span className="text-amber-300">•</span>
-          <span className="font-semibold">{liveContext.sales.pendingApprovalsCount} Drafts Pending</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/30 border border-cyan-500/25 text-cyan-200 shrink-0 text-[11px]">
+          <Bot className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-bold text-white">SDR Harvey:</span>
+          <span>{liveContext.sales.totalLeads} Prospects</span>
+          <span className="text-cyan-500/50">•</span>
+          <span className="font-bold text-amber-300">{liveContext.sales.pendingApprovalsCount} Drafts Pending</span>
         </div>
       </div>
 
       {/* ======================================================== */}
-      {/* 3. MAIN CHAT CONTAINER (CENTERED CHATGPT/GEMINI LAYOUT)   */}
+      {/* 3. MAIN CHAT CONTAINER (STARK TACTICAL TERMINAL)        */}
       {/* ======================================================== */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 pb-48">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 pb-48 z-10">
         <div className="max-w-3xl mx-auto w-full space-y-6">
 
-          {/* Gemini-Style Welcome Hero when starting fresh */}
+          {/* Stark MK VII Welcome Hero when starting fresh */}
           {isOnlyWelcome && (
-            <div className="pt-4 pb-6 text-center space-y-3 animate-fadeIn">
-              <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-cyan-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-100 shadow-inner">
-                <Sparkles className="w-8 h-8 text-indigo-600 animate-pulse" />
+            <div className="pt-4 pb-6 text-center space-y-4 animate-fadeIn">
+              <div className={`inline-flex p-4 rounded-2xl border shadow-xl ${
+                isFriday 
+                  ? 'bg-rose-950/30 border-rose-500/30 shadow-rose-950/40 text-rose-400' 
+                  : 'bg-cyan-950/30 border-cyan-500/30 shadow-cyan-950/40 text-cyan-400'
+              }`}>
+                <Sparkles className="w-10 h-10 animate-pulse" />
               </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Command Center Ready, Boss
+              <h2 className="text-3xl md:text-4xl font-black tracking-wider font-orbitron text-white">
+                {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'} // MK_VII ACTIVE
               </h2>
-              <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto font-normal">
-                Autonomous technical copilot with live real-time telemetry across Contracts, QA & Sales. Speak or type your command.
+              <p className="text-xs md:text-sm text-cyan-300/80 max-w-xl mx-auto font-mono tracking-wide">
+                Direct neural executive command line synchronized with Business contracts, QA defect radar, and Autonomous Sales SDR Harvey.
               </p>
 
-              {/* Gemini 2x2 Suggestion Cards */}
+              {/* 2x2 Stark HUD Suggestion Widgets */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-6 text-left">
                 {suggestionCards.map((card, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSend(card.query)}
-                    className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-500/5 transition-all text-left flex flex-col justify-between group cursor-pointer shadow-2xs"
+                    className="p-4 rounded-xl bg-[#030d14]/80 border border-cyan-500/25 hover:border-cyan-400 hover:bg-cyan-950/20 transition-all text-left flex flex-col justify-between group cursor-pointer shadow-[0_4px_16px_rgba(0,0,0,0.5)]"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 rounded-xl bg-slate-50 group-hover:bg-indigo-50 transition-colors">
+                      <div className="p-2 rounded-lg bg-black/60 border border-cyan-500/30 group-hover:border-cyan-400">
                         {card.icon}
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="w-4 h-4 text-cyan-500/50 group-hover:text-cyan-300 group-hover:translate-x-1 transition-all" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors tracking-wide">
                         {card.title}
                       </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">
                         {card.desc}
                       </p>
                     </div>
@@ -801,7 +955,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                   {msg.attachments && msg.attachments.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 justify-end">
                       {msg.attachments.map((file, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
+                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-[11px] font-semibold">
                           <FileText className="w-3 h-3" />
                           <span>{file}</span>
                         </span>
@@ -809,51 +963,64 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                     </div>
                   )}
 
-                  {/* User Bubble */}
-                  <div className="bg-slate-100 hover:bg-slate-200/70 border border-slate-200/60 text-slate-900 rounded-3xl px-5 py-3 text-[14px] leading-relaxed max-w-[85%] shadow-2xs font-normal">
+                  {/* User Command Bubble */}
+                  <div className="bg-cyan-950/40 hover:bg-cyan-900/40 border border-cyan-500/35 text-cyan-100 rounded-2xl px-5 py-3 text-[13px] leading-relaxed max-w-[85%] shadow-lg shadow-cyan-950/20">
                     <p className="whitespace-pre-wrap">{msg.text}</p>
                   </div>
-                  <span className="text-[10px] text-slate-400 mr-2">{msg.timestamp}</span>
+                  <span className="text-[10px] text-slate-500 mr-2 tracking-widest">{msg.timestamp}</span>
                 </div>
               );
             }
 
-            // AI Assistant Response
+            // AI Assistant Response (Holographic Stark HUD Card)
             return (
               <div key={msg.id} className="flex items-start gap-3.5 animate-fadeIn">
                 
-                {/* Assistant Sparkle Avatar */}
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                {/* Assistant Holographic Avatar */}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-lg mt-0.5 border ${
+                  isFriday
+                    ? 'bg-rose-950/80 border-rose-500/50 text-rose-400 shadow-rose-950/50'
+                    : 'bg-cyan-950/80 border-cyan-500/50 text-cyan-300 shadow-cyan-950/50'
+                }`}>
                   <Sparkles className="w-4 h-4" />
                 </div>
 
                 {/* Assistant Message Body */}
-                <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex-1 min-w-0 space-y-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900">AI DEV</span>
-                    <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-1.5 py-0.2 rounded-md font-semibold">
-                      Boss Copilot
+                    <span className="text-xs font-black tracking-widest font-orbitron text-white">
+                      {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'}
                     </span>
-                    <span className="text-[10px] text-slate-400">• {msg.timestamp}</span>
+                    <span className="text-[9px] text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-1.5 py-0.2 rounded font-bold tracking-wider">
+                      TELEMETRY DISPATCH
+                    </span>
+                    <span className="text-[10px] text-slate-500">• {msg.timestamp}</span>
                   </div>
 
-                  <div className="text-slate-800 text-[14px] leading-relaxed prose prose-slate max-w-none">
+                  {/* Card Container */}
+                  <div className="p-4 rounded-xl bg-[#030e17]/85 border border-cyan-500/25 shadow-[0_0_24px_rgba(0,229,255,0.05)] text-slate-200 text-[13px] leading-relaxed">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
                         table: ({ node: _node, ...props }) => (
-                          <div className="overflow-x-auto my-3 rounded-xl border border-slate-200 bg-white shadow-2xs">
-                            <table className="w-full text-left text-xs border-collapse divide-y divide-slate-100" {...props} />
+                          <div className="overflow-x-auto my-3 rounded-lg border border-cyan-500/30 bg-black/60 shadow-inner">
+                            <table className="w-full text-left text-xs border-collapse divide-y divide-cyan-500/20" {...props} />
                           </div>
                         ),
                         th: ({ node: _node, ...props }) => (
-                          <th className="py-2.5 px-3.5 font-bold text-slate-600 bg-slate-50 text-xs" {...props} />
+                          <th className="py-2.5 px-3.5 font-bold text-cyan-300 bg-cyan-950/50 text-xs tracking-wider" {...props} />
                         ),
                         td: ({ node: _node, ...props }) => (
-                          <td className="py-2 px-3.5 text-slate-700 border-t border-slate-100 text-xs" {...props} />
+                          <td className="py-2 px-3.5 text-slate-300 border-t border-cyan-500/15 text-xs font-mono" {...props} />
                         ),
                         blockquote: ({ node: _node, ...props }) => (
-                          <blockquote className="border-l-3 border-indigo-500 bg-indigo-50/50 pl-3.5 py-2 rounded-r-xl text-indigo-950 my-3 text-xs leading-relaxed" {...props} />
+                          <blockquote className="border-l-2 border-cyan-400 bg-cyan-950/30 pl-3.5 py-2 rounded-r-lg text-cyan-200 my-3 text-xs leading-relaxed" {...props} />
+                        ),
+                        h3: ({ node: _node, ...props }) => (
+                          <h3 className="text-sm font-bold font-orbitron tracking-wider text-cyan-300 mb-2 mt-3" {...props} />
+                        ),
+                        h4: ({ node: _node, ...props }) => (
+                          <h4 className="text-xs font-bold font-orbitron tracking-wide text-white mb-1.5 mt-2.5" {...props} />
                         )
                       }}
                     >
@@ -863,13 +1030,13 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
                   {/* Deep Link Action Pill */}
                   {msg.actionSuggestion && onSwitchApp && (
-                    <div className="pt-2 flex items-center">
+                    <div className="pt-1 flex items-center">
                       <button
                         onClick={() => onSwitchApp(msg.actionSuggestion.targetApp)}
-                        className="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        className="px-3.5 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm hover:scale-[1.02]"
                       >
                         <span>{msg.actionSuggestion.label}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
                       </button>
                     </div>
                   )}
@@ -881,20 +1048,20 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                         onClick={() => handleSpeakText(msg.id, msg.spokenText)}
                         className={`flex items-center gap-1.5 font-medium transition-colors cursor-pointer text-xs ${
                           isSpeaking && currentSpeakingId === msg.id 
-                            ? 'text-indigo-600 font-bold' 
-                            : 'hover:text-slate-700'
+                            ? 'text-cyan-300 font-bold' 
+                            : 'hover:text-cyan-300'
                         }`}
-                        title="Read aloud with strict authoritative voice"
+                        title="Vocalize telemetry dispatch"
                       >
                         {isSpeaking && currentSpeakingId === msg.id ? (
                           <>
-                            <Square className="w-3 h-3 fill-current" />
-                            <span>Stop Audio</span>
+                            <Square className="w-3 h-3 fill-current text-cyan-400" />
+                            <span className="text-cyan-300">Stop Audio</span>
                           </>
                         ) : (
                           <>
-                            <Volume2 className="w-3.5 h-3.5" />
-                            <span>Read Aloud</span>
+                            <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Vocalize</span>
                           </>
                         )}
                       </button>
@@ -902,13 +1069,13 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
                     <button
                       onClick={() => handleCopy(msg.id, msg.markdown)}
-                      className="flex items-center gap-1.5 hover:text-slate-700 font-medium transition-colors cursor-pointer text-xs"
+                      className="flex items-center gap-1.5 hover:text-cyan-300 font-medium transition-colors cursor-pointer text-xs"
                       title="Copy response markdown"
                     >
                       {copiedId === msg.id ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-600 font-semibold">Copied!</span>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-semibold">Copied</span>
                         </>
                       ) : (
                         <>
@@ -926,12 +1093,12 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
           {/* Thinking State Indicator */}
           {isThinking && (
             <div className="flex items-start gap-3.5 animate-fadeIn">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
-                <Sparkles className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 flex items-center justify-center shrink-0 shadow-lg animate-pulse">
+                <Sparkles className="w-4 h-4 animate-spin" />
               </div>
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-2xs text-xs text-indigo-700 font-medium">
-                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
-                <span>AI Dev is analyzing live platform telemetry for Boss...</span>
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#030e17]/80 border border-cyan-500/30 text-xs text-cyan-300 font-medium tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <span>Processing live platform telemetry for Boss...</span>
               </div>
             </div>
           )}
@@ -941,110 +1108,185 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       </div>
 
       {/* ======================================================== */}
-      {/* 4. REAL-TIME LIVE VOICE CALL OVERLAY (GEMINI LIVE STYLE) */}
+      {/* 4. REAL-TIME LIVE VOICE CALL OVERLAY (IRON MAN MK_VII)   */}
       {/* ======================================================== */}
       {isLiveCallActive && (
-        <div className="absolute inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex flex-col justify-between items-center p-6 text-white animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-[#020609] flex flex-col justify-between p-4 sm:p-6 text-white animate-fadeIn select-none overflow-hidden">
           
-          {/* Top Bar inside Live Call */}
-          <div className="w-full max-w-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
-                JARVIS LIVE • ENERGETIC MALE VOICE • BOSS COMMAND
-              </span>
-            </div>
+          {/* Atmospheric Layering */}
+          <div className={isFriday ? "bg-atmosphere-friday" : "bg-atmosphere"} />
+          <div className="bg-grid" />
+          <div className="bg-scanlines" />
 
-            <button
-              onClick={handleEndLiveCall}
-              className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-white/10"
-            >
-              <PhoneOff className="w-3.5 h-3.5 text-rose-400" />
-              <span>End Call</span>
-            </button>
+          {/* Fullscreen Interactive Canvas for Particles, Orbital Geometry & Vocal Core */}
+          <div className="absolute inset-0 z-10">
+            <JarvisVocalCore 
+              mode={liveCallState} 
+              agent={agentVoice} 
+              onCoreClick={liveCallState === 'ai_speaking' ? handleInterruptAi : undefined}
+            />
           </div>
 
-          {/* Centerpiece: Animated Glowing Voice Orb & Live Waveform */}
-          <div className="flex flex-col items-center justify-center text-center space-y-6 my-auto">
+          {/* Top HUD Row with Telemetry Brackets */}
+          <div className="relative z-20 w-full flex items-start justify-between pointer-events-none">
             
-            {/* The Orb */}
-            <div className="relative cursor-pointer" onClick={liveCallState === 'ai_speaking' ? handleInterruptAi : undefined}>
-              {/* Outer Pulsing Waves */}
-              <div className={`absolute -inset-6 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 opacity-30 blur-xl transition-all duration-500 ${
-                liveCallState === 'user_speaking' || liveCallState === 'ai_speaking'
-                  ? 'scale-125 opacity-50 animate-pulse'
-                  : 'scale-100 opacity-20'
-              }`} />
+            {/* Top-Left Telemetry Bracket */}
+            <div className="hud-bracket-left pointer-events-auto">
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[11px] sm:text-xs tracking-[0.28em] text-slate-400/90 font-orbitron font-bold">
+                    &bull; {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'} // MK_VII
+                  </span>
+                </div>
+                <div className="text-[10px] tracking-[0.18em] glow-cyan font-medium -mt-1 ml-1">
+                  SYS.CORP.MK7
+                </div>
 
-              {/* Central Glowing Sphere */}
-              <div className={`w-36 h-36 md:w-44 md:h-44 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/50 relative border-2 border-white/20 transition-all duration-300 ${
-                liveCallState === 'ai_speaking'
-                  ? 'scale-105 ring-8 ring-indigo-400/30'
-                  : liveCallState === 'user_speaking'
-                    ? 'scale-110 ring-8 ring-cyan-400/40 animate-pulse'
-                    : 'scale-100'
-              }`}>
-                {liveCallState === 'user_speaking' ? (
-                  <Mic className="w-12 h-12 text-white animate-bounce" />
-                ) : liveCallState === 'ai_speaking' ? (
-                  <div className="flex items-end gap-1.5 h-8">
-                    <span className="w-1.5 bg-white animate-bounce h-5 rounded-full" />
-                    <span className="w-1.5 bg-white animate-bounce h-8 rounded-full [animation-delay:0.15s]" />
-                    <span className="w-1.5 bg-white animate-bounce h-4 rounded-full [animation-delay:0.3s]" />
-                    <span className="w-1.5 bg-white animate-bounce h-7 rounded-full [animation-delay:0.45s]" />
-                  </div>
-                ) : liveCallState === 'thinking' ? (
-                  <Sparkles className="w-12 h-12 text-white animate-spin" />
-                ) : (
-                  <Sparkles className="w-12 h-12 text-white/90 animate-pulse" />
-                )}
+                <div className="w-28 h-[1px] bg-cyan-400/40 my-2 shadow-[0_0_6px_rgba(0,229,255,0.5)]" />
+
+                <div className="text-[10px] tracking-[0.16em] glow-cyan font-medium">
+                  UPLINK: ESTABLISHED
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isMicMuted ? 'bg-rose-500' : 'bg-cyan-400 animate-ping'} shadow-[0_0_8px_#00e5ff]`} />
+                  <span className="text-[10px] tracking-[0.18em] text-cyan-300">
+                    {isMicMuted ? 'MIC MUTED' : 'MIC ACTIVE'}
+                  </span>
+                </div>
+                <div className="text-[9px] tracking-[0.2em] text-slate-400 mt-1 font-light">
+                  FREQ: {liveCallState === 'ai_speaking' ? '240 Hz // 48.2 dB' : liveCallState === 'user_speaking' ? '180 Hz // 44.0 dB' : '000 Hz // 0.0 dB'}
+                </div>
               </div>
             </div>
 
-            {/* Status Heading */}
-            <div className="space-y-2 max-w-lg px-4">
-              <h3 className="text-xl md:text-2xl font-black tracking-tight text-white">
-                {liveCallState === 'connecting' && "Connecting Live Channel..."}
-                {liveCallState === 'listening' && "🎙️ Listening to Boss..."}
-                {liveCallState === 'user_speaking' && "Boss is Speaking..."}
-                {liveCallState === 'thinking' && "⚡ Analyzing Telemetry for Boss..."}
-                {liveCallState === 'ai_speaking' && "🔊 AI Dev Speaking..."}
-              </h3>
+            {/* Top Center: Voice Agent Switcher & Language Switcher inside Call */}
+            <div className="pointer-events-auto flex flex-col items-center gap-1.5">
+              <div className="flex items-center p-1 rounded-xl bg-black/75 border border-cyan-500/35 backdrop-blur-md shadow-2xl">
+                <button
+                  onClick={() => handleToggleAgentVoice('jarvis')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-orbitron transition-all flex items-center gap-1.5 cursor-pointer ${
+                    agentVoice === 'jarvis'
+                      ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/50 font-black'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Switch to J.A.R.V.I.S. (Male Voice)"
+                >
+                  <span>⚡ J.A.R.V.I.S. (MALE)</span>
+                </button>
+                <button
+                  onClick={() => handleToggleAgentVoice('friday')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-orbitron transition-all flex items-center gap-1.5 cursor-pointer ${
+                    agentVoice === 'friday'
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/50 font-black'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Switch to F.R.I.D.A.Y. (Female Voice)"
+                >
+                  <span>✨ F.R.I.D.A.Y. (FEMALE)</span>
+                </button>
+              </div>
 
-              {/* Live Subtitle Transcript */}
-              {liveTranscript && (
-                <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 text-sm md:text-base text-cyan-200 font-medium max-w-md mx-auto shadow-inner">
+              {/* Language Pill */}
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-black/60 border border-cyan-500/25 text-[10px]">
+                <button
+                  onClick={() => handleToggleLanguage('hi-IN')}
+                  className={`px-2 py-0.5 rounded font-bold transition-all ${
+                    speechLang === 'hi-IN' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🇮🇳 Hindi / Hinglish
+                </button>
+                <button
+                  onClick={() => handleToggleLanguage('en-US')}
+                  className={`px-2 py-0.5 rounded font-bold transition-all ${
+                    speechLang === 'en-US' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🌐 English
+                </button>
+              </div>
+            </div>
+
+            {/* Top-Right Telemetry Bracket */}
+            <div className="hud-bracket-right pointer-events-auto">
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] sm:text-xs tracking-[0.28em] text-slate-300 font-orbitron">
+                    {liveCallState === 'listening' ? 'LISTENING' : liveCallState === 'user_speaking' ? 'RECEIVING' : liveCallState === 'thinking' ? 'PROCESSING' : liveCallState === 'ai_speaking' ? 'VOCALIZING' : 'STANDBY'}
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#00e5ff]" />
+                </div>
+                <div className="text-[10px] tracking-[0.16em] glow-cyan font-medium -mt-1 mr-2">
+                  MEM: 44.2 TB
+                </div>
+
+                {/* 4 Animated Equalizer Telemetry Bars */}
+                <div className="flex items-end gap-1.5 mt-2 mr-1">
+                  <div className="eq-bar"><div className="eq-bar-fill" style={{ height: liveCallState === 'ai_speaking' ? '85%' : '35%' }} /></div>
+                  <div className="eq-bar"><div className="eq-bar-fill" style={{ height: liveCallState === 'ai_speaking' ? '95%' : '65%' }} /></div>
+                  <div className="eq-bar"><div className="eq-bar-fill" style={{ height: liveCallState === 'user_speaking' ? '90%' : '45%' }} /></div>
+                  <div className="eq-bar"><div className="eq-bar-fill" style={{ height: liveCallState === 'user_speaking' ? '80%' : '50%' }} /></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Center-Bottom Vocal Status & Interactive Prompt */}
+          <div className="relative z-20 flex flex-col items-center justify-end flex-1 pb-4 pointer-events-auto">
+            
+            {/* Spacer */}
+            <div className="h-[44vh] sm:h-[46vh] pointer-events-none" />
+
+            {/* TAP TO INTERRUPT / TERMINATE BUTTON */}
+            {liveCallState === 'ai_speaking' ? (
+              <button
+                onClick={handleInterruptAi}
+                className="terminate-btn glow-danger uppercase font-bold py-2.5 px-6 rounded-lg bg-rose-950/60 border border-rose-500/50 hover:bg-rose-900/60 text-rose-300 transition-all cursor-pointer shadow-lg shadow-rose-950/50 font-orbitron"
+              >
+                TAP TO INTERRUPT & SPEAK
+              </button>
+            ) : (
+              <div className="status-track text-cyan-400/80 uppercase font-orbitron tracking-[0.3em] text-xs">
+                {liveCallState === 'connecting' && "INITIALIZING DUPLEX VOCAL LINK..."}
+                {liveCallState === 'listening' && "AWAITING VOCAL INPUT // SPEAK NOW"}
+                {liveCallState === 'user_speaking' && "RECEIVING VOCAL COMMAND..."}
+                {liveCallState === 'thinking' && "NEURAL TELEMETRY MATRIX PROCESSING..."}
+              </div>
+            )}
+
+            {/* Live Subtitle Transcript */}
+            <div className="mt-3 flex flex-col items-center text-center max-w-lg px-4 min-h-[3rem]">
+              {liveTranscript ? (
+                <div className="text-sm md:text-base tracking-wide text-cyan-200 font-bold glow-cyan">
                   "{liveTranscript}"
                 </div>
-              )}
-
-              {/* Last Spoken AI Output */}
-              {liveCallState === 'ai_speaking' && lastAiSpeech && !liveTranscript && (
-                <div className="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 text-xs md:text-sm text-indigo-200 font-medium max-w-md mx-auto line-clamp-3">
+              ) : liveCallState === 'ai_speaking' && lastAiSpeech ? (
+                <div className="text-xs md:text-sm tracking-wide text-cyan-100 font-medium line-clamp-2">
                   "{lastAiSpeech}"
                 </div>
-              )}
-
-              {liveCallState === 'listening' && !liveTranscript && (
-                <p className="text-xs text-white/60 font-normal">
-                  Speak anytime in Hindi or English. Main automatically sunkar turant bolkar update dunga Boss.
-                </p>
+              ) : (
+                <div className="text-[11px] text-slate-400 font-light tracking-widest">
+                  Speak anytime in Hindi, Hinglish, or English. {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'} will respond instantly.
+                </div>
               )}
             </div>
 
-            {/* Quick Command Pills for Boss inside Call */}
-            <div className="flex flex-wrap items-center justify-center gap-2 max-w-md pt-2">
+            {/* Quick Command Pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-lg pt-3">
               <button
                 onClick={() => {
                   setLiveTranscript("Kiska contract kabtak hai?");
                   liveCallStateRef.current = 'thinking';
                   setLiveCallState('thinking');
                   handleSend("Kiska contract kabtak hain aur kab expire hoga?", {
+                    agent: agentVoice,
                     onResponseReady: (resp) => {
                       liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                       setLastAiSpeech(resp.spokenText);
                       aiDevService.speak(resp.spokenText, {
+                        agent: agentVoice,
                         onEnd: () => {
                           if (isLiveCallActiveRef.current) {
                             liveCallStateRef.current = 'listening';
@@ -1056,9 +1298,9 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                     }
                   });
                 }}
-                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white/90 transition-all cursor-pointer"
+                className="px-3 py-1 rounded-md bg-[#05161e]/80 hover:bg-cyan-950/60 border border-cyan-500/30 text-[11px] text-cyan-300 font-medium transition-all cursor-pointer"
               >
-                🏢 Contracts kab expire honge?
+                🏢 Contracts Expiration
               </button>
 
               <button
@@ -1067,11 +1309,13 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                   liveCallStateRef.current = 'thinking';
                   setLiveCallState('thinking');
                   handleSend("Kitne bugs open hain aur critical bugs ki list do", {
+                    agent: agentVoice,
                     onResponseReady: (resp) => {
                       liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                       setLastAiSpeech(resp.spokenText);
                       aiDevService.speak(resp.spokenText, {
+                        agent: agentVoice,
                         onEnd: () => {
                           if (isLiveCallActiveRef.current) {
                             liveCallStateRef.current = 'listening';
@@ -1083,9 +1327,9 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                     }
                   });
                 }}
-                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white/90 transition-all cursor-pointer"
+                className="px-3 py-1 rounded-md bg-[#05161e]/80 hover:bg-cyan-950/60 border border-cyan-500/30 text-[11px] text-cyan-300 font-medium transition-all cursor-pointer"
               >
-                🚨 Critical bugs status
+                🚨 Critical Defect Radar
               </button>
 
               <button
@@ -1094,11 +1338,13 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                   liveCallStateRef.current = 'thinking';
                   setLiveCallState('thinking');
                   handleSend("Pura platform ka comprehensive real-time briefing do", {
+                    agent: agentVoice,
                     onResponseReady: (resp) => {
                       liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                       setLastAiSpeech(resp.spokenText);
                       aiDevService.speak(resp.spokenText, {
+                        agent: agentVoice,
                         onEnd: () => {
                           if (isLiveCallActiveRef.current) {
                             liveCallStateRef.current = 'listening';
@@ -1110,64 +1356,51 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                     }
                   });
                 }}
-                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] font-semibold text-white/90 transition-all cursor-pointer"
+                className="px-3 py-1 rounded-md bg-[#05161e]/80 hover:bg-cyan-950/60 border border-cyan-500/30 text-[11px] text-cyan-300 font-medium transition-all cursor-pointer"
               >
-                ⚡ Executive summary
+                ⚡ Executive Summary
               </button>
             </div>
 
-          </div>
-
-          {/* Bottom Live Call Controls */}
-          <div className="w-full max-w-sm flex items-center justify-around pb-6 pt-4 border-t border-white/10">
-            {/* Mute Button */}
-            <button
-              onClick={handleToggleMute}
-              className={`p-4 rounded-full border transition-all cursor-pointer ${
-                isMicMuted
-                  ? 'bg-rose-500/20 border-rose-500 text-rose-400'
-                  : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
-              }`}
-              title={isMicMuted ? "Unmute Mic" : "Mute Mic"}
-            >
-              {isMicMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-            </button>
-
-            {/* Interrupt AI Button */}
-            {liveCallState === 'ai_speaking' && (
+            {/* Bottom Controls Bar */}
+            <div className="w-full max-w-sm flex items-center justify-around pt-4 mt-2 border-t border-cyan-500/20">
               <button
-                onClick={handleInterruptAi}
-                className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
-                title="Interrupt AI Dev to speak now"
+                onClick={handleToggleMute}
+                className={`p-3.5 rounded-full border transition-all cursor-pointer ${
+                  isMicMuted
+                    ? 'bg-rose-500/20 border-rose-500 text-rose-400'
+                    : 'bg-black/60 hover:bg-cyan-950/40 border-cyan-500/40 text-cyan-300'
+                }`}
+                title={isMicMuted ? "Unmute Microphone" : "Mute Microphone"}
               >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Interrupt & Speak</span>
+                {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
-            )}
 
-            {/* End Call Button */}
-            <button
-              onClick={handleEndLiveCall}
-              className="p-4 rounded-full bg-rose-600 hover:bg-rose-700 text-white transition-all cursor-pointer shadow-lg shadow-rose-600/30"
-              title="End Voice Call"
-            >
-              <PhoneOff className="w-6 h-6" />
-            </button>
+              <button
+                onClick={handleEndLiveCall}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold font-orbitron text-xs transition-all cursor-pointer flex items-center gap-2 shadow-lg shadow-rose-600/40"
+                title="Terminate Vocal Interface"
+              >
+                <PhoneOff className="w-4 h-4" />
+                <span>TERMINATE</span>
+              </button>
+            </div>
+
           </div>
 
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* 5. BOTTOM FLOATING PROMPTBAR DOCK (REACT BITS PROMPTBAR)  */}
+      {/* 5. BOTTOM FLOATING PROMPTBAR DOCK (STARK CYBER THEME)    */}
       {/* ======================================================== */}
-      <div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-slate-50 via-slate-50/95 to-transparent pt-8 pb-4 px-4 flex flex-col items-center pointer-events-auto">
+      <div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-[#020609] via-[#020609]/95 to-transparent pt-8 pb-4 px-4 flex flex-col items-center pointer-events-auto">
         <div className="w-full max-w-3xl flex flex-col items-center">
           
           <div className="w-full flex items-center gap-2">
             <div className="flex-1">
               <PromptBar
-                placeholder="Ask anything about contracts, QA, bugs, or click Live Call to talk with Boss mode..."
+                placeholder={isFriday ? "F.R.I.D.A.Y. command matrix active. Ask in Hindi or English..." : "J.A.R.V.I.S. command matrix active. Ask in Hindi or English..."}
                 sources={promptSources}
                 commands={promptCommands}
                 models={promptModels}
@@ -1183,35 +1416,39 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                 }}
                 onAttach={handleAttach}
                 onDictate={handleDictate}
-                background="#ffffff"
-                color="#0f172a"
-                menuBackground="#ffffff"
-                sparkColor="#6366f1"
-                sparkBoost={1.2}
+                background="#030e17"
+                color="#e2e8f0"
+                menuBackground="#020609"
+                sparkColor={isFriday ? '#f43f5e' : '#00e5ff'}
+                sparkBoost={1.3}
                 width={768}
-                radius={20}
+                radius={16}
                 maxRows={6}
                 morphDuration={240}
                 squash={0.12}
                 tilt={8}
                 pressScale={0.96}
-                className="w-full shadow-lg shadow-indigo-500/5"
+                className="w-full shadow-2xl shadow-cyan-950/40 border border-cyan-500/30"
               />
             </div>
 
-            {/* Quick Call Pill right next to PromptBar */}
+            {/* Quick Live Talk Button right next to PromptBar */}
             <button
               onClick={handleStartLiveCall}
-              className="h-12 px-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95"
-              title="Start Real-time Voice Call with Boss"
+              className={`h-12 px-4 rounded-xl font-orbitron font-bold text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 ${
+                isFriday
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-rose-600/30'
+                  : 'bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-cyan-500/30'
+              }`}
+              title="Launch Dynamic Vocal Interface with Boss"
             >
-              <Phone className="w-4 h-4" />
-              <span className="hidden sm:inline">Live Talk</span>
+              <Radio className="w-4 h-4 animate-pulse" />
+              <span className="hidden sm:inline">LIVE TALK</span>
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-400 mt-2 text-center">
-            AI Dev references live in-memory telemetry across InfratechAI. Boss command channel active.
+          <p className="text-[10px] text-cyan-400/60 mt-2 text-center tracking-wider font-mono">
+            {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'} MK_VII TELEMETRY MATRIX • DUAL VOICE AGENT ACTIVE • BOSS COMMAND READY
           </p>
         </div>
       </div>
@@ -1219,3 +1456,4 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     </div>
   );
 };
+export default AiDevView;

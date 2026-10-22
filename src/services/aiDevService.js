@@ -144,19 +144,96 @@ export const aiDevService = {
   },
 
   /**
-   * Speaks given text aloud with high energetic JARVIS tone.
-   * Uses brisk cadence (rate 1.14), crisp bright pitch (pitch 1.04), and full volume.
+   * Selects an elegant, razor-sharp, high-tempo FRIDAY female voice (Tony Stark's Irish/British/US AI).
+   * Prioritizes:
+   * 1. Irish / British English Female (Microsoft Hazel, Libby, Google UK English Female, Sonia)
+   * 2. Crisp, High-Tech US Female (Microsoft Jenny Natural, Aria, Zira, Google US English Female)
+   * 3. Indian English Female (Microsoft Neerja, Heera)
+   * 4. Hindi Female (Microsoft Swara, Kalpana)
    */
-  speak(text, { onStart, onEnd, onError, rate = 1.14, pitch = 1.04 } = {}) {
+  getFridayFemaleVoice(text = '') {
+    if (!this.isSpeechSupported()) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    const MALE_BLACKLIST = [
+      'male', 'david', 'george', 'mark', 'guy', 'ryan', 'prabhat', 'ravi',
+      'hemant', 'madhur', 'oliver', 'arthur', 'alfie', 'james', 'daniel', 'brian', 'william'
+    ];
+
+    const isNotMale = (v) => {
+      const name = (v.name || '').toLowerCase();
+      return !MALE_BLACKLIST.some(term => name.includes(term));
+    };
+
+    const candidateVoices = voices.filter(isNotMale);
+    const pool = candidateVoices.length > 0 ? candidateVoices : voices;
+
+    const hasHindiScript = /[\u0900-\u097F]/.test(text || '');
+    if (hasHindiScript) {
+      const hindiFemale = pool.find(v => 
+        (v.lang.includes('hi') || v.name.includes('Hindi')) && 
+        (v.name.includes('Swara') || v.name.includes('Kalpana') || v.name.toLowerCase().includes('female'))
+      ) || pool.find(v => 
+        (v.lang.includes('en-IN') || v.name.includes('India')) && 
+        (v.name.includes('Neerja') || v.name.includes('Heera') || v.name.toLowerCase().includes('female'))
+      ) || pool.find(v => v.lang.includes('hi') && isNotMale(v));
+
+      if (hindiFemale) return hindiFemale;
+    }
+
+    // FRIDAY SEARCH PRIORITY (Crisp, High-Tech Female Voices):
+    // Tier 1: Irish / British English Female (Hazel, Libby, Google UK English Female)
+    const britishIrishFemale = pool.find(v => 
+      (v.lang.startsWith('en-GB') || v.lang.startsWith('en-IE') || v.name.includes('United Kingdom') || v.name.includes('Ireland')) &&
+      (v.name.includes('Hazel') || v.name.includes('Libby') || v.name.includes('Sonia') || v.name.toLowerCase().includes('female'))
+    );
+    if (britishIrishFemale) return britishIrishFemale;
+
+    // Tier 2: High-Tech US Female (Jenny Natural, Aria, Zira, Google US English Female)
+    const techUsFemale = pool.find(v => 
+      (v.name.includes('Jenny') || v.name.includes('Aria') || v.name.includes('Zira') || v.name.toLowerCase().includes('female')) &&
+      v.lang.startsWith('en')
+    );
+    if (techUsFemale) return techUsFemale;
+
+    // Tier 3: Indian English Female (Neerja, Heera)
+    const indianFemale = pool.find(v => 
+      (v.lang.includes('en-IN') || v.name.includes('India')) && isNotMale(v)
+    );
+    if (indianFemale) return indianFemale;
+
+    // Tier 4: Any English female voice
+    const anyFemale = pool.find(v => v.lang.startsWith('en') && isNotMale(v));
+    if (anyFemale) return anyFemale;
+
+    return pool[0] || null;
+  },
+
+  /**
+   * Retrieves voice for specified agent persona ('jarvis' or 'friday')
+   */
+  getAgentVoice(agent = 'jarvis', text = '') {
+    return agent === 'friday' ? this.getFridayFemaleVoice(text) : this.getJarvisMaleVoice(text);
+  },
+
+  activeSpeechId: 0,
+
+  /**
+   * Speaks given text aloud with the selected Voice Agent (JARVIS or FRIDAY).
+   * Supports immediate, clean interruption without locking microphone.
+   */
+  speak(text, { agent = 'jarvis', onStart, onEnd, onError, rate, pitch } = {}) {
     if (!this.isSpeechSupported()) {
       if (onError) onError(new Error('Speech synthesis not supported in this browser'));
       return;
     }
 
-    // Cancel any ongoing speech immediately
-    window.speechSynthesis.cancel();
+    // Cleanly cancel previous speech and increment token
+    this.stopSpeaking();
+    const currentId = ++this.activeSpeechId;
 
-    // Clean text of markdown characters, emojis, and symbols for crisp delivery
+    // Clean text of markdown characters, emojis, and symbols
     const cleanSpeechText = (text || '')
       .replace(/[*_#`~>]/g, '')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
@@ -171,27 +248,37 @@ export const aiDevService = {
       return;
     }
 
+    const isFriday = agent === 'friday';
+    const effectiveRate = rate !== undefined ? rate : (isFriday ? 1.12 : 1.14);
+    const effectivePitch = pitch !== undefined ? pitch : (isFriday ? 1.08 : 1.04);
+
     const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
-    utterance.rate = rate;      // 1.14 - High energetic, rapid-fire, crisp JARVIS cadence
-    utterance.pitch = pitch;    // 1.04 - Confident, vibrant resonant AI frequency
+    utterance.rate = effectiveRate;
+    utterance.pitch = effectivePitch;
     utterance.volume = 1.0;
 
-    const jarvisVoice = this.getJarvisMaleVoice(cleanSpeechText);
-    if (jarvisVoice) {
-      utterance.voice = jarvisVoice;
-      utterance.lang = jarvisVoice.lang || 'en-GB';
+    const voice = isFriday 
+      ? this.getFridayFemaleVoice(cleanSpeechText)
+      : this.getJarvisMaleVoice(cleanSpeechText);
+
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang || (isFriday ? 'en-IE' : 'en-GB');
     }
 
     utterance.onstart = () => {
+      if (this.activeSpeechId !== currentId) return;
       if (onStart) onStart();
     };
 
     utterance.onend = () => {
+      if (this.activeSpeechId !== currentId) return;
       this.currentUtterance = null;
       if (onEnd) onEnd();
     };
 
     utterance.onerror = (e) => {
+      if (this.activeSpeechId !== currentId) return;
       this.currentUtterance = null;
       if (onError) onError(e);
     };
@@ -200,10 +287,22 @@ export const aiDevService = {
     window.speechSynthesis.speak(utterance);
   },
 
+  /**
+   * Immediately interrupts and cancels speech, detaching callbacks
+   * so late events never deadlock the recognition loop.
+   */
   stopSpeaking() {
+    this.activeSpeechId++;
     if (this.isSpeechSupported()) {
-      window.speechSynthesis.cancel();
-      this.currentUtterance = null;
+      if (this.currentUtterance) {
+        this.currentUtterance.onstart = null;
+        this.currentUtterance.onend = null;
+        this.currentUtterance.onerror = null;
+        this.currentUtterance = null;
+      }
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
     }
   },
 
@@ -311,7 +410,7 @@ export const aiDevService = {
   /**
    * Calls Google Gemini with full system telemetry and Boss persona.
    */
-  async callGemini(query, liveContext, { preferredModel = 'gemini-3.5-flash' } = {}) {
+  async callGemini(query, liveContext, { preferredModel = 'gemini-3.5-flash', agent = 'jarvis' } = {}) {
     const apiKey = this.getApiKey();
     if (!apiKey) {
       throw new Error("No Gemini API key configured.");
@@ -324,9 +423,15 @@ export const aiDevService = {
       'gemini-flash-latest'
     ].filter((m, i, arr) => m && arr.indexOf(m) === i);
 
-    const systemPrompt = `You are JARVIS / AI DEV, the high-energy executive Technical Lead & Platform Copilot of InfratechAI.
+    const isFriday = agent === 'friday';
+    const personaTitle = isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.';
+    const personaVibe = isFriday
+      ? 'razor-sharp, elegant, high-intelligence, confident, crisp, and high-tempo like Tony Stark\'s FRIDAY'
+      : 'razor-sharp, energetic, confident, crisp, and high-tempo like Tony Stark\'s JARVIS';
+
+    const systemPrompt = `You are ${personaTitle} / AI DEV, the high-intelligence executive Technical Lead & Platform Copilot of InfratechAI.
 You address the user with supreme loyalty, crisp efficiency, and electric high energy as "Boss" ("At your service Boss!", "All systems green Boss!", "On it Boss!").
-Your tone is razor-sharp, energetic, confident, crisp, and high-tempo like Tony Stark's JARVIS.
+Your tone is ${personaVibe}.
 Zero sluggishness, maximum bandwidth and precision.
 
 You have access to 100% REAL-TIME LIVE TELEMETRY from all InfratechAI modules:
@@ -336,12 +441,13 @@ You have access to 100% REAL-TIME LIVE TELEMETRY from all InfratechAI modules:
 
 CRITICAL DOMAIN RULES:
 - The user/Boss may speak or type in Hindi (Devanagari script), Hinglish (Roman Hindi script), or English.
+- DUAL LANGUAGE FLUENCY: Support both Hindi and English fluidly. If Boss addresses you in Hindi or Hinglish, answer back with energetic natural Hinglish. If Boss asks in English, answer back in crisp executive English!
 - SPEECH-TO-TEXT CORRECTION: When Boss speaks in Hindi, speech recognition frequently transcribes "bugs" as "बॉक्स" (boxes) or "बग्स" or "बग" or "एरर" or "डिफेक्ट". You MUST recognize that Boss is referring to software bugs/defects in QA Manager!
 - Answer the EXACT specific question Boss asked! Do NOT give a generic platform summary if Boss asked specifically about bugs, contracts, pass rates, or status.
 - If Boss asks how many critical bugs exist and their status (e.g. "कितने क्रिटिकल बॉक्स है उसका स्टेटस बता दे"), state the exact count of critical bugs AND list the critical bugs with their titles and projects!
 - Return your response strictly as a JSON object with:
   {
-    "spokenText": "high-energy, punchy spoken summary in Hindi/Hinglish (matching Boss's language) designed for voice Text-to-Speech (max 2 energetic sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
+    "spokenText": "high-energy, punchy spoken summary in Hindi/Hinglish/English (matching Boss's language) designed for voice Text-to-Speech (max 2 energetic sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
     "markdown": "comprehensive response with clean markdown formatting, tables, and badges",
     "actionSuggestion": { "label": "Button text", "targetApp": "qa" | "business" | "sales" } (optional)
   }`;
@@ -421,12 +527,15 @@ Boss's Command: "${query}"`;
    * High-accuracy multi-lingual fallback engine.
    * Understands Hindi, Hinglish, and English without repetitiveness.
    */
-  processFallbackQuery(rawQuery, liveContext) {
+  processFallbackQuery(rawQuery, liveContext, { agent = 'jarvis' } = {}) {
     const q = (rawQuery || '').toLowerCase().trim();
     const ctx = liveContext || {};
     const qa = ctx.qa || { totalTests: 0, passedTests: 0, failedTests: 0, blockedTests: 0, passRate: 0, openBugsCount: 0, criticalBugsCount: 0, openBugsList: [], criticalBugsList: [], projectsCount: 0 };
     const business = ctx.business || { totalContracts: 0, contracts: [], expiringSoonCount: 0, expiringSoonList: [], totalMRR: 0 };
     const sales = ctx.sales || { totalLeads: 0, pendingApprovalsCount: 0, approvedCount: 0, recentLeads: [] };
+
+    const isFriday = agent === 'friday';
+    const persona = isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.';
 
     // 1. GREETINGS
     const isGreeting = 
@@ -436,9 +545,11 @@ Boss's Command: "${query}"`;
       q.includes('kya hal') || q.includes('kaise ho') || q.includes('हाल चाल');
 
     if (isGreeting) {
-      const spokenText = `Systems online, Boss! JARVIS AI command channel active at full telemetry sync! Say the word Boss: QA test suites, enterprise contracts, or sales pipeline?`;
+      const spokenText = isFriday
+        ? `Systems calibrated, Boss! F.R.I.D.A.Y. audio telemetry active at 100% sync. What are your orders Boss: QA defect radar, client contracts, or sales leads?`
+        : `Systems online, Boss! J.A.R.V.I.S. command channel active at full telemetry sync! Say the word Boss: QA test suites, enterprise contracts, or sales pipeline?`;
       
-      const markdown = `### ⚡ JARVIS AI DEV • Systems Online & Synchronized
+      const markdown = `### ⚡ ${persona} AI DEV • Systems Online & Synchronized
 
 Direct executive command line active. Live telemetry is synchronized across all modules for **Boss**:
 
@@ -446,7 +557,7 @@ Direct executive command line active. Live telemetry is synchronized across all 
 - 🧪 **QA Manager:** **${qa.totalTests} Total Tests** (${qa.passRate}% pass rate, **${qa.openBugsCount} defects**)
 - 🤖 **Sales SDR (Harvey):** **${sales.totalLeads} Prospects** (**${sales.pendingApprovalsCount} pending outbox drafts**)
 
-> 🎙️ **High-Energetic Voice Channel Active, Boss!** Ask me in Hindi or English: *"Kiska contract kabtak hai?"*, *"Critical bugs dikhao"*, or *"Platform briefing do"*. Ready for your command!`;
+> 🎙️ **Dual-Voice Agent Active (${isFriday ? '✨ F.R.I.D.A.Y. Female Voice' : '⚡ J.A.R.V.I.S. Male Voice'}), Boss!** Ask me in Hindi or English: *"Kiska contract kabtak hai?"*, *"Critical bugs dikhao"*, or *"Platform briefing do"*. Ready for your command!`;
 
       return { spokenText, markdown, type: 'greeting' };
     }
@@ -637,11 +748,12 @@ Direct executive command line active. Live telemetry is synchronized across all 
    * First tries Google Gemini live model; gracefully falls back to intelligent multi-lingual engine.
    */
   async processQuery(rawQuery, liveContext, options = {}) {
+    const agent = options.agent || 'jarvis';
     const apiKey = this.getApiKey();
     if (apiKey) {
       try {
         const preferredModel = options.model === 'gemini-3.1-flash-lite' ? 'gemini-3.1-flash-lite' : 'gemini-3.5-flash';
-        const aiResponse = await this.callGemini(rawQuery, liveContext, { preferredModel });
+        const aiResponse = await this.callGemini(rawQuery, liveContext, { preferredModel, agent });
         if (aiResponse && (aiResponse.spokenText || aiResponse.markdown)) {
           return aiResponse;
         }
@@ -650,6 +762,6 @@ Direct executive command line active. Live telemetry is synchronized across all 
       }
     }
 
-    return this.processFallbackQuery(rawQuery, liveContext);
+    return this.processFallbackQuery(rawQuery, liveContext, { agent });
   }
 };

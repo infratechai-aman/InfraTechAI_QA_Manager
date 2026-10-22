@@ -94,23 +94,25 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/send' && req.method === 'POST') {
     try {
       const body = await parseJsonBody(req);
-      const { to, subject, text, user, pass, fromName = 'Harvey Ross' } = body;
+      const { to, subject, text, fromName = 'Harvey Ross' } = body;
+      const effectiveUser = body.user || process.env.VITE_GMAIL_ADDRESS || 'aman.infratechai@gmail.com';
+      const effectivePass = body.pass || process.env.VITE_GMAIL_APP_PASSWORD || 'qerk bggh ysyk mrfg';
 
-      if (!to || !subject || !text || !user || !pass) {
+      if (!to || !subject || !text || !effectiveUser || !effectivePass) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Missing required email fields (to, subject, text, user, pass)' }));
+        res.end(JSON.stringify({ success: false, error: 'Missing required email fields (to, subject, text)' }));
         return;
       }
 
-      const cleanPass = pass.replace(/\s+/g, '');
+      const cleanPass = effectivePass.replace(/\s+/g, '');
       const transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: { user, pass: cleanPass },
+        auth: { user: effectiveUser, pass: cleanPass },
         tls: { rejectUnauthorized: false }
       });
 
       const mailOptions = {
-        from: `"${fromName}" <${user}>`,
+        from: `"${fromName}" <${effectiveUser}>`,
         to,
         subject,
         text

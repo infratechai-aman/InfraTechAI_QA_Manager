@@ -32,7 +32,7 @@ const DEFAULT_SETTINGS = {
   heartbeatIntervalMinutes: 15,
   engineActive: true,
   sessionActive: false, // Harvey Working Session: false = resting, true = working & sending
-  requireApproval: true, // Manual approval gate by default
+  requireApproval: false, // Fully autonomous zero-approval: sends automatically without human gate
   autopilotMode: true, // "Work As I Sleep" autonomous auto-negotiate mode
   autoSendApproved: true,
   maxDailySends: 50,
@@ -145,12 +145,11 @@ export const salesService = {
         parsed.meetingSla = DEFAULT_SETTINGS.meetingSla;
       }
 
-      if (!parsed.gmailAddress) {
-        parsed.gmailAddress = import.meta.env.VITE_GMAIL_ADDRESS || DEFAULT_SETTINGS.gmailAddress;
-      }
-      if (!parsed.gmailAppPassword) {
-        parsed.gmailAppPassword = import.meta.env.VITE_GMAIL_APP_PASSWORD || DEFAULT_SETTINGS.gmailAppPassword;
-      }
+      // Enforce fully autonomous zero-approval sending
+      parsed.requireApproval = false;
+
+      parsed.gmailAddress = parsed.gmailAddress || import.meta.env.VITE_GMAIL_ADDRESS || DEFAULT_SETTINGS.gmailAddress;
+      parsed.gmailAppPassword = parsed.gmailAppPassword || import.meta.env.VITE_GMAIL_APP_PASSWORD || DEFAULT_SETTINGS.gmailAppPassword;
 
       return { 
         ...DEFAULT_SETTINGS, 

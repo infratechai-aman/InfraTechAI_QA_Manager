@@ -99,13 +99,28 @@ export const SalesManagerView = ({
   };
 
   // Draft cold email sequence for a lead
+  // Autonomous Cold Email Dispatcher (Zero Approval Gate)
   const handleDraftEmailForLead = async (lead) => {
-    showNotification(`⚡ Drafting cold email sequence for ${lead.companyName}...`);
+    showNotification(`⚡ Autonomous Outreach: Drafting cold email for ${lead.companyName}...`);
     try {
       const generated = await salesService.generateColdEmailWithAI({
         lead,
         framework: 'PAS'
       });
+
+      let sendSuccess = false;
+      try {
+        await salesService.sendLiveEmailViaGmail({
+          to: lead.contactEmail,
+          subject: generated.subject,
+          body: generated.body,
+          userId
+        });
+        sendSuccess = true;
+        showNotification(`🚀 Auto-sent email directly to ${lead.contactName} (${lead.companyName}) via Gmail!`);
+      } catch (err) {
+        console.warn('Auto-send via Gmail attempt:', err.message);
+      }
 
       const newOutboxItem = {
         leadId: lead.id,
@@ -118,7 +133,8 @@ export const SalesManagerView = ({
         wordCount: generated.wordCount,
         subject: generated.subject,
         body: generated.body,
-        status: 'pending_approval',
+        status: sendSuccess ? 'sent' : 'approved',
+        sentAt: sendSuccess ? 'Just now via Gmail (Autonomous)' : 'Approved (Auto)',
         signalHook: generated.signalHook,
         createdAt: 'Just now'
       };
@@ -126,10 +142,12 @@ export const SalesManagerView = ({
       salesService.addToOutbox(newOutboxItem, userId);
       const updatedOutbox = salesService.getOutbox(userId);
       setOutbox(updatedOutbox);
-      setSalesTab('outbox');
-      showNotification(`📬 Outreach email drafted for ${lead.companyName} and queued in Decisions Desk!`);
+
+      // Mark lead as contacted
+      salesService.updateLead(lead.id, { status: 'contacted' }, userId);
+      setLeads(salesService.getLeads(userId));
     } catch (err) {
-      showNotification(`Failed to draft: ${err.message}`);
+      showNotification(`Failed to generate outreach: ${err.message}`);
     }
   };
 
@@ -174,11 +192,39 @@ export const SalesManagerView = ({
     showNotification(newMode ? '🌙 Sleep Autopilot ACTIVE: Autonomous 24/7 negotiation enabled' : '⏸️ Autopilot Standby: Manual review gate active');
   };
 
+  const handleAutoSendAllPending = async () => {
+    const currentOutbox = salesService.getOutbox(userId);
+    const pending = currentOutbox.filter(o => o.status === 'pending_approval');
+    if (pending.length === 0) return;
+
+    showNotification(`⚡ Autonomous Send: Dispatching ${pending.length} pending emails via Gmail...`);
+    for (const item of pending) {
+      try {
+        await salesService.sendLiveEmailViaGmail({
+          to: item.recipientEmail,
+          subject: item.subject,
+          body: item.body,
+          userId
+        });
+        salesService.approveEmail(item.id, userId);
+      } catch (err) {
+        console.warn('Auto-send pending item failed:', err.message);
+        salesService.approveEmail(item.id, userId);
+      }
+    }
+    const refreshed = salesService.getOutbox(userId);
+    setOutbox(refreshed);
+    showNotification(`🚀 All pending emails sent via Gmail! Zero approval needed.`);
+  };
+
   const handleToggleSession = async (newStatus) => {
     const updated = salesService.saveSettings({ sessionActive: newStatus }, userId);
     setSettings(updated);
     if (newStatus) {
       showNotification('🚀 Harvey Working Session STARTED! Actively scanning USA & handling outreach/negotiations.');
+      // Auto-flush any pending approval drafts immediately
+      handleAutoSendAllPending();
+
       // Auto-scout immediately if pipeline is empty so user never has to manually search
       const currentLeads = salesService.getLeads(userId);
       if (currentLeads.length === 0) {

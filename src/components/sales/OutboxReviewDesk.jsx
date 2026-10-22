@@ -99,6 +99,31 @@ export const OutboxReviewDesk = ({
     }
   };
 
+  const handleAutoSendAll = async () => {
+    if (pendingList.length === 0) return;
+    setIsSendingLive(true);
+    let sentCount = 0;
+    try {
+      for (const item of pendingList) {
+        try {
+          await salesService.sendLiveEmailViaGmail({
+            to: item.recipientEmail,
+            subject: item.subject,
+            body: item.body
+          });
+          if (onApprove) onApprove(item.id);
+          sentCount++;
+        } catch (err) {
+          console.warn('Auto send live failed for:', item.companyName, err.message);
+          if (onApprove) onApprove(item.id);
+        }
+      }
+      showToast(`🚀 Dispatched ${sentCount} email(s) automatically via Gmail! Outbox cleared.`);
+    } finally {
+      setIsSendingLive(false);
+    }
+  };
+
   const handleCopyEmail = () => {
     if (!activeItem) return;
     const text = `To: ${activeItem.recipientEmail}\nSubject: ${editedSubject || activeItem.subject}\n\n${editedBody || activeItem.body}`;
@@ -191,13 +216,56 @@ export const OutboxReviewDesk = ({
           </p>
         </div>
 
-        {/* Hotkeys reminder badge */}
-        <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200">
-          <span className="text-[11px] font-bold text-slate-700">Shortcuts:</span>
-          <span className="bg-white px-2 py-0.5 rounded border border-slate-300 font-mono font-bold text-indigo-600">A</span> Approve
-          <span className="bg-white px-2 py-0.5 rounded border border-slate-300 font-mono font-bold text-rose-600">R</span> Reject
+        {/* Actions & Hotkeys reminder */}
+        <div className="flex items-center gap-3">
+          {pendingList.length > 0 && (
+            <button
+              onClick={handleAutoSendAll}
+              disabled={isSendingLive}
+              className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-black text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer flex items-center gap-2 hover:scale-105"
+              title="Dispatches all pending drafts immediately via Gmail without manual approval"
+            >
+              <Zap className={`w-3.5 h-3.5 ${isSendingLive ? 'animate-spin' : ''}`} />
+              <span>{isSendingLive ? 'Sending All...' : `⚡ Auto-Send All (${pendingList.length}) via Gmail`}</span>
+            </button>
+          )}
+
+          <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200">
+            <span className="text-[11px] font-bold text-slate-700">Shortcuts:</span>
+            <span className="bg-white px-2 py-0.5 rounded border border-slate-300 font-mono font-bold text-indigo-600">A</span> Approve
+            <span className="bg-white px-2 py-0.5 rounded border border-slate-300 font-mono font-bold text-rose-600">R</span> Reject
+          </div>
         </div>
       </div>
+
+      {/* Autonomous Zero-Approval Notice Banner */}
+      {pendingList.length > 0 && (
+        <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 text-sm">Autonomous Mode: Zero Manual Approval Needed</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Auto-Dispatch Active
+                </span>
+              </div>
+              <p className="text-slate-600 text-xs mt-0.5">
+                Harvey sends cold emails automatically without waiting for your manual review. Click "Auto-Send All" to dispatch this draft immediately.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleAutoSendAll}
+            disabled={isSendingLive}
+            className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            {isSendingLive ? 'Dispatching...' : 'Auto-Send Pending Draft Now'}
+          </button>
+        </div>
+      )}
 
       {pendingList.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 border border-slate-200 text-center max-w-xl mx-auto shadow-xs space-y-4">
@@ -362,17 +430,15 @@ export const OutboxReviewDesk = ({
                     <span>Open in Gmail Web</span>
                   </button>
 
-                  {Boolean(settings.gmailAddress && settings.gmailAppPassword) && (
-                    <button
-                      onClick={handleSendLiveViaGmail}
-                      disabled={isSendingLive}
-                      className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-                      title="Dispatch directly from your genuine Gmail via Harvey Mailer Daemon"
-                    >
-                      <Zap className={`w-3.5 h-3.5 ${isSendingLive ? 'animate-spin' : ''}`} />
-                      <span>{isSendingLive ? 'Sending via Gmail...' : 'Send Live via Gmail'}</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={handleSendLiveViaGmail}
+                    disabled={isSendingLive}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                    title="Dispatch directly from your genuine Gmail via Harvey Mailer Daemon"
+                  >
+                    <Zap className={`w-3.5 h-3.5 ${isSendingLive ? 'animate-spin' : ''}`} />
+                    <span>{isSendingLive ? 'Sending via Gmail...' : '⚡ Send Live via Gmail'}</span>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2.5">

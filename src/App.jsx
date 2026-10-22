@@ -420,6 +420,21 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     return () => clearTimeout(timer);
   }, [activeProjectId, tests, bugs, files, reports, activeProject, currentUser, clientId]);
 
+  // Synchronize document body & root background for seamless cyber dark theme in AI Dev
+  useEffect(() => {
+    if (activeApp === 'aidev') {
+      document.body.style.backgroundColor = '#020609';
+      document.documentElement.style.backgroundColor = '#020609';
+      document.body.classList.add('bg-[#020609]');
+      document.body.classList.remove('bg-slate-50');
+    } else {
+      document.body.style.backgroundColor = '#f8fafc';
+      document.documentElement.style.backgroundColor = '#f8fafc';
+      document.body.classList.remove('bg-[#020609]');
+      document.body.classList.add('bg-slate-50');
+    }
+  }, [activeApp]);
+
   // --- Project Management ---
   const handleAddProject = (newProjData) => {
     const newProject = {
@@ -1060,7 +1075,11 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   return (
-    <div className="flex h-screen h-[100dvh] w-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
+    <div className={`flex h-screen h-[100dvh] w-full ${
+      activeApp === 'aidev'
+        ? 'bg-[#020609] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200'
+        : 'bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900'
+    } font-sans overflow-hidden relative`}>
       
       {/* Desktop App Rail Dock (Linear/Slack Style Multi-App Switcher) */}
       {activeApp !== 'hub' && (
@@ -1104,7 +1123,13 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 relative overflow-y-auto flex flex-col min-w-0 ${activeApp === 'hub' ? 'bg-slate-50' : 'bg-white pb-dock-safe md:pb-0'}`}>
+      <main className={`flex-1 relative flex flex-col min-w-0 ${
+        activeApp === 'aidev'
+          ? 'bg-[#020609] h-full overflow-hidden p-0 m-0'
+          : activeApp === 'hub'
+            ? 'bg-slate-50 overflow-y-auto'
+            : 'bg-white overflow-y-auto pb-dock-safe md:pb-0'
+      }`}>
         
         {/* Mobile Header Bar (hidden on desktop and hub) */}
         {activeApp !== 'hub' && (

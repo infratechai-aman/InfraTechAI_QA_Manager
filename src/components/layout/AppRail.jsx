@@ -20,7 +20,7 @@ export const AppRail = ({
   return (
     <nav 
       aria-label="InfratechAI App Dock"
-      className="hidden md:flex w-[68px] flex-col items-center justify-between py-4 bg-slate-950 border-r border-slate-800 shrink-0 z-30 select-none"
+      className="hidden md:flex w-[68px] h-full flex-col items-center justify-between py-4 bg-slate-950 border-r border-slate-800 shrink-0 z-30 select-none"
     >
       {/* Top: Suite Brand Logo */}
       <div className="flex flex-col items-center gap-4">

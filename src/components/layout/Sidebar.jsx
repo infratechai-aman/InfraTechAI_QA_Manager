@@ -82,7 +82,7 @@ export const Sidebar = ({
   const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A';
 
   return (
-    <aside className={`hidden md:flex w-64 border-r flex-col shrink-0 z-20 h-screen transition-colors duration-200 ${
+    <aside className={`hidden md:flex w-64 border-r flex-col shrink-0 z-20 h-full transition-colors duration-200 ${
       isDark 
         ? 'bg-[#03090e] border-white/10 text-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.6)]' 
         : 'bg-white border-slate-200 shadow-[2px_0_15px_rgba(0,0,0,0.02)]'

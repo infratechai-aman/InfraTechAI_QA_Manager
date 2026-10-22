@@ -27,7 +27,7 @@
     min-height: 100dvh;
     display: flex;
     position: relative;
-    background-color: #f8fafc;
+    background-color: transparent;
   }
 }
 

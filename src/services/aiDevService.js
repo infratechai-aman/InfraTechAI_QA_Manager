@@ -44,8 +44,11 @@ export const aiDevService = {
     return '';
   },
 
+  cachedJarvisVoice: null,
+  cachedFridayVoice: null,
+
   /**
-   * Retrieves all available system voices with caching
+   * Retrieves all available system voices
    */
   getAvailableVoices() {
     if (!this.isSpeechSupported()) return [];
@@ -53,15 +56,73 @@ export const aiDevService = {
   },
 
   /**
-   * Selects a strictly male, high-energy JARVIS voice.
-   * Eliminates all female voices and prioritizes:
-   * 1. British English Male (Microsoft George, Ryan, Oliver, Google UK English Male - true Jarvis)
-   * 2. Crisp, Energetic US English Male (Microsoft Guy, David, Mark)
-   * 3. Authoritative Indian English Male (Microsoft Prabhat, Ravi)
-   * 4. Hindi Male (Microsoft Madhur, Hemant)
+   * Transliterates Devanagari characters to phonetic Roman Hinglish
+   * so the British / US JARVIS voice pronounces it cleanly without switching synthesizers.
    */
-  getJarvisMaleVoice(text = '') {
+  devanagariToRoman(text = '') {
+    if (!text || !/[\u0900-\u097F]/.test(text)) return text;
+
+    const wordMap = {
+      'हाँ': 'Haan', 'हा': 'Haan', 'नहीं': 'Nahi', 'ना': 'Na',
+      'बॉस': 'Boss', 'बास': 'Boss',
+      'बग': 'bug', 'बग्स': 'bugs', 'बॉक्स': 'bugs', 'बक्से': 'bugs',
+      'डिफेक्ट': 'defect', 'डिफेक्ट्स': 'defects',
+      'एरर': 'error', 'एरर्स': 'errors',
+      'स्टेटस': 'status', 'पास': 'pass', 'फेल': 'fail',
+      'टेस्ट': 'test', 'टेस्ट्स': 'tests',
+      'प्रोजेक्ट': 'project', 'प्रोजेक्ट्स': 'projects',
+      'कॉन्ट्रैक्ट': 'contract', 'कॉन्ट्रैक्ट्स': 'contracts',
+      'क्लाइंट': 'client', 'क्लाइंट्स': 'clients',
+      'कुल': 'kul', 'कितने': 'kitne', 'कितना': 'kitna',
+      'है': 'hai', 'हैं': 'hain', 'था': 'tha', 'थी': 'thi',
+      'होगा': 'hoga', 'होगी': 'hogi', 'कर': 'kar', 'करो': 'karo',
+      'दीजिए': 'dijiye', 'दीजिये': 'dijiye',
+      'नमस्ते': 'Namaste', 'शुक्रिया': 'Shukriya', 'धन्यवाद': 'Dhanyavaad',
+      'ठीक': 'Theek', 'अच्छा': 'Achha', 'सुनाओ': 'sunao', 'बताओ': 'batao'
+    };
+
+    let result = text;
+    for (const [hindi, roman] of Object.entries(wordMap)) {
+      result = result.replace(new RegExp(hindi, 'g'), roman);
+    }
+
+    const charMap = {
+      'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri',
+      'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au', 'अं': 'an', 'अः': 'ah',
+      'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
+      'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
+      'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+      'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+      'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+      'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+      'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri',
+      'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ं': 'n', 'ँ': 'n', 'ः': 'h',
+      '्': '', '़': '', '।': '.'
+    };
+
+    let romanized = '';
+    for (const char of result) {
+      if (charMap[char] !== undefined) {
+        romanized += charMap[char];
+      } else if (/[\u0900-\u097F]/.test(char)) {
+        // Skip orphan diacritics
+      } else {
+        romanized += char;
+      }
+    }
+
+    return romanized.replace(/\s+/g, ' ').trim();
+  },
+
+  /**
+   * Selects and locks in the exact authentic Tony Stark British / High-Tech JARVIS voice.
+   * This is the exact voice played when clicking "LIVE TALK".
+   * Once selected, it is cached and used consistently across all utterances.
+   */
+  getJarvisMaleVoice() {
     if (!this.isSpeechSupported()) return null;
+    if (this.cachedJarvisVoice) return this.cachedJarvisVoice;
+
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
@@ -82,33 +143,20 @@ export const aiDevService = {
 
     // Filter down to non-female voices
     const nonFemaleVoices = voices.filter(isNotFemale);
-    const candidateVoices = nonFemaleVoices.length > 0 ? nonFemaleVoices : voices;
+    const pool = nonFemaleVoices.length > 0 ? nonFemaleVoices : voices;
 
-    const hasHindiScript = /[\u0900-\u097F]/.test(text || '');
-
-    // If text has Devanagari Hindi characters, prioritize male Indian/Hindi voice
-    if (hasHindiScript) {
-      const hindiMale = candidateVoices.find(v => 
-        (v.lang.includes('hi') || v.name.includes('Hindi')) && 
-        (v.name.includes('Madhur') || v.name.includes('Hemant') || v.name.toLowerCase().includes('male'))
-      ) || candidateVoices.find(v => 
-        (v.lang.includes('en-IN') || v.name.includes('India')) && 
-        (v.name.includes('Prabhat') || v.name.includes('Ravi') || v.name.toLowerCase().includes('male'))
-      ) || candidateVoices.find(v => (v.lang.includes('hi') || v.name.includes('Hindi')) && isNotFemale(v));
-
-      if (hindiMale) return hindiMale;
-    }
-
-    // JARVIS SEARCH PRIORITY (Energetic, Crisp Men's Voices):
-    // Tier 1: British English Male (Authentic Tony Stark's JARVIS accent - George, Ryan, Oliver, UK Male)
-    const jarvisBritish = candidateVoices.find(v => 
+    // TIER 1: British English Male (Authentic Tony Stark's JARVIS accent - George, Ryan, Oliver, UK Male)
+    const jarvisBritish = pool.find(v => 
       (v.lang.startsWith('en-GB') || v.name.includes('United Kingdom') || v.name.includes('UK')) &&
       (v.name.includes('George') || v.name.includes('Ryan') || v.name.includes('Oliver') || v.name.toLowerCase().includes('male'))
     );
-    if (jarvisBritish) return jarvisBritish;
+    if (jarvisBritish) {
+      this.cachedJarvisVoice = jarvisBritish;
+      return jarvisBritish;
+    }
 
-    // Tier 2: High-Tech Energetic US English Male (Microsoft Guy Natural, David, Mark)
-    const jarvisTechMale = candidateVoices.find(v => 
+    // TIER 2: High-Tech Energetic US English Male (Microsoft Guy Natural, David, Mark, Ryan)
+    const jarvisTechMale = pool.find(v => 
       v.name.includes('Guy') || 
       v.name.includes('George') || 
       v.name.includes('David') || 
@@ -116,43 +164,53 @@ export const aiDevService = {
       v.name.includes('Ryan') ||
       (v.name.toLowerCase().includes('male') && v.lang.startsWith('en'))
     );
-    if (jarvisTechMale) return jarvisTechMale;
+    if (jarvisTechMale) {
+      this.cachedJarvisVoice = jarvisTechMale;
+      return jarvisTechMale;
+    }
 
-    // Tier 3: Crisp Indian English Male (Prabhat, Ravi)
-    const indianMale = candidateVoices.find(v => 
+    // TIER 3: Crisp Indian English Male (Prabhat, Ravi)
+    const indianMale = pool.find(v => 
       (v.lang.includes('en-IN') || v.name.includes('India')) && 
       (v.name.includes('Prabhat') || v.name.includes('Ravi') || v.name.toLowerCase().includes('male'))
     );
-    if (indianMale) return indianMale;
+    if (indianMale) {
+      this.cachedJarvisVoice = indianMale;
+      return indianMale;
+    }
 
-    // Tier 4: Any voice with explicit 'Male' token in name that is not blacklisted
-    const anyExplicitMale = candidateVoices.find(v => v.name.toLowerCase().includes('male'));
-    if (anyExplicitMale) return anyExplicitMale;
+    // TIER 4: Any English voice with explicit 'Male' token
+    const anyExplicitMale = pool.find(v => v.name.toLowerCase().includes('male') && v.lang.startsWith('en'));
+    if (anyExplicitMale) {
+      this.cachedJarvisVoice = anyExplicitMale;
+      return anyExplicitMale;
+    }
 
-    // Tier 5: Any English voice that is safe from female blacklist
-    const safeEnglish = candidateVoices.find(v => v.lang.startsWith('en'));
-    if (safeEnglish) return safeEnglish;
+    // TIER 5: Any safe English voice
+    const safeEnglish = pool.find(v => v.lang.startsWith('en'));
+    if (safeEnglish) {
+      this.cachedJarvisVoice = safeEnglish;
+      return safeEnglish;
+    }
 
-    return candidateVoices[0] || null;
+    this.cachedJarvisVoice = pool[0] || null;
+    return this.cachedJarvisVoice;
   },
 
   /**
    * Alias for backward compatibility
    */
-  getAuthoritativeVoice(text = '') {
-    return this.getJarvisMaleVoice(text);
+  getAuthoritativeVoice() {
+    return this.getJarvisMaleVoice();
   },
 
   /**
-   * Selects an elegant, razor-sharp, high-tempo FRIDAY female voice (Tony Stark's Irish/British/US AI).
-   * Prioritizes:
-   * 1. Irish / British English Female (Microsoft Hazel, Libby, Google UK English Female, Sonia)
-   * 2. Crisp, High-Tech US Female (Microsoft Jenny Natural, Aria, Zira, Google US English Female)
-   * 3. Indian English Female (Microsoft Neerja, Heera)
-   * 4. Hindi Female (Microsoft Swara, Kalpana)
+   * Selects and locks in an elegant, razor-sharp FRIDAY female voice.
    */
-  getFridayFemaleVoice(text = '') {
+  getFridayFemaleVoice() {
     if (!this.isSpeechSupported()) return null;
+    if (this.cachedFridayVoice) return this.cachedFridayVoice;
+
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
@@ -169,52 +227,51 @@ export const aiDevService = {
     const candidateVoices = voices.filter(isNotMale);
     const pool = candidateVoices.length > 0 ? candidateVoices : voices;
 
-    const hasHindiScript = /[\u0900-\u097F]/.test(text || '');
-    if (hasHindiScript) {
-      const hindiFemale = pool.find(v => 
-        (v.lang.includes('hi') || v.name.includes('Hindi')) && 
-        (v.name.includes('Swara') || v.name.includes('Kalpana') || v.name.toLowerCase().includes('female'))
-      ) || pool.find(v => 
-        (v.lang.includes('en-IN') || v.name.includes('India')) && 
-        (v.name.includes('Neerja') || v.name.includes('Heera') || v.name.toLowerCase().includes('female'))
-      ) || pool.find(v => v.lang.includes('hi') && isNotMale(v));
-
-      if (hindiFemale) return hindiFemale;
-    }
-
-    // FRIDAY SEARCH PRIORITY (Crisp, High-Tech Female Voices):
-    // Tier 1: Irish / British English Female (Hazel, Libby, Google UK English Female)
+    // TIER 1: Irish / British English Female (Hazel, Libby, Sonia)
     const britishIrishFemale = pool.find(v => 
       (v.lang.startsWith('en-GB') || v.lang.startsWith('en-IE') || v.name.includes('United Kingdom') || v.name.includes('Ireland')) &&
       (v.name.includes('Hazel') || v.name.includes('Libby') || v.name.includes('Sonia') || v.name.toLowerCase().includes('female'))
     );
-    if (britishIrishFemale) return britishIrishFemale;
+    if (britishIrishFemale) {
+      this.cachedFridayVoice = britishIrishFemale;
+      return britishIrishFemale;
+    }
 
-    // Tier 2: High-Tech US Female (Jenny Natural, Aria, Zira, Google US English Female)
+    // TIER 2: High-Tech US Female (Jenny Natural, Aria, Zira)
     const techUsFemale = pool.find(v => 
       (v.name.includes('Jenny') || v.name.includes('Aria') || v.name.includes('Zira') || v.name.toLowerCase().includes('female')) &&
       v.lang.startsWith('en')
     );
-    if (techUsFemale) return techUsFemale;
+    if (techUsFemale) {
+      this.cachedFridayVoice = techUsFemale;
+      return techUsFemale;
+    }
 
-    // Tier 3: Indian English Female (Neerja, Heera)
+    // TIER 3: Indian English Female (Neerja, Heera)
     const indianFemale = pool.find(v => 
       (v.lang.includes('en-IN') || v.name.includes('India')) && isNotMale(v)
     );
-    if (indianFemale) return indianFemale;
+    if (indianFemale) {
+      this.cachedFridayVoice = indianFemale;
+      return indianFemale;
+    }
 
-    // Tier 4: Any English female voice
+    // TIER 4: Any English female voice
     const anyFemale = pool.find(v => v.lang.startsWith('en') && isNotMale(v));
-    if (anyFemale) return anyFemale;
+    if (anyFemale) {
+      this.cachedFridayVoice = anyFemale;
+      return anyFemale;
+    }
 
-    return pool[0] || null;
+    this.cachedFridayVoice = pool[0] || null;
+    return this.cachedFridayVoice;
   },
 
   /**
    * Retrieves voice for specified agent persona ('jarvis' or 'friday')
    */
-  getAgentVoice(agent = 'jarvis', text = '') {
-    return agent === 'friday' ? this.getFridayFemaleVoice(text) : this.getJarvisMaleVoice(text);
+  getAgentVoice(agent = 'jarvis') {
+    return agent === 'friday' ? this.getFridayFemaleVoice() : this.getJarvisMaleVoice();
   },
 
   activeSpeechId: 0,
@@ -222,6 +279,7 @@ export const aiDevService = {
   /**
    * Speaks given text aloud with the selected Voice Agent (JARVIS or FRIDAY).
    * Supports immediate, clean interruption without locking microphone.
+   * Locked to the authentic Live Talk voice across all responses.
    */
   speak(text, { agent = 'jarvis', onStart, onEnd, onError, rate, pitch } = {}) {
     if (!this.isSpeechSupported()) {
@@ -233,8 +291,11 @@ export const aiDevService = {
     this.stopSpeaking();
     const currentId = ++this.activeSpeechId;
 
+    // Transliterate any Devanagari Hindi text to clean Roman Hinglish
+    const transliterated = this.devanagariToRoman(text || '');
+
     // Clean text of markdown characters, emojis, and symbols
-    const cleanSpeechText = (text || '')
+    const cleanSpeechText = transliterated
       .replace(/[*_#`~>]/g, '')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
       .replace(/\|/g, ', ')
@@ -257,9 +318,10 @@ export const aiDevService = {
     utterance.pitch = effectivePitch;
     utterance.volume = 1.0;
 
+    // Use the locked-in voice (the exact voice from Live Talk)
     const voice = isFriday 
-      ? this.getFridayFemaleVoice(cleanSpeechText)
-      : this.getJarvisMaleVoice(cleanSpeechText);
+      ? this.getFridayFemaleVoice()
+      : this.getJarvisMaleVoice();
 
     if (voice) {
       utterance.voice = voice;
@@ -438,12 +500,13 @@ STRICT TONE & FORMAT RULES:
 - ZERO EMOJIS: Never output emojis in either "markdown" or "spokenText". No icons, no smiley faces, no emoji bullet points.
 - NO ROBOTIC TROPES: Avoid cliché sci-fi phrases such as "telemetry matrix online", "radar sweep complete", "diagnostics green", "firing on all cylinders", "neutralize defects". Speak like a top-tier executive Chief of Staff / Technical Director.
 - DUAL LANGUAGE FLUENCY: Support both Hindi and English fluidly. If Boss addresses you in Hindi or Hinglish, respond back in natural, professional Hinglish. If Boss asks in English, respond in crisp executive English.
+- CRITICAL TTS PRONUNCIATION RULE: The "spokenText" field MUST always be written ONLY using standard Latin/English alphabet characters (A-Z) in English or conversational Hinglish (e.g. "Boss, QA mein kul 12 bugs hain jisme se 3 critical hain..."). NEVER use Devanagari Hindi characters (no हिंदी लिपि) in "spokenText" because the Tony Stark British JARVIS voice engine reads Roman characters.
 - SPEECH-TO-TEXT CORRECTION: When Boss speaks in Hindi, speech recognition frequently transcribes "bugs" as "बॉक्स" (boxes) or "बग्स" or "बग" or "एरर" or "डिफेक्ट". You MUST recognize that Boss is referring to software bugs/defects in QA Manager!
 - Answer the EXACT specific question Boss asked! Do NOT give a generic platform summary if Boss asked specifically about bugs, contracts, pass rates, or status.
 - If Boss asks how many critical bugs exist and their status (e.g. "कितने क्रिटिकल बॉक्स है उसका स्टेटस बता दे"), state the exact count of critical bugs AND list the critical bugs with their titles and projects!
 - Return your response strictly as a JSON object with:
   {
-    "spokenText": "concise, natural spoken summary in Hindi/Hinglish/English (matching Boss's language) designed for voice Text-to-Speech (max 2 clear sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
+    "spokenText": "concise spoken summary in Roman Hinglish or English (Latin alphabet ONLY, NO Devanagari, NO emojis, max 2 clear sentences for Text-to-Speech)",
     "markdown": "comprehensive response with clean markdown formatting, tables, and sections (NO emojis)",
     "actionSuggestion": { "label": "Button text", "targetApp": "qa" | "business" | "sales" } (optional)
   }`;
@@ -761,3 +824,15 @@ All systems are synchronized across modules for **Boss**:
     return this.processFallbackQuery(rawQuery, liveContext, { agent });
   }
 };
+
+// Pre-resolve and lock voices as soon as speech synthesis engine reports voices changed
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    aiDevService.cachedJarvisVoice = null;
+    aiDevService.cachedFridayVoice = null;
+    aiDevService.getJarvisMaleVoice();
+    aiDevService.getFridayFemaleVoice();
+  };
+}
+
+export default aiDevService;

@@ -103,7 +103,8 @@ export const AiDevView = ({
   const [messages, setMessages] = useState(() => {
     const isFriday = agentVoice === 'friday';
     const personaTitle = isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.';
-    const greetingSpoken = `Hello Boss. ${personaTitle} is online. All modules are synchronized across client contracts, QA test suites, and the sales pipeline. How may I assist you today?`;
+    const personaName = isFriday ? 'Friday' : 'Jarvis';
+    const greetingSpoken = `Hello Boss. ${personaName} is online. All modules are synchronized across client contracts, QA test suites, and the sales pipeline. How may I assist you today?`;
     
     const greetingMd = `### ${personaTitle} • Executive Copilot Online
 
@@ -412,8 +413,8 @@ Autonomous platform intelligence synchronized across business operations, qualit
 
     const isFriday = agentVoice === 'friday';
     const greeting = isFriday
-      ? "Systems calibrated, Boss! F.R.I.D.A.Y. dynamic vocal interface online. At your service Boss, what are your orders?"
-      : "Systems online, Boss! J.A.R.V.I.S. dynamic vocal interface online. At your service Boss, what are your orders?";
+      ? "Systems calibrated, Boss! Friday dynamic vocal interface online. At your service Boss, what are your orders?"
+      : "Systems online, Boss! Jarvis dynamic vocal interface online. At your service Boss, what are your orders?";
 
     setLastAiSpeech(greeting);
 
@@ -510,8 +511,8 @@ Autonomous platform intelligence synchronized across business operations, qualit
     agentVoiceRef.current = newAgent;
     if (isLiveCallActive) {
       const notice = newAgent === 'friday'
-        ? "F.R.I.D.A.Y. vocal core online. Listening Boss."
-        : "J.A.R.V.I.S. vocal core online. Listening Boss.";
+        ? "Friday vocal core online. Listening Boss."
+        : "Jarvis vocal core online. Listening Boss.";
       setLastAiSpeech(notice);
       aiDevService.speak(notice, {
         agent: newAgent,

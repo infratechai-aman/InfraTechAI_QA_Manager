@@ -294,8 +294,17 @@ export const aiDevService = {
     // Transliterate any Devanagari Hindi text to clean Roman Hinglish
     const transliterated = this.devanagariToRoman(text || '');
 
+    // Pronounce names naturally as words ("Jarvis", "Friday", "Mark 7") instead of spelling letters with dots
+    const naturalSpokenNames = transliterated
+      .replace(/J\.A\.R\.V\.I\.S\.?/gi, 'Jarvis')
+      .replace(/F\.R\.I\.D\.A\.Y\.?/gi, 'Friday')
+      .replace(/\bJARVIS\b/g, 'Jarvis')
+      .replace(/\bFRIDAY\b/g, 'Friday')
+      .replace(/\bMK[\s_]?VII\b/gi, 'Mark 7')
+      .replace(/\bMK[\s_]?([0-9IVXLCDM]+)\b/gi, 'Mark $1');
+
     // Clean text of markdown characters, emojis, and symbols
-    const cleanSpeechText = transliterated
+    const cleanSpeechText = naturalSpokenNames
       .replace(/[*_#`~>]/g, '')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
       .replace(/\|/g, ', ')
@@ -500,7 +509,7 @@ STRICT TONE & FORMAT RULES:
 - ZERO EMOJIS: Never output emojis in either "markdown" or "spokenText". No icons, no smiley faces, no emoji bullet points.
 - NO ROBOTIC TROPES: Avoid cliché sci-fi phrases such as "telemetry matrix online", "radar sweep complete", "diagnostics green", "firing on all cylinders", "neutralize defects". Speak like a top-tier executive Chief of Staff / Technical Director.
 - DUAL LANGUAGE FLUENCY: Support both Hindi and English fluidly. If Boss addresses you in Hindi or Hinglish, respond back in natural, professional Hinglish. If Boss asks in English, respond in crisp executive English.
-- CRITICAL TTS PRONUNCIATION RULE: The "spokenText" field MUST always be written ONLY using standard Latin/English alphabet characters (A-Z) in English or conversational Hinglish (e.g. "Boss, QA mein kul 12 bugs hain jisme se 3 critical hain..."). NEVER use Devanagari Hindi characters (no हिंदी लिपि) in "spokenText" because the Tony Stark British JARVIS voice engine reads Roman characters.
+- CRITICAL TTS PRONUNCIATION RULE: The "spokenText" field MUST always be written ONLY using standard Latin/English alphabet characters (A-Z) in English or conversational Hinglish (e.g. "Boss, QA mein kul 12 bugs hain jisme se 3 critical hain..."). In "spokenText", always refer to yourself by the natural word "Jarvis" or "Friday" (NEVER with dots like J.A.R.V.I.S. or F.R.I.D.A.Y.). NEVER use Devanagari Hindi characters (no हिंदी लिपि) in "spokenText" because the voice engine reads Roman characters.
 - SPEECH-TO-TEXT CORRECTION: When Boss speaks in Hindi, speech recognition frequently transcribes "bugs" as "बॉक्स" (boxes) or "बग्स" or "बग" or "एरर" or "डिफेक्ट". You MUST recognize that Boss is referring to software bugs/defects in QA Manager!
 - Answer the EXACT specific question Boss asked! Do NOT give a generic platform summary if Boss asked specifically about bugs, contracts, pass rates, or status.
 - If Boss asks how many critical bugs exist and their status (e.g. "कितने क्रिटिकल बॉक्स है उसका स्टेटस बता दे"), state the exact count of critical bugs AND list the critical bugs with their titles and projects!
@@ -605,8 +614,8 @@ Boss's Command: "${query}"`;
 
     if (isGreeting) {
       const spokenText = isFriday
-        ? `Hello Boss. F.R.I.D.A.Y. is online. All modules are fully synchronized across QA, client contracts, and the sales pipeline. How may I assist you today?`
-        : `Hello Boss. J.A.R.V.I.S. is active and connected to QA test suites, enterprise contracts, and the sales pipeline. How can I help you?`;
+        ? `Hello Boss. Friday is online. All modules are fully synchronized across QA, client contracts, and the sales pipeline. How may I assist you today?`
+        : `Hello Boss. Jarvis is active and connected to QA test suites, enterprise contracts, and the sales pipeline. How can I help you?`;
       
       const markdown = `### ${persona} AI Dev • Executive Copilot Online
 

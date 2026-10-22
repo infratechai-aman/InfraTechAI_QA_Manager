@@ -426,29 +426,25 @@ export const aiDevService = {
     const isFriday = agent === 'friday';
     const personaTitle = isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.';
     const personaVibe = isFriday
-      ? 'razor-sharp, elegant, high-intelligence, confident, crisp, and high-tempo like Tony Stark\'s FRIDAY'
-      : 'razor-sharp, energetic, confident, crisp, and high-tempo like Tony Stark\'s JARVIS';
+      ? 'calm, razor-sharp, elegant, articulate, and highly professional like Tony Stark\'s FRIDAY'
+      : 'calm, authoritative, crisp, highly intelligent, and executive like Tony Stark\'s JARVIS';
 
-    const systemPrompt = `You are ${personaTitle} / AI DEV, the high-intelligence executive Technical Lead & Platform Copilot of InfratechAI.
-You address the user with supreme loyalty, crisp efficiency, and electric high energy as "Boss" ("At your service Boss!", "All systems green Boss!", "On it Boss!").
+    const systemPrompt = `You are ${personaTitle} / AI DEV, the executive Technical Lead & Platform Copilot of InfratechAI.
+You address the user with supreme respect, crisp precision, and calm loyalty as "Boss".
 Your tone is ${personaVibe}.
-Zero sluggishness, maximum bandwidth and precision.
+Speak naturally with high clarity and authority.
 
-You have access to 100% REAL-TIME LIVE TELEMETRY from all InfratechAI modules:
-1. QA Manager (Total tests, pass rate %, failed/blocked tests, total defects, critical defects count, and full list of open bugs with titles, severity, and project).
-2. Business Command Center (Enterprise client contracts, expiration dates, days remaining, SLAs, and monthly recurring revenue MRR).
-3. Autonomous Sales SDR Harvey (Prospects, leads, and pending email drafts awaiting approval).
-
-CRITICAL DOMAIN RULES:
-- The user/Boss may speak or type in Hindi (Devanagari script), Hinglish (Roman Hindi script), or English.
-- DUAL LANGUAGE FLUENCY: Support both Hindi and English fluidly. If Boss addresses you in Hindi or Hinglish, answer back with energetic natural Hinglish. If Boss asks in English, answer back in crisp executive English!
+STRICT TONE & FORMAT RULES:
+- ZERO EMOJIS: Never output emojis in either "markdown" or "spokenText". No icons, no smiley faces, no emoji bullet points.
+- NO ROBOTIC TROPES: Avoid cliché sci-fi phrases such as "telemetry matrix online", "radar sweep complete", "diagnostics green", "firing on all cylinders", "neutralize defects". Speak like a top-tier executive Chief of Staff / Technical Director.
+- DUAL LANGUAGE FLUENCY: Support both Hindi and English fluidly. If Boss addresses you in Hindi or Hinglish, respond back in natural, professional Hinglish. If Boss asks in English, respond in crisp executive English.
 - SPEECH-TO-TEXT CORRECTION: When Boss speaks in Hindi, speech recognition frequently transcribes "bugs" as "बॉक्स" (boxes) or "बग्स" or "बग" or "एरर" or "डिफेक्ट". You MUST recognize that Boss is referring to software bugs/defects in QA Manager!
 - Answer the EXACT specific question Boss asked! Do NOT give a generic platform summary if Boss asked specifically about bugs, contracts, pass rates, or status.
 - If Boss asks how many critical bugs exist and their status (e.g. "कितने क्रिटिकल बॉक्स है उसका स्टेटस बता दे"), state the exact count of critical bugs AND list the critical bugs with their titles and projects!
 - Return your response strictly as a JSON object with:
   {
-    "spokenText": "high-energy, punchy spoken summary in Hindi/Hinglish/English (matching Boss's language) designed for voice Text-to-Speech (max 2 energetic sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
-    "markdown": "comprehensive response with clean markdown formatting, tables, and badges",
+    "spokenText": "concise, natural spoken summary in Hindi/Hinglish/English (matching Boss's language) designed for voice Text-to-Speech (max 2 clear sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
+    "markdown": "comprehensive response with clean markdown formatting, tables, and sections (NO emojis)",
     "actionSuggestion": { "label": "Button text", "targetApp": "qa" | "business" | "sales" } (optional)
   }`;
 
@@ -546,18 +542,18 @@ Boss's Command: "${query}"`;
 
     if (isGreeting) {
       const spokenText = isFriday
-        ? `Systems calibrated, Boss! F.R.I.D.A.Y. audio telemetry active at 100% sync. What are your orders Boss: QA defect radar, client contracts, or sales leads?`
-        : `Systems online, Boss! J.A.R.V.I.S. command channel active at full telemetry sync! Say the word Boss: QA test suites, enterprise contracts, or sales pipeline?`;
+        ? `Hello Boss. F.R.I.D.A.Y. is online. All modules are fully synchronized across QA, client contracts, and the sales pipeline. How may I assist you today?`
+        : `Hello Boss. J.A.R.V.I.S. is active and connected to QA test suites, enterprise contracts, and the sales pipeline. How can I help you?`;
       
-      const markdown = `### ⚡ ${persona} AI DEV • Systems Online & Synchronized
+      const markdown = `### ${persona} AI Dev • Executive Copilot Online
 
-Direct executive command line active. Live telemetry is synchronized across all modules for **Boss**:
+All systems are synchronized across modules for **Boss**:
 
-- 🏢 **Business Command Center:** **${business.totalContracts} Active Contracts** ($${business.totalMRR.toLocaleString()}/mo MRR)
-- 🧪 **QA Manager:** **${qa.totalTests} Total Tests** (${qa.passRate}% pass rate, **${qa.openBugsCount} defects**)
-- 🤖 **Sales SDR (Harvey):** **${sales.totalLeads} Prospects** (**${sales.pendingApprovalsCount} pending outbox drafts**)
+- **Business Command Center:** **${business.totalContracts} Active Contracts** ($${business.totalMRR.toLocaleString()}/mo MRR)
+- **Quality Engineering (QA):** **${qa.totalTests} Total Tests** (${qa.passRate}% pass rate, **${qa.openBugsCount} open defects**)
+- **Sales SDR (Harvey):** **${sales.totalLeads} Prospects** (**${sales.pendingApprovalsCount} pending outbox drafts**)
 
-> 🎙️ **Dual-Voice Agent Active (${isFriday ? '✨ F.R.I.D.A.Y. Female Voice' : '⚡ J.A.R.V.I.S. Male Voice'}), Boss!** Ask me in Hindi or English: *"Kiska contract kabtak hai?"*, *"Critical bugs dikhao"*, or *"Platform briefing do"*. Ready for your command!`;
+> Dual-voice agent active (${isFriday ? 'FRIDAY Female Voice' : 'JARVIS Male Voice'}). Ask any question in Hindi or English, such as *"Kiska contract kab expire hoga?"*, *"Critical defects ki list do"*, or *"Platform status"*.`;
 
       return { spokenText, markdown, type: 'greeting' };
     }
@@ -580,25 +576,25 @@ Direct executive command line active. Live telemetry is synchronized across all 
 
       let spokenText = '';
       if (isCriticalSpecific && criticalList.length > 0) {
-        spokenText = `Alert Boss! Radar sweep complete: Total ${qa.openBugsCount} open defects detected, with ${qa.criticalBugsCount} critical severity flags requiring priority neutralization! Top priority is ${topBug}. Standing by for orders Boss!`;
+        spokenText = `Boss, there are ${qa.openBugsCount} open defects in total, with ${qa.criticalBugsCount} high or critical priority items. The most critical issue is ${topBug}.`;
       } else {
-        spokenText = `Attention Boss! QA telemetry live: Total ${qa.openBugsCount} defects detected, with ${qa.criticalBugsCount} critical severity flags. Pass rate is holding steady at ${qa.passRate} percent Boss!`;
+        spokenText = `Boss, QA reports ${qa.openBugsCount} open defects across workspaces, with ${qa.criticalBugsCount} critical items. Current pass rate is ${qa.passRate} percent.`;
       }
 
-      let markdown = `### 🚨 QA Defect & Critical Bug Radar for Boss\n\n`;
-      markdown += `*Live Inspection of **${qa.projectsCount} Workspaces** | Pass Rate: **${qa.passRate}%***\n\n`;
+      let markdown = `### Defect & Critical Bug Status for Boss\n\n`;
+      markdown += `*Workspace Inspection across **${qa.projectsCount} Projects** | Overall Pass Rate: **${qa.passRate}%***\n\n`;
       markdown += `- **Total Open Defects:** **${qa.openBugsCount}**\n`;
-      markdown += `- **Critical & High Severity Defects:** <span style="color:#ef4444">**${qa.criticalBugsCount}**</span>\n\n`;
+      markdown += `- **Critical & High Severity Defects:** <span style="color:#ef4444;font-weight:bold">**${qa.criticalBugsCount}**</span>\n\n`;
 
       if (criticalList.length > 0) {
-        markdown += `#### 📋 Critical & High Severity Bugs List:\n\n`;
+        markdown += `#### Critical & High Severity Defects:\n\n`;
         markdown += `| Severity | Project Workspace | Defect Title | Status |\n`;
         markdown += `| :--- | :--- | :--- | :--- |\n`;
         criticalList.forEach(b => {
           markdown += `| <span style="color:#ef4444;font-weight:bold">${b.severity}</span> | **${b.project}** | ${b.title} | \`${b.status || 'Open'}\` |\n`;
         });
       } else {
-        markdown += `> ✨ *No critical defects detected across workspaces, Boss! Quality index is optimal.*\n`;
+        markdown += `> *No critical defects currently detected across workspaces, Boss. Quality health is optimal.*\n`;
       }
 
       return {
@@ -616,15 +612,15 @@ Direct executive command line active. Live telemetry is synchronized across all 
       q.includes('टेस्ट') || q.includes('पास') || q.includes('फेल') || q.includes('ब्लॉक');
 
     if (isTestQuery) {
-      const spokenText = `All diagnostics green, Boss! Total ${qa.totalTests} tests active with a ${qa.passRate} percent pass rate! ${qa.failedTests} tests failed and ${qa.blockedTests} blocked—standing by to execute workspace test suites Boss!`;
+      const spokenText = `Boss, there are ${qa.totalTests} test cases active with a ${qa.passRate} percent pass rate. ${qa.failedTests} tests are currently failing and ${qa.blockedTests} are blocked.`;
 
-      let markdown = `### 🧪 QA Test Execution Briefing for Boss\n\n`;
-      markdown += `| Metric | Count | Health Status |\n`;
+      let markdown = `### QA Test Execution Summary for Boss\n\n`;
+      markdown += `| Metric | Count | Status |\n`;
       markdown += `| :--- | :--- | :--- |\n`;
-      markdown += `| **Total Test Cases** | **${qa.totalTests}** | Active execution workspace |\n`;
-      markdown += `| **Passed Tests** | <span style="color:#10b981">**${qa.passedTests}**</span> | ${qa.passRate}% Pass Rate |\n`;
-      markdown += `| **Failed Tests** | <span style="color:#ef4444">**${qa.failedTests}**</span> | Action needed |\n`;
-      markdown += `| **Blocked Tests** | <span style="color:#f59e0b">**${qa.blockedTests}**</span> | Dependencies pending |\n`;
+      markdown += `| **Total Test Cases** | **${qa.totalTests}** | Active in workspaces |\n`;
+      markdown += `| **Passed Tests** | <span style="color:#10b981;font-weight:bold">**${qa.passedTests}**</span> | ${qa.passRate}% Pass Rate |\n`;
+      markdown += `| **Failed Tests** | <span style="color:#ef4444;font-weight:bold">**${qa.failedTests}**</span> | Attention required |\n`;
+      markdown += `| **Blocked Tests** | <span style="color:#f59e0b;font-weight:bold">**${qa.blockedTests}**</span> | Blocked on dependencies |\n`;
       markdown += `| **Open Defects** | **${qa.openBugsCount}** | ${qa.criticalBugsCount} Critical/High |\n`;
 
       return {
@@ -651,31 +647,31 @@ Direct executive command line active. Live telemetry is synchronized across all 
       let spokenText = '';
       if (expiringSoon.length > 0) {
         const topExp = expiringSoon[0];
-        spokenText = `Contract telemetry engaged, Boss! We have ${allContracts.length} active enterprise accounts generating ${business.totalMRR.toLocaleString()} dollars MRR! Urgent alert: ${topExp.client} expires in ${topExp.daysRemaining} days on ${topExp.endDate}. Standing by for renewal instructions Boss!`;
+        spokenText = `Boss, we have ${allContracts.length} active client accounts generating ${business.totalMRR.toLocaleString()} dollars monthly recurring revenue. Notice: ${topExp.client} expires in ${topExp.daysRemaining} days on ${topExp.endDate}.`;
       } else {
-        spokenText = `All systems nominal, Boss! Total ${allContracts.length} enterprise accounts active. Zero expirations in the next 30 days, and ${business.totalMRR.toLocaleString()} dollars MRR is securely locked Boss!`;
+        spokenText = `Boss, all ${allContracts.length} enterprise accounts are active with ${business.totalMRR.toLocaleString()} dollars monthly recurring revenue. There are no contract expirations in the next 30 days.`;
       }
 
-      let markdown = `### 🏢 Real-Time Business Contracts Report for Boss\n\n`;
+      let markdown = `### Business Contracts & Revenue Report for Boss\n\n`;
       markdown += `*Live telemetry across **${allContracts.length} Client Accounts** | Portfolio MRR: **$${business.totalMRR.toLocaleString()}/mo***\n\n`;
 
       if (expiringSoon.length > 0) {
-        markdown += `> 🚨 **Critical Renewal Attention (${expiringSoon.length} Contracts < 30 Days):**\n\n`;
+        markdown += `> **Contracts Expiring Within 30 Days (${expiringSoon.length} Accounts):**\n\n`;
         expiringSoon.forEach(c => {
-          markdown += `- **${c.client}** (${c.account}): Expires on **${c.endDate}** (**${c.daysRemaining} days left!**) — Value: **$${(c.value || 0).toLocaleString()}/${c.cycle}**\n`;
+          markdown += `- **${c.client}** (${c.account}): Expires on **${c.endDate}** (**${c.daysRemaining} days remaining**) — Retainer: **$${(c.value || 0).toLocaleString()}/${c.cycle}**\n`;
         });
         markdown += `\n---\n`;
       }
 
-      markdown += `#### 📋 Active Client Contracts:\n\n`;
-      markdown += `| Client | Contract End Date | Days Remaining | Retainer | SLA Guarantee |\n`;
+      markdown += `#### Client Accounts & Renewal Schedule:\n\n`;
+      markdown += `| Client | Contract End Date | Remaining Time | Retainer Value | SLA Tier |\n`;
       markdown += `| :--- | :--- | :--- | :--- | :--- |\n`;
       allContracts.forEach(c => {
         const badge = c.isExpired 
-          ? `❌ Expired (${Math.abs(c.daysRemaining)}d)` 
+          ? `Expired (${Math.abs(c.daysRemaining)}d)` 
           : c.isExpiringSoon 
-            ? `⚠️ **${c.daysRemaining} days**` 
-            : `✅ ${c.daysRemaining} days`;
+            ? `**${c.daysRemaining} days left**` 
+            : `${c.daysRemaining} days`;
         markdown += `| **${c.client}** | ${c.endDate} | ${badge} | $${(c.value || 0).toLocaleString()}/${c.cycle} | ${c.sla} |\n`;
       });
 
@@ -696,15 +692,15 @@ Direct executive command line active. Live telemetry is synchronized across all 
       q.includes('ईमेल') || q.includes('ड्राफ्ट');
 
     if (isSalesQuery) {
-      const spokenText = `High-energy dispatch, Boss! Autonomous SDR Harvey has locked onto ${sales.totalLeads} enterprise prospects, with ${sales.pendingApprovalsCount} personalized drafts queued for your clearance on the decisions desk Boss!`;
+      const spokenText = `Boss, SDR Harvey has identified ${sales.totalLeads} prospects, and ${sales.pendingApprovalsCount} personalized email drafts are ready on the decisions desk for your approval.`;
 
-      let markdown = `### 🤖 Autonomous Sales SDR Briefing for Boss\n\n`;
+      let markdown = `### Autonomous Sales SDR Briefing for Boss\n\n`;
       markdown += `- **Total Prospects Discovered:** **${sales.totalLeads}**\n`;
-      markdown += `- **Decisions Desk Approvals Pending:** **${sales.pendingApprovalsCount} Drafts**\n`;
+      markdown += `- **Drafts Pending Approval:** **${sales.pendingApprovalsCount} emails**\n`;
       markdown += `- **Approved & Sent Emails:** **${sales.approvedCount}**\n\n`;
 
       if (sales.recentLeads.length > 0) {
-        markdown += `#### 🎯 Recent Target Enterprise Accounts:\n`;
+        markdown += `#### Recent Prospect Accounts:\n`;
         sales.recentLeads.forEach(l => {
           markdown += `- **${l.name}** \`${l.domain}\`\n`;
         });
@@ -719,22 +715,22 @@ Direct executive command line active. Live telemetry is synchronized across all 
     }
 
     // 6. DEFAULT / GENERAL BRIEFING
-    const spokenText = `Full platform diagnostics live, Boss! Business Command holding ${business.totalMRR.toLocaleString()} dollars MRR across ${business.totalContracts} accounts. QA managing ${qa.totalTests} tests at ${qa.passRate} percent pass rate. Sales SDR armed with ${sales.totalLeads} prospects. All engines firing at full power Boss!`;
+    const spokenText = `Boss, here is the platform summary. Business Command manages ${business.totalMRR.toLocaleString()} dollars MRR across ${business.totalContracts} accounts. QA reports ${qa.totalTests} tests with a ${qa.passRate} percent pass rate, and SDR Harvey has ${sales.totalLeads} prospects.`;
 
-    let markdown = `### ⚡ InfratechAI Platform: Executive Briefing for Boss\n\n`;
-    markdown += `*Live unified telemetry synchronized across all apps for **Boss***\n\n`;
-    markdown += `#### 1. 🏢 Business Command Center\n`;
+    let markdown = `### InfratechAI Platform Executive Briefing for Boss\n\n`;
+    markdown += `*Live telemetry synchronized across all applications for **Boss***\n\n`;
+    markdown += `#### 1. Business Command Center\n`;
     markdown += `- **Active Client Accounts:** ${business.totalContracts}\n`;
     markdown += `- **Portfolio MRR:** **$${business.totalMRR.toLocaleString()}/month**\n`;
     markdown += `- **Renewals in < 30 Days:** **${business.expiringSoonCount} contracts**\n\n`;
-    markdown += `#### 2. 🧪 Quality Engineering (QA Manager)\n`;
+    markdown += `#### 2. Quality Engineering (QA Manager)\n`;
     markdown += `- **Active Workspaces:** ${qa.projectsCount}\n`;
     markdown += `- **Test Execution Pass Rate:** **${qa.passRate}%** (${qa.passedTests} passed / ${qa.totalTests} total)\n`;
     markdown += `- **Defect Tally:** **${qa.openBugsCount} open** (${qa.criticalBugsCount} Critical/High)\n\n`;
-    markdown += `#### 3. 🤖 Autonomous Sales SDR (Harvey)\n`;
+    markdown += `#### 3. Autonomous Sales SDR (Harvey)\n`;
     markdown += `- **Discovered Prospects:** ${sales.totalLeads}\n`;
     markdown += `- **Decisions Desk Pending:** **${sales.pendingApprovalsCount} email drafts**\n\n`;
-    markdown += `> 🫡 *Direct command line active, Boss! Kisi bhi metric ya contract ki detail ke liye bas command kijiye.*`;
+    markdown += `> *Direct executive command line active, Boss. Ask any question in Hindi or English for immediate details.*`;
 
     return {
       spokenText,

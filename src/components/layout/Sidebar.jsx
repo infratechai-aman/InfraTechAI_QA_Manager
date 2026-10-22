@@ -5,7 +5,7 @@ import {
   Download, UploadCloud, LogOut, DoorOpen, BookOpen,
   FileText, UserPlus, Users, RefreshCw, Bot, Mail,
   Layers, MessageSquare, Sliders, Sparkles, ShieldCheck,
-  Building2, Cpu, Volume2, Activity, Calendar, CheckSquare
+  Building2, Cpu, Volume2, Activity, Calendar, CheckSquare, Radio
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -78,13 +78,20 @@ export const Sidebar = ({
     e.target.value = '';
   };
 
+  const isDark = activeApp === 'aidev';
   const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A';
 
   return (
-    <aside className="hidden md:flex w-64 border-r border-slate-200 flex-col shrink-0 z-20 bg-white shadow-[2px_0_15px_rgba(0,0,0,0.02)] h-screen">
+    <aside className={`hidden md:flex w-64 border-r flex-col shrink-0 z-20 h-screen transition-colors duration-200 ${
+      isDark 
+        ? 'bg-[#03090e] border-white/10 text-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.6)]' 
+        : 'bg-white border-slate-200 shadow-[2px_0_15px_rgba(0,0,0,0.02)]'
+    }`}>
       
       {/* Brand Header with Logo */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+      <div className={`px-4 py-3 border-b flex items-center justify-between ${
+        isDark ? 'border-white/10 bg-[#03090e]' : 'border-slate-100'
+      }`}>
         <div className="flex items-center gap-3">
           <img 
             src="/qa-logo.png" 
@@ -92,16 +99,18 @@ export const Sidebar = ({
             className="w-10 h-10 object-contain shrink-0"
           />
           <div>
-            <span className="font-extrabold text-slate-900 text-base tracking-tight block leading-tight">
+            <span className={`font-extrabold text-base tracking-tight block leading-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}>
               InfratechAI
             </span>
             <span className={`text-[11px] font-semibold tracking-wider uppercase ${
-              activeApp === 'sales' 
-                ? 'text-amber-600' 
-                : activeApp === 'business' 
-                  ? 'text-emerald-600' 
-                  : activeApp === 'aidev' 
-                    ? 'text-cyan-600' 
+              isDark
+                ? 'text-cyan-400'
+                : activeApp === 'sales' 
+                  ? 'text-amber-600' 
+                  : activeApp === 'business' 
+                    ? 'text-emerald-600' 
                     : 'text-indigo-600'
             }`}>
               {activeApp === 'sales' 
@@ -118,17 +127,25 @@ export const Sidebar = ({
 
       {/* Return to App Library Capsule */}
       {onReturnToHub && (
-        <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/60">
+        <div className={`px-3 py-2 border-b ${
+          isDark ? 'border-white/10 bg-black/40' : 'border-slate-100 bg-slate-50/60'
+        }`}>
           <button
             onClick={onReturnToHub}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 transition-all cursor-pointer shadow-2xs group"
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs group ${
+              isDark 
+                ? 'bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white border border-white/10 hover:border-cyan-500/40' 
+                : 'text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300'
+            }`}
             title="Return to Apps"
           >
             <div className="flex items-center gap-2">
-              <Layers size={14} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+              <Layers size={14} className={`${isDark ? 'text-cyan-400' : 'text-indigo-600'} group-hover:scale-110 transition-transform`} />
               <span>⊞ Apps</span>
             </div>
-            <span className="text-[10px] text-slate-400 group-hover:text-indigo-600 font-semibold">Switch App →</span>
+            <span className={`text-[10px] font-semibold ${
+              isDark ? 'text-slate-400 group-hover:text-cyan-300' : 'text-slate-400 group-hover:text-indigo-600'
+            }`}>Switch App →</span>
           </button>
         </div>
       )}
@@ -171,42 +188,60 @@ export const Sidebar = ({
         {/* === MODE D: AI DEV COPILOT NAVIGATION === */}
         {activeApp === 'aidev' && (
           <div className="space-y-4">
-            <div className="p-3 bg-gradient-to-r from-cyan-50 to-indigo-50 rounded-xl border border-cyan-200/80 space-y-1">
+            <div className="p-3.5 rounded-xl bg-gradient-to-b from-cyan-950/40 to-black/60 border border-cyan-500/30 space-y-2 backdrop-blur-md shadow-lg shadow-cyan-950/20">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Technical Copilot</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                  Voice Ready
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest font-mono">Autonomous Core</span>
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Online
                 </span>
               </div>
-              <p className="text-xs font-black text-slate-800">AI DEV Technical Lead</p>
-              <p className="text-[10px] text-slate-500">Real-time speech & full platform knowledge</p>
+              <div>
+                <p className="text-xs font-bold text-white tracking-wide">Executive Copilot</p>
+                <p className="text-[11px] text-slate-400 leading-snug mt-0.5">Dual-voice engine with live multi-system context</p>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                Live Knowledge Feeds
+            <div className="space-y-2">
+              <div className="px-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+                Connected Telemetry
               </div>
               <div className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
-                    <CheckSquare size={13} className="text-indigo-600" /> QA Test Suites
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors">
+                  <span className="text-slate-300 flex items-center gap-2 font-medium">
+                    <CheckSquare size={14} className="text-cyan-400" /> QA Test Suites
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-600">Connected</span>
+                  <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
+                  </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
-                    <Building2 size={13} className="text-emerald-600" /> Contracts & Deadlines
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors">
+                  <span className="text-slate-300 flex items-center gap-2 font-medium">
+                    <Building2 size={14} className="text-emerald-400" /> Client Contracts
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-600">Connected</span>
+                  <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
+                  </span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
-                  <span className="text-slate-600 flex items-center gap-1.5 font-semibold">
-                    <Bot size={13} className="text-amber-600" /> Sales Engine
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors">
+                  <span className="text-slate-300 flex items-center gap-2 font-medium">
+                    <Bot size={14} className="text-amber-400" /> Harvey SDR Pipeline
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-600">Connected</span>
+                  <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
+                  </span>
                 </div>
               </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <Radio size={14} className="text-cyan-400" />
+                <span>Duplex Voice Link</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Low-latency streaming in Hindi and English with instant voice interruption.
+              </p>
             </div>
           </div>
         )}
@@ -409,13 +444,17 @@ export const Sidebar = ({
 
       {/* User Account Info Bar */}
       {currentUser && (
-        <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
+        <div className={`px-4 py-2.5 border-t flex items-center justify-between ${
+          isDark ? 'border-white/10 bg-black/50 text-slate-300' : 'border-slate-100 bg-slate-50/60'
+        }`}>
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            <div className={`w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 ${
+              isDark ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-indigo-600 text-white'
+            }`}>
               {userInitial}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-800 truncate" title={currentUser.email}>
+              <p className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-800'}`} title={currentUser.email}>
                 {currentUser.email}
               </p>
               <button
@@ -428,16 +467,18 @@ export const Sidebar = ({
                   syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' :
                   syncStatus === 'error' ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'
                 }`}></span>
-                <span className={syncStatus === 'error' ? 'text-rose-600' : 'text-emerald-600'}>
+                <span className={syncStatus === 'error' ? (isDark ? 'text-rose-400' : 'text-rose-600') : (isDark ? 'text-emerald-400' : 'text-emerald-600')}>
                   {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Paused' : 'Live Synced'}
                 </span>
-                <RefreshCw size={9} className={`text-slate-400 group-hover:text-indigo-600 transition-colors ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                <RefreshCw size={9} className={`${isDark ? 'text-slate-500 group-hover:text-cyan-400' : 'text-slate-400 group-hover:text-indigo-600'} transition-colors ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              isDark ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-950/40' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+            }`}
             title="Sign Out"
           >
             <LogOut size={15} />
@@ -446,7 +487,7 @@ export const Sidebar = ({
       )}
 
       {/* Bottom Footer — Real-Time Sync & Export/Import */}
-      <div className="p-3 border-t border-slate-100 space-y-2 bg-white">
+      <div className={`p-3 border-t space-y-2 ${isDark ? 'border-white/10 bg-[#03090e]' : 'border-slate-100 bg-white'}`}>
         {/* Real-time Collaboration Status (Zero manual pull needed) */}
         {activeProjectId && (
           <div className="py-2 px-2.5 bg-emerald-50/80 border border-emerald-200/90 rounded-lg flex items-center justify-between shadow-xs">
@@ -476,14 +517,22 @@ export const Sidebar = ({
         <div className="flex gap-1">
           <button
             onClick={onExportBackup}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
+              isDark 
+                ? 'text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10' 
+                : 'text-slate-600 rounded-lg hover:bg-slate-100'
+            }`}
             title="Download JSON Backup"
           >
             <Download size={13} /> Export Backup
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
+              isDark 
+                ? 'text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10' 
+                : 'text-slate-600 rounded-lg hover:bg-slate-100'
+            }`}
             title="Import JSON Backup"
           >
             <UploadCloud size={13} /> Import Backup

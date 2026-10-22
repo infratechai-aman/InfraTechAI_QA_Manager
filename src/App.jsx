@@ -1321,6 +1321,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             qaProjects={projects}
             qaBugs={bugs}
             qaTests={tests}
+            onContractsChange={(updated) => setContracts(updated)}
             onNavigateToQA={(projectId) => {
               setActiveApp('qa');
               if (projectId) {

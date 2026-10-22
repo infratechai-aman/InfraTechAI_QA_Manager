@@ -383,7 +383,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     setLiveTranscript('');
     setLastAiSpeech('');
 
-    const greeting = "Jai Hind Boss! Live voice channel connected. Boliye Boss, main sun raha hoon.";
+    const greeting = "Systems online, Boss! JARVIS live command channel connected. At your service Boss, what are your orders?";
     setLastAiSpeech(greeting);
 
     aiDevService.speak(greeting, {
@@ -951,7 +951,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
               <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
-                LIVE VOICE CALL • BOSS MODE
+                JARVIS LIVE • ENERGETIC MALE VOICE • BOSS COMMAND
               </span>
             </div>
 

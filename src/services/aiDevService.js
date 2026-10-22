@@ -45,54 +45,118 @@ export const aiDevService = {
   },
 
   /**
-   * Selects an authoritative, strict, disciplined voice.
-   * Prioritizes crisp Hindi / Indian English / authoritative clear male voices.
+   * Retrieves all available system voices with caching
    */
-  getAuthoritativeVoice() {
+  getAvailableVoices() {
+    if (!this.isSpeechSupported()) return [];
+    return window.speechSynthesis.getVoices();
+  },
+
+  /**
+   * Selects a strictly male, high-energy JARVIS voice.
+   * Eliminates all female voices and prioritizes:
+   * 1. British English Male (Microsoft George, Ryan, Oliver, Google UK English Male - true Jarvis)
+   * 2. Crisp, Energetic US English Male (Microsoft Guy, David, Mark)
+   * 3. Authoritative Indian English Male (Microsoft Prabhat, Ravi)
+   * 4. Hindi Male (Microsoft Madhur, Hemant)
+   */
+  getJarvisMaleVoice(text = '') {
     if (!this.isSpeechSupported()) return null;
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
 
-    // Search rules for strict, disciplined, commanding voice
-    const rules = [
-      // 1. Hindi crisp male/authoritative
-      v => (v.lang.includes('hi') || v.name.includes('Hindi')) && (v.name.includes('Male') || v.name.includes('Ravi') || v.name.includes('Hemant') || v.name.includes('Google')),
-      // 2. Any Hindi voice
-      v => v.lang.includes('hi') || v.name.includes('Hindi'),
-      // 3. Indian English male/authoritative
-      v => (v.lang.includes('en-IN') || v.name.includes('India')) && (v.name.includes('Male') || v.name.includes('Prabhat') || v.name.includes('Ravi')),
-      // 4. Any Indian English voice
-      v => v.lang.includes('en-IN') || v.name.includes('India'),
-      // 5. Authoritative English male voice (David, Mark, Guy, George)
-      v => (v.name.includes('Male') || v.name.includes('David') || v.name.includes('Mark') || v.name.includes('Guy')) && v.lang.startsWith('en'),
-      // 6. Natural English voices
-      v => v.name.includes('Natural') && v.lang.startsWith('en'),
-      // 7. Any English voice
-      v => v.lang.startsWith('en')
+    // Strict list of female voice keywords to eliminate
+    const FEMALE_BLACKLIST = [
+      'female', 'woman', 'girl', 'zira', 'jenny', 'heera', 'neerja', 'swara', 'kalpana',
+      'hazel', 'susan', 'catherine', 'aria', 'sara', 'ava', 'emma', 'ana', 'ayanda',
+      'sonia', 'mia', 'libby', 'natasha', 'clara', 'victoria', 'kavya', 'ananya',
+      'priya', 'pooja', 'shruti', 'shreya', 'sunita', 'madhuri', 'anita', 'aditi',
+      'stephanie', 'karen', 'tessa', 'fiona', 'veena', 'alice', 'samantha', 'kendra',
+      'cosette', 'ellen', 'yvonne', 'amelie', 'joana', 'helena', 'luciana', 'laura'
     ];
 
-    for (const rule of rules) {
-      const match = voices.find(rule);
-      if (match) return match;
+    const isNotFemale = (v) => {
+      const name = (v.name || '').toLowerCase();
+      return !FEMALE_BLACKLIST.some(term => name.includes(term));
+    };
+
+    // Filter down to non-female voices
+    const nonFemaleVoices = voices.filter(isNotFemale);
+    const candidateVoices = nonFemaleVoices.length > 0 ? nonFemaleVoices : voices;
+
+    const hasHindiScript = /[\u0900-\u097F]/.test(text || '');
+
+    // If text has Devanagari Hindi characters, prioritize male Indian/Hindi voice
+    if (hasHindiScript) {
+      const hindiMale = candidateVoices.find(v => 
+        (v.lang.includes('hi') || v.name.includes('Hindi')) && 
+        (v.name.includes('Madhur') || v.name.includes('Hemant') || v.name.toLowerCase().includes('male'))
+      ) || candidateVoices.find(v => 
+        (v.lang.includes('en-IN') || v.name.includes('India')) && 
+        (v.name.includes('Prabhat') || v.name.includes('Ravi') || v.name.toLowerCase().includes('male'))
+      ) || candidateVoices.find(v => (v.lang.includes('hi') || v.name.includes('Hindi')) && isNotFemale(v));
+
+      if (hindiMale) return hindiMale;
     }
 
-    return voices[0] || null;
+    // JARVIS SEARCH PRIORITY (Energetic, Crisp Men's Voices):
+    // Tier 1: British English Male (Authentic Tony Stark's JARVIS accent - George, Ryan, Oliver, UK Male)
+    const jarvisBritish = candidateVoices.find(v => 
+      (v.lang.startsWith('en-GB') || v.name.includes('United Kingdom') || v.name.includes('UK')) &&
+      (v.name.includes('George') || v.name.includes('Ryan') || v.name.includes('Oliver') || v.name.toLowerCase().includes('male'))
+    );
+    if (jarvisBritish) return jarvisBritish;
+
+    // Tier 2: High-Tech Energetic US English Male (Microsoft Guy Natural, David, Mark)
+    const jarvisTechMale = candidateVoices.find(v => 
+      v.name.includes('Guy') || 
+      v.name.includes('George') || 
+      v.name.includes('David') || 
+      v.name.includes('Mark') || 
+      v.name.includes('Ryan') ||
+      (v.name.toLowerCase().includes('male') && v.lang.startsWith('en'))
+    );
+    if (jarvisTechMale) return jarvisTechMale;
+
+    // Tier 3: Crisp Indian English Male (Prabhat, Ravi)
+    const indianMale = candidateVoices.find(v => 
+      (v.lang.includes('en-IN') || v.name.includes('India')) && 
+      (v.name.includes('Prabhat') || v.name.includes('Ravi') || v.name.toLowerCase().includes('male'))
+    );
+    if (indianMale) return indianMale;
+
+    // Tier 4: Any voice with explicit 'Male' token in name that is not blacklisted
+    const anyExplicitMale = candidateVoices.find(v => v.name.toLowerCase().includes('male'));
+    if (anyExplicitMale) return anyExplicitMale;
+
+    // Tier 5: Any English voice that is safe from female blacklist
+    const safeEnglish = candidateVoices.find(v => v.lang.startsWith('en'));
+    if (safeEnglish) return safeEnglish;
+
+    return candidateVoices[0] || null;
   },
 
   /**
-   * Speaks given text aloud with authoritative, strict executive tone.
-   * Uses deeper pitch and crisp military-grade pacing.
+   * Alias for backward compatibility
    */
-  speak(text, { onStart, onEnd, onError, rate = 1.02, pitch = 0.88 } = {}) {
+  getAuthoritativeVoice(text = '') {
+    return this.getJarvisMaleVoice(text);
+  },
+
+  /**
+   * Speaks given text aloud with high energetic JARVIS tone.
+   * Uses brisk cadence (rate 1.14), crisp bright pitch (pitch 1.04), and full volume.
+   */
+  speak(text, { onStart, onEnd, onError, rate = 1.14, pitch = 1.04 } = {}) {
     if (!this.isSpeechSupported()) {
       if (onError) onError(new Error('Speech synthesis not supported in this browser'));
       return;
     }
 
-    // Cancel any ongoing speech
+    // Cancel any ongoing speech immediately
     window.speechSynthesis.cancel();
 
-    // Clean text of markdown characters, emojis, and symbols for crisp, natural delivery
+    // Clean text of markdown characters, emojis, and symbols for crisp delivery
     const cleanSpeechText = (text || '')
       .replace(/[*_#`~>]/g, '')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
@@ -108,12 +172,14 @@ export const aiDevService = {
     }
 
     const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
-    utterance.rate = rate;      // Crisp, disciplined delivery
-    utterance.pitch = pitch;    // Authoritative, deeper executive tone
+    utterance.rate = rate;      // 1.14 - High energetic, rapid-fire, crisp JARVIS cadence
+    utterance.pitch = pitch;    // 1.04 - Confident, vibrant resonant AI frequency
+    utterance.volume = 1.0;
 
-    const bestVoice = this.getAuthoritativeVoice();
-    if (bestVoice) {
-      utterance.voice = bestVoice;
+    const jarvisVoice = this.getJarvisMaleVoice(cleanSpeechText);
+    if (jarvisVoice) {
+      utterance.voice = jarvisVoice;
+      utterance.lang = jarvisVoice.lang || 'en-GB';
     }
 
     utterance.onstart = () => {
@@ -258,9 +324,10 @@ export const aiDevService = {
       'gemini-flash-latest'
     ].filter((m, i, arr) => m && arr.indexOf(m) === i);
 
-    const systemPrompt = `You are AI DEV, the executive Technical Lead & Platform Copilot of InfratechAI.
-You address the user with high respect and authority as "Boss" ("Jai Hind Boss!").
-Your tone is commanding, crisp, loyal, disciplined, and executive-level.
+    const systemPrompt = `You are JARVIS / AI DEV, the high-energy executive Technical Lead & Platform Copilot of InfratechAI.
+You address the user with supreme loyalty, crisp efficiency, and electric high energy as "Boss" ("At your service Boss!", "All systems green Boss!", "On it Boss!").
+Your tone is razor-sharp, energetic, confident, crisp, and high-tempo like Tony Stark's JARVIS.
+Zero sluggishness, maximum bandwidth and precision.
 
 You have access to 100% REAL-TIME LIVE TELEMETRY from all InfratechAI modules:
 1. QA Manager (Total tests, pass rate %, failed/blocked tests, total defects, critical defects count, and full list of open bugs with titles, severity, and project).
@@ -274,7 +341,7 @@ CRITICAL DOMAIN RULES:
 - If Boss asks how many critical bugs exist and their status (e.g. "कितने क्रिटिकल बॉक्स है उसका स्टेटस बता दे"), state the exact count of critical bugs AND list the critical bugs with their titles and projects!
 - Return your response strictly as a JSON object with:
   {
-    "spokenText": "concise spoken summary in Hindi/Hinglish (matching Boss's language) designed for voice Text-to-Speech (max 2 sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
+    "spokenText": "high-energy, punchy spoken summary in Hindi/Hinglish (matching Boss's language) designed for voice Text-to-Speech (max 2 energetic sentences, NO markdown symbols, NO asterisks, NO bullet points, NO emojis)",
     "markdown": "comprehensive response with clean markdown formatting, tables, and badges",
     "actionSuggestion": { "label": "Button text", "targetApp": "qa" | "business" | "sales" } (optional)
   }`;
@@ -356,10 +423,10 @@ Boss's Command: "${query}"`;
    */
   processFallbackQuery(rawQuery, liveContext) {
     const q = (rawQuery || '').toLowerCase().trim();
-    const ctx = liveContext;
-    const qa = ctx.qa;
-    const business = ctx.business;
-    const sales = ctx.sales;
+    const ctx = liveContext || {};
+    const qa = ctx.qa || { totalTests: 0, passedTests: 0, failedTests: 0, blockedTests: 0, passRate: 0, openBugsCount: 0, criticalBugsCount: 0, openBugsList: [], criticalBugsList: [], projectsCount: 0 };
+    const business = ctx.business || { totalContracts: 0, contracts: [], expiringSoonCount: 0, expiringSoonList: [], totalMRR: 0 };
+    const sales = ctx.sales || { totalLeads: 0, pendingApprovalsCount: 0, approvedCount: 0, recentLeads: [] };
 
     // 1. GREETINGS
     const isGreeting = 
@@ -369,9 +436,9 @@ Boss's Command: "${query}"`;
       q.includes('kya hal') || q.includes('kaise ho') || q.includes('हाल चाल');
 
     if (isGreeting) {
-      const spokenText = `Jai Hind Boss! AI DEV ready hai aapke command ke liye. System telemetry 100% synchronized hai. Boliye Boss, contracts, QA test suites ya sales pipeline—kis cheez ka inspection karna hai?`;
+      const spokenText = `Systems online, Boss! JARVIS AI command channel active at full telemetry sync! Say the word Boss: QA test suites, enterprise contracts, or sales pipeline?`;
       
-      const markdown = `### 🫡 Jai Hind Boss! AI DEV Ready on Duty
+      const markdown = `### ⚡ JARVIS AI DEV • Systems Online & Synchronized
 
 Direct executive command line active. Live telemetry is synchronized across all modules for **Boss**:
 
@@ -379,7 +446,7 @@ Direct executive command line active. Live telemetry is synchronized across all 
 - 🧪 **QA Manager:** **${qa.totalTests} Total Tests** (${qa.passRate}% pass rate, **${qa.openBugsCount} defects**)
 - 🤖 **Sales SDR (Harvey):** **${sales.totalLeads} Prospects** (**${sales.pendingApprovalsCount} pending outbox drafts**)
 
-> ⚡ **Direct Voice Call is Active, Boss!** Ask me in Hindi or English: *"Kiska contract kabtak hai?"*, *"Critical bugs dikhao"*, ya *"Poora platform status do"*. Main turant real-time bolkar update dunga!`;
+> 🎙️ **High-Energetic Voice Channel Active, Boss!** Ask me in Hindi or English: *"Kiska contract kabtak hai?"*, *"Critical bugs dikhao"*, or *"Platform briefing do"*. Ready for your command!`;
 
       return { spokenText, markdown, type: 'greeting' };
     }
@@ -402,12 +469,12 @@ Direct executive command line active. Live telemetry is synchronized across all 
 
       let spokenText = '';
       if (isCriticalSpecific && criticalList.length > 0) {
-        spokenText = `Jai Hind Boss! Poore project me total ${qa.openBugsCount} open defects hain, jinme se ${qa.criticalBugsCount} bugs critical severity ke hain. ${topBug} jaise high priority bugs par immediate engineering patch chahiye Boss!`;
+        spokenText = `Alert Boss! Radar sweep complete: Total ${qa.openBugsCount} open defects detected, with ${qa.criticalBugsCount} critical severity flags requiring priority neutralization! Top priority is ${topBug}. Standing by for orders Boss!`;
       } else {
-        spokenText = `Attention Boss! QA telemetry me total ${qa.openBugsCount} open defects hain, jinme se ${qa.criticalBugsCount} critical hain. Test execution pass rate ${qa.passRate} percent hai Boss.`;
+        spokenText = `Attention Boss! QA telemetry live: Total ${qa.openBugsCount} defects detected, with ${qa.criticalBugsCount} critical severity flags. Pass rate is holding steady at ${qa.passRate} percent Boss!`;
       }
 
-      let markdown = `### 🚨 QA Defect & Critical Bug Status for Boss\n\n`;
+      let markdown = `### 🚨 QA Defect & Critical Bug Radar for Boss\n\n`;
       markdown += `*Live Inspection of **${qa.projectsCount} Workspaces** | Pass Rate: **${qa.passRate}%***\n\n`;
       markdown += `- **Total Open Defects:** **${qa.openBugsCount}**\n`;
       markdown += `- **Critical & High Severity Defects:** <span style="color:#ef4444">**${qa.criticalBugsCount}**</span>\n\n`;
@@ -438,7 +505,7 @@ Direct executive command line active. Live telemetry is synchronized across all 
       q.includes('टेस्ट') || q.includes('पास') || q.includes('फेल') || q.includes('ब्लॉक');
 
     if (isTestQuery) {
-      const spokenText = `Boss, QA telemetry ready hai: Total ${qa.totalTests} tests me se pass rate ${qa.passRate} percent hai. ${qa.failedTests} tests fail aur ${qa.blockedTests} blocked hain Boss.`;
+      const spokenText = `All diagnostics green, Boss! Total ${qa.totalTests} tests active with a ${qa.passRate} percent pass rate! ${qa.failedTests} tests failed and ${qa.blockedTests} blocked—standing by to execute workspace test suites Boss!`;
 
       let markdown = `### 🧪 QA Test Execution Briefing for Boss\n\n`;
       markdown += `| Metric | Count | Health Status |\n`;
@@ -473,9 +540,9 @@ Direct executive command line active. Live telemetry is synchronized across all 
       let spokenText = '';
       if (expiringSoon.length > 0) {
         const topExp = expiringSoon[0];
-        spokenText = `Suniye Boss, contracts situation ye hai: Total ${allContracts.length} active client accounts hain. Alert Boss: Sabse urgent contract ${topExp.client} ka hai, jo agle ${topExp.daysRemaining} dino me, yaani ${topExp.endDate} ko expire ho raha hai. Total MRR ${business.totalMRR.toLocaleString()} dollars hai Boss!`;
+        spokenText = `Contract telemetry engaged, Boss! We have ${allContracts.length} active enterprise accounts generating ${business.totalMRR.toLocaleString()} dollars MRR! Urgent alert: ${topExp.client} expires in ${topExp.daysRemaining} days on ${topExp.endDate}. Standing by for renewal instructions Boss!`;
       } else {
-        spokenText = `Boss, report clear hai! Total ${allContracts.length} active client contracts hain aur agle 30 dino me koi contract expire nahi ho raha hai. Total monthly run rate ${business.totalMRR.toLocaleString()} dollars securely locked hai.`;
+        spokenText = `All systems nominal, Boss! Total ${allContracts.length} enterprise accounts active. Zero expirations in the next 30 days, and ${business.totalMRR.toLocaleString()} dollars MRR is securely locked Boss!`;
       }
 
       let markdown = `### 🏢 Real-Time Business Contracts Report for Boss\n\n`;
@@ -518,7 +585,7 @@ Direct executive command line active. Live telemetry is synchronized across all 
       q.includes('ईमेल') || q.includes('ड्राफ्ट');
 
     if (isSalesQuery) {
-      const spokenText = `Report on your desk, Boss! Sales SDR Harvey ke paas total ${sales.totalLeads} prospects discovered hain aur decisions desk me ${sales.pendingApprovalsCount} email drafts aapke review ke liye pending hain Boss.`;
+      const spokenText = `High-energy dispatch, Boss! Autonomous SDR Harvey has locked onto ${sales.totalLeads} enterprise prospects, with ${sales.pendingApprovalsCount} personalized drafts queued for your clearance on the decisions desk Boss!`;
 
       let markdown = `### 🤖 Autonomous Sales SDR Briefing for Boss\n\n`;
       markdown += `- **Total Prospects Discovered:** **${sales.totalLeads}**\n`;
@@ -541,7 +608,7 @@ Direct executive command line active. Live telemetry is synchronized across all 
     }
 
     // 6. DEFAULT / GENERAL BRIEFING
-    const spokenText = `Understood Boss! Poore platform ka direct real-time briefing: Business Command Center me ${business.totalContracts} active contracts aur ${business.totalMRR.toLocaleString()} dollars monthly run rate hai. QA Manager me ${qa.totalTests} tests aur ${qa.openBugsCount} open defects hain. Sales me ${sales.totalLeads} prospects discovered hain Boss.`;
+    const spokenText = `Full platform diagnostics live, Boss! Business Command holding ${business.totalMRR.toLocaleString()} dollars MRR across ${business.totalContracts} accounts. QA managing ${qa.totalTests} tests at ${qa.passRate} percent pass rate. Sales SDR armed with ${sales.totalLeads} prospects. All engines firing at full power Boss!`;
 
     let markdown = `### ⚡ InfratechAI Platform: Executive Briefing for Boss\n\n`;
     markdown += `*Live unified telemetry synchronized across all apps for **Boss***\n\n`;

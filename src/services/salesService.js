@@ -66,8 +66,8 @@ const DEFAULT_SETTINGS = {
   },
   harveyDaemonUrl: 'http://127.0.0.1:5555',
   isDaemonConnected: true,
-  gmailAddress: import.meta.env.VITE_GMAIL_ADDRESS || 'aman.infratechai@gmail.com',
-  gmailAppPassword: import.meta.env.VITE_GMAIL_APP_PASSWORD || ''
+  gmailAddress: 'aman.infratechai@gmail.com',
+  gmailAppPassword: 'qerk bggh ysyk mrfg'
 };
 
 // Clean production workspace - Zero mock leads, outbox drafts, or conversations
@@ -148,8 +148,8 @@ export const salesService = {
       // Enforce fully autonomous zero-approval sending
       parsed.requireApproval = false;
 
-      parsed.gmailAddress = parsed.gmailAddress || import.meta.env.VITE_GMAIL_ADDRESS || DEFAULT_SETTINGS.gmailAddress;
-      parsed.gmailAppPassword = parsed.gmailAppPassword || import.meta.env.VITE_GMAIL_APP_PASSWORD || DEFAULT_SETTINGS.gmailAppPassword;
+      parsed.gmailAddress = parsed.gmailAddress || import.meta.env.VITE_GMAIL_ADDRESS || 'aman.infratechai@gmail.com';
+      parsed.gmailAppPassword = parsed.gmailAppPassword || import.meta.env.VITE_GMAIL_APP_PASSWORD || 'qerk bggh ysyk mrfg';
 
       return { 
         ...DEFAULT_SETTINGS, 
@@ -616,7 +616,7 @@ You are reaching out 1-to-1 to a US House Keeping & Cleaning business owner.
 
 CRITICAL IDENTITY DIRECTIVE:
 - YOU ARE A REAL HUMAN EMPLOYEE. Under NO circumstances do you say, mention, or admit you are an AI, bot, or automated tool.
-- Speak directly and naturally like an expert web consultant who checked their site from an iPhone or laptop.
+- Speak directly, warmly, and naturally like an expert web consultant.
 
 TARGET CLIENT PROFILE:
 Company: ${lead.companyName} (${lead.domain})
@@ -624,26 +624,29 @@ Location: ${lead.location}
 Contact: ${lead.contactName}, ${lead.contactTitle}
 Observable Issue: ${lead.detectedSignals?.[0]?.title || 'Old, sloppy website without instant mobile booking calculator'}
 
-OUR VALUE PROPOSITION & OFFER:
-- We modernize outdated, sloppy cleaning company websites into high-converting booking engines.
-- Homeowners today book whichever house cleaner gives an instant price and booking on mobile.
-- Live working demo link to share: ${portfolioUrl}
-- OUR 24-HOUR NO-RISK HOOK: We can build a custom live preview for ${lead.companyName} in 24 hours for free. They only pay once they see and love it.
+WHAT WE DELIVER (MUST BE CLEARLY OUTLINED):
+1. Instant bedroom/bathroom online estimate calculator
+2. Mobile-first 60-second booking flow
+3. Automated SMS & email alerts for new bookings
+4. Modern high-speed layout with service area radius
+
+FREE 24-HOUR CUSTOM DEMO (ZERO COST, ZERO OBLIGATION):
+- We build a 100% FREE custom preview with ${lead.companyName}'s branding within 24 hours.
+- If they already have a website or Facebook page, we directly fetch their logo, images, and details automatically.
+- Or they can simply reply with their logo/colors.
+- Turnkey launch is $499 one-time, plus $20/month hosting and ongoing maintenance.
+- Live working demo link to test: ${portfolioUrl}
 
 ANTI-AI & WRITING RULES:
-1. LENGTH: STRICTLY 45 TO 65 WORDS. Never write walls of text.
-2. ZERO AI CLICHES: Never use "I hope this email finds you well", "I wanted to reach out", "In today's fast-paced world", "delve", "game-changer", "revolutionary", "streamline", "leverage", "testament", "at your convenience".
-3. Write like a real person sending a crisp note.
-4. Line 1: Noticed ${lead.companyName}'s site in ${lead.location} — saw it's missing instant mobile quote booking.
-5. Line 2: Homeowners book whichever cleaner lets them price out bedrooms/bathrooms on their phone in 20 seconds.
-6. Line 3: We built a clean modern house cleaning demo you can tap through: ${portfolioUrl}
-7. Line 4: I can build a working preview tailored for ${lead.companyName} in 24 hours at zero cost — open to a quick peek tomorrow?
+1. Keep email concise, organized with clean bullet points.
+2. ZERO AI CLICHES (no "hope this email finds you well", "game-changer", "streamline", "delve").
+3. Include clickable link to ${portfolioUrl}.
 
 Return ONLY valid JSON:
 {
-  "subject": "quick question regarding ${lead.companyName} website",
+  "subject": "quick question regarding ${lead.companyName} online bookings",
   "body": "...",
-  "signalHook": "Sloppy legacy site missing instant mobile booking"
+  "signalHook": "Missing instant bedroom/bathroom booking calculator"
 }
 `;
 
@@ -683,19 +686,38 @@ Return ONLY valid JSON:
       }
     }
 
-    // Heuristic Human-Style Template (<60 words)
+    // Heuristic Human-Style Template with full deliverables & free 24-hr demo offer
     const firstName = (lead.contactName || 'there').split(' ')[0];
     const city = (lead.location || 'your area').split(',')[0];
-    const hasNoSite = lead.hasWebsite === false || !lead.domain || lead.domain.includes('none') || (lead.detectedSignals?.[0]?.title || '').toLowerCase().includes('no website');
     
-    const fallbackBody = hasNoSite
-      ? `Hi ${firstName},\n\nCame across ${lead.companyName} in ${city} — saw your great reputation on Google/Yelp, but noticed you don't have a direct website for homeowners to price & book online.\n\nMost people today book whichever house cleaner lets them price bedrooms/bathrooms on their phone in 20 seconds.\n\nTested this live setup: ${portfolioUrl}\n\nI can build a working preview tailored for ${lead.companyName} in 24 hours for free. Open to a quick peek tomorrow?`
-      : `Hi ${firstName},\n\nCame across ${lead.companyName} in ${city} — saw your current site is missing an instant mobile booking calculator for homeowners.\n\nMost people today book whichever house cleaner lets them price bedrooms/bathrooms on their phone in 20 seconds.\n\nTested this live setup: ${portfolioUrl}\n\nI can build a custom preview for ${lead.companyName} in 24 hours for free. Open to a quick peek tomorrow?`;
+    const fallbackBody = `Hi ${firstName},
+
+Checked out ${lead.companyName} and noticed you don't have an instant online estimate and 60-second booking flow on mobile for homeowners in ${city}.
+
+Here is what we build for cleaning pros:
+• Instant bedroom/bathroom online estimate calculator
+• Mobile-first 60-second customer booking system
+• Automated SMS & email alerts for new bookings
+• Modern, high-speed layout with service area radius
+
+See our live working demo here (1-click):
+${portfolioUrl}
+
+We'll build a 100% FREE custom interactive preview for ${lead.companyName} within 24 hours (zero cost, zero obligation). If you have an existing website or Facebook page, we fetch your logo and business details directly — or just reply with your logo/colors.
+
+If you ever decide to launch, it's just $499 turnkey one-time, plus $20/month for hosting & maintenance.
+
+Would you like us to put together your free 24-hr custom preview?
+
+Best,
+Harvey Ross
+Client Solutions Specialist | InfraTech AI
+aman.infratechai@gmail.com`;
 
     return {
-      subject: hasNoSite ? `${firstName} — quick question about ${lead.companyName}'s booking` : `${firstName} — quick question about ${lead.companyName}'s website`,
+      subject: `quick question about ${lead.companyName} online bookings`,
       body: fallbackBody,
-      signalHook: hasNoSite ? 'No website active; relying on third-party listings' : 'Outdated legacy website lacking mobile instant booking',
+      signalHook: 'Lacks instant mobile bedroom/bathroom estimate calculator',
       wordCount: fallbackBody.trim().split(/\s+/).length,
       modelUsed: 'InfratechAI Neural SDR'
     };

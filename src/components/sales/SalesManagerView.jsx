@@ -250,11 +250,16 @@ export const SalesManagerView = ({
     const updated = salesService.saveSettings({ sessionActive: newStatus }, userId);
     setSettings(updated);
     if (newStatus) {
-      showNotification('🚀 Harvey Working Session STARTED! Actively scanning USA & handling outreach/negotiations.');
+      showNotification('🚀 Harvey Working Session STARTED! Autonomous outreach & overnight engine active.');
+      try {
+        await fetch('http://127.0.0.1:5555/api/start-overnight', { method: 'POST' });
+      } catch (e) {
+        console.warn('Daemon start-overnight ping:', e.message);
+      }
       // Auto-flush any pending approval drafts immediately
       handleAutoSendAllPending();
 
-      // Auto-scout immediately if pipeline is empty so user never has to manually search
+      // Auto-scout immediately if pipeline is empty
       const currentLeads = salesService.getLeads(userId);
       if (currentLeads.length === 0) {
         showNotification('🔍 Harvey Scout Agent is auto-discovering USA cleaning businesses...');
@@ -268,6 +273,11 @@ export const SalesManagerView = ({
       }
     } else {
       showNotification('😴 Harvey is now RESTING. Outbound sending & auto-replies paused.');
+      try {
+        await fetch('http://127.0.0.1:5555/api/stop-overnight', { method: 'POST' });
+      } catch (e) {
+        console.warn('Daemon stop-overnight ping:', e.message);
+      }
     }
   };
 

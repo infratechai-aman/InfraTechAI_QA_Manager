@@ -686,32 +686,28 @@ Return ONLY valid JSON:
       }
     }
 
-    // Heuristic Human-Style Template with full deliverables & free 24-hr demo offer
+    // Heuristic Human-Style Template (<65 words, natural tone, single-line offer, $499-$899 range)
     const firstName = (lead.contactName || 'there').split(' ')[0];
     const city = (lead.location || 'your area').split(',')[0];
     
     const fallbackBody = `Hi ${firstName},
 
-Checked out ${lead.companyName} and noticed you don't have an instant online estimate and 60-second booking flow on mobile for homeowners in ${city}.
+Took a quick look at ${lead.companyName} and noticed you don't have an instant online estimate and booking flow on mobile for homeowners in ${city}. Most people bounce if they can't book in 60 seconds.
 
-Here is what we build for cleaning pros:
-• Instant bedroom/bathroom online estimate calculator
-• Mobile-first 60-second customer booking system
-• Automated SMS & email alerts for new bookings
-• Modern, high-speed layout with service area radius
+We build modern booking systems for cleaners with instant bedroom/bathroom estimate calculators, 60-second mobile checkout, and automated SMS alerts.
 
-See our live working demo here (1-click):
+Built a live preview of how this works:
 ${portfolioUrl}
 
-We'll build a 100% FREE custom interactive preview for ${lead.companyName} within 24 hours (zero cost, zero obligation). If you have an existing website or Facebook page, we fetch your logo and business details directly — or just reply with your logo/colors.
+We can build a 100% FREE custom interactive preview with ${lead.companyName}'s branding in 24 hours (zero cost, zero obligation). If you already have a website or Facebook page, we fetch your logo and details directly — or just reply with your colors.
 
-If you ever decide to launch, it's just $499 turnkey one-time, plus $20/month for hosting & maintenance.
+Turnkey setup is $499 - $899 based on your scope, plus $20/month maintenance and hosting.
 
-Would you like us to put together your free 24-hr custom preview?
+Would you be open to a quick peek tomorrow?
 
 Best,
 Harvey Ross
-Client Solutions Specialist | InfraTech AI
+InfraTech AI
 aman.infratechai@gmail.com`;
 
     return {

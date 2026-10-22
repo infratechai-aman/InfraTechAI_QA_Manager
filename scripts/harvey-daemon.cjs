@@ -70,7 +70,7 @@ const VERIFIED_USA_CLEANING_PROSPECTS = [
   { companyName: "Maid Sailors", contactName: "Joe", contactEmail: "support@maidsailors.com", domain: "maidsailors.com", city: "New York, NY" }
 ];
 
-// Inbound Demo Inquiries (Simulated clients requesting custom preview)
+// Inbound Demo Inquiries (Simulated clients requesting custom preview with full service details in reply)
 const DEMO_INQUIRIES = [
   {
     atIndex: 2, // Fires after 2nd email
@@ -79,8 +79,8 @@ const DEMO_INQUIRIES = [
     contactEmail: "info@morehands.com",
     city: "Austin, TX",
     dealSize: 499,
-    prospectMessage: "Hey Harvey, saw the demo at https://housecleaning-998d3.web.app/! Can you build a custom preview for our Austin branch with our branding? Also is the $20/month maintenance fixed?",
-    harveyReply: "Hi Robert! Yes, we'll build a 100% FREE custom interactive preview for MoreHands within 24 hours. We will pull your logo and brand colors directly. And yes, maintenance is fixed at $20/month ($200/yr). Does tomorrow 2:00 PM EST work for a quick walk-through?",
+    prospectMessage: "Hey Harvey, saw the demo at https://housecleaning-998d3.web.app/! Can you build a custom preview for our Austin branch with our branding? Also what is included?",
+    harveyReply: "Hi Robert! Absolutely. We will build a 100% FREE custom interactive preview for MoreHands within 24 hours, pulling your logo and colors directly from your site.\n\nHere is everything included in your turnkey setup:\n• Instant bedroom/bathroom online estimate calculator\n• Mobile-first 60-second customer booking checkout\n• Automated SMS & email alerts for new bookings\n• Service area radius map & Google reviews widget\n• Fast cloud hosting & 24/7 maintenance ($20/mo)\n\nTurnkey setup for your Austin operations is $499. Does tomorrow 2:00 PM EST work for a quick walk-through?",
     stage: "demo_in_progress"
   },
   {
@@ -89,9 +89,9 @@ const DEMO_INQUIRIES = [
     contactName: "Jessica",
     contactEmail: "info@tampacleaningcompany.com",
     city: "Tampa, FL",
-    dealSize: 499,
-    prospectMessage: "Can homeowners calculate instant bedroom/bathroom prices on mobile like that demo? How fast can you deliver our preview?",
-    harveyReply: "Hi Jessica! Yes, the instant calculator is fully included and works seamlessly on iPhone & Android. We will deliver your free custom preview in under 24 hours. Let's connect tomorrow afternoon!",
+    dealSize: 649,
+    prospectMessage: "Can homeowners calculate instant bedroom/bathroom prices on mobile like that demo? What does a full rollout cost for our team?",
+    harveyReply: "Hi Jessica! Yes, the instant calculator is fully included and works seamlessly on iPhone & Android.\n\nIncluded in your custom setup:\n• Instant bedroom/bath & square-footage quote calculator\n• Mobile-first 60-second booking checkout flow\n• Real-time SMS team dispatch notifications\n• Google Maps radius for Tampa Bay coverage\n• Ongoing monthly maintenance & hosting ($20/mo)\n\nTurnkey setup for your full team is $649 with 24-hr turnaround for your free preview. Let's connect tomorrow afternoon!",
     stage: "demo_in_progress"
   },
   {
@@ -100,9 +100,9 @@ const DEMO_INQUIRIES = [
     contactName: "Michael",
     contactEmail: "support@cleanzen.com",
     city: "Chicago, IL",
-    dealSize: 499,
-    prospectMessage: "Hey Harvey, checked the link https://housecleaning-998d3.web.app/. It's really fast. Can we integrate automated SMS alerts for new cleaning bookings?",
-    harveyReply: "Hi Michael, yes! Automated SMS and email alerts are built in. Turnkey setup is $499 with 24-hr delivery and zero obligation for the preview. We're setting up your custom demo today!",
+    dealSize: 799,
+    prospectMessage: "Hey Harvey, checked https://housecleaning-998d3.web.app/. It's really fast. Can we integrate multi-crew scheduling and automated SMS alerts? What's the pricing?",
+    harveyReply: "Hi Michael, yes! Multi-crew scheduling and automated SMS alerts are built right in.\n\nIncluded in your custom build:\n• Multi-crew scheduling with instant room-count calculator\n• 60-second mobile checkout with deposit support\n• Automated SMS & email booking notifications\n• Cloud hosting, SSL & ongoing maintenance ($20/mo)\n\nTurnkey setup for your Chicago multi-team operations is $799. We're building your 100% free preview today!",
     stage: "demo_in_progress"
   },
   {
@@ -111,9 +111,9 @@ const DEMO_INQUIRIES = [
     contactName: "Steve",
     contactEmail: "info@sunlifemaids.com",
     city: "Phoenix, AZ",
-    dealSize: 499,
-    prospectMessage: "Would love to see our free custom preview for Phoenix. Do you need our logo or will you grab it from our site?",
-    harveyReply: "Hi Steve! We'll fetch your logo and business details directly from your existing site. We'll have your custom interactive preview ready in 24 hours. What's best for a quick 5-min peek tomorrow?",
+    dealSize: 899,
+    prospectMessage: "Would love to see our free custom preview for Phoenix. We do high-end residential & vacation rentals. How much for full setup?",
+    harveyReply: "Hi Steve! We will fetch your logo, photos, and business details directly from your existing site.\n\nFull enterprise setup includes:\n• Instant bedroom/bathroom pricing calculator with recurring discounts\n• Airbnb turnover & deep-clean scheduling tabs\n• Automated SMS alerts & calendar sync\n• High-performance responsive architecture & $20/mo maintenance\n\nTurnkey delivery for your full Phoenix setup is $899. We'll have your custom preview ready in 24 hours. Does tomorrow 3:30 PM work?",
     stage: "demo_in_progress"
   }
 ];
@@ -196,31 +196,27 @@ function formatEmailHtml(text) {
   `;
 }
 
-// Generate concise, human-toned email copy with all deliverables & free 24-hr demo
+// Generate concise, human-toned email copy (<65 words, natural tone, single-line offer, $499-$899 range)
 function generateEmailContent(prospect) {
   const subject = `quick question about ${prospect.companyName} online bookings`;
   const text = `Hi ${prospect.contactName},
 
-Checked out ${prospect.companyName} and noticed you don't have an instant online estimate and 60-second booking flow on mobile for homeowners in ${prospect.city}.
+Took a quick look at ${prospect.companyName} and noticed you don't have an instant online estimate and booking flow on mobile for homeowners in ${prospect.city}. Most people bounce if they can't book in 60 seconds.
 
-Here is what we build for cleaning pros:
-• Instant bedroom/bathroom online estimate calculator
-• Mobile-first 60-second customer booking system
-• Automated SMS & email alerts for new bookings
-• Modern, high-speed layout with service area radius
+We build modern booking systems for cleaners with instant bedroom/bathroom estimate calculators, 60-second mobile checkout, and automated SMS alerts.
 
-See our live working demo here (1-click):
+Built a live preview of how this works:
 https://housecleaning-998d3.web.app/
 
-We'll build a 100% FREE custom interactive preview for ${prospect.companyName} within 24 hours (zero cost, zero obligation). If you have an existing website or Facebook page, we fetch your logo and business details directly — or just reply with your logo/colors.
+We can build a 100% FREE custom interactive preview with ${prospect.companyName}'s branding in 24 hours (zero cost, zero obligation). If you already have a website or Facebook page, we fetch your logo and details directly — or just reply with your colors.
 
-If you ever decide to launch, it's just $499 turnkey one-time, plus $20/month for hosting & maintenance.
+Turnkey setup is $499 - $899 based on your scope, plus $20/month maintenance and hosting.
 
-Would you like us to put together your free 24-hr custom preview?
+Would you be open to a quick peek tomorrow?
 
 Best,
 Harvey Ross
-Client Solutions Specialist | InfraTech AI
+InfraTech AI
 aman.infratechai@gmail.com`;
 
   return { subject, text };

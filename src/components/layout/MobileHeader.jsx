@@ -16,8 +16,14 @@ export const MobileHeader = ({
   const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
   const userColor = getUserColor(currentUser?.email || 'user');
 
+  const isAiDev = activeApp === 'aidev';
+
   return (
-    <header className="flex md:hidden items-center justify-between px-3 py-2 bg-white border-b border-slate-200 sticky top-0 z-30 shrink-0 shadow-2xs">
+    <header className={`flex md:hidden items-center justify-between px-3 py-2 sticky top-0 z-30 shrink-0 transition-colors ${
+      isAiDev
+        ? 'bg-[#030d14]/95 border-b border-white/10 text-white backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)]'
+        : 'bg-white border-b border-slate-200 text-slate-900 shadow-2xs'
+    }`}>
       {/* Brand & Project Info */}
       <div className="flex items-center gap-1.5 min-w-0">
         <button
@@ -34,13 +40,15 @@ export const MobileHeader = ({
 
         {/* Mobile App Switcher Capsule */}
         {setActiveApp && (
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs shrink-0 overflow-x-auto scrollbar-none max-w-[240px]">
+          <div className={`flex items-center p-0.5 rounded-lg border text-xs shrink-0 overflow-x-auto scrollbar-none max-w-[240px] ${
+            isAiDev ? 'bg-black/60 border-white/10' : 'bg-slate-100 border-slate-200'
+          }`}>
             <button
               onClick={() => setActiveApp('qa')}
               className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeApp === 'qa' 
                   ? 'bg-indigo-600 text-white shadow-2xs' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               QA
@@ -50,7 +58,7 @@ export const MobileHeader = ({
               className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeApp === 'sales' 
                   ? 'bg-amber-500 text-slate-950 shadow-2xs' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Sales
@@ -60,7 +68,7 @@ export const MobileHeader = ({
               className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeApp === 'business' 
                   ? 'bg-emerald-600 text-white shadow-2xs' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Business
@@ -69,8 +77,8 @@ export const MobileHeader = ({
               onClick={() => setActiveApp('aidev')}
               className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeApp === 'aidev' 
-                  ? 'bg-cyan-600 text-white shadow-2xs' 
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-cyan-500 text-black shadow-2xs font-extrabold' 
+                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               AI Dev
@@ -107,9 +115,9 @@ export const MobileHeader = ({
         )}
 
         {activeApp === 'aidev' && (
-          <div className="hidden min-[400px]:flex items-center gap-1 min-w-0 bg-cyan-50 border border-cyan-200 rounded-full py-0.5 px-2">
-            <Sparkles size={10} className="text-cyan-700 shrink-0" />
-            <span className="text-[10px] font-bold text-cyan-800 truncate">
+          <div className="hidden min-[400px]:flex items-center gap-1 min-w-0 bg-cyan-950/60 border border-cyan-500/40 rounded-full py-0.5 px-2">
+            <Sparkles size={10} className="text-cyan-400 shrink-0" />
+            <span className="text-[10px] font-bold text-cyan-300 truncate">
               Copilot
             </span>
           </div>
@@ -121,7 +129,11 @@ export const MobileHeader = ({
         {activeProjectId && onOpenInviteModal && (
           <button
             onClick={onOpenInviteModal}
-            className="p-2 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 active-spring"
+            className={`p-2 rounded-full border active-spring ${
+              isAiDev
+                ? 'bg-cyan-950/50 hover:bg-cyan-900/50 text-cyan-300 border-cyan-500/40'
+                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-200'
+            }`}
             title="Invite Collaborator"
           >
             <UserPlus size={14} />
@@ -130,7 +142,9 @@ export const MobileHeader = ({
 
         <button
           onClick={onOpenOptionsSheet}
-          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-white/20 active-spring ${userColor?.badge || 'bg-indigo-600 text-white'}`}
+          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-1 ${
+            isAiDev ? 'ring-cyan-500/30' : 'ring-white/20'
+          } active-spring ${userColor?.badge || 'bg-indigo-600 text-white'}`}
           title="User menu & options"
         >
           {userInitial}

@@ -396,12 +396,16 @@ Autonomous platform intelligence synchronized across business operations, qualit
                 setLiveCallState('ai_speaking');
                 setLastAiSpeech(response.spokenText);
 
+                // Start recognition loop so wake-word barge-in is active while AI speaks
+                startRecognitionLoop();
+
                 aiDevService.speak(response.spokenText, {
                   agent: agentVoiceRef.current,
                   onStart: () => {
                     if (!isLiveCallActiveRef.current) return;
                     liveCallStateRef.current = 'ai_speaking';
                     setLiveCallState('ai_speaking');
+                    startRecognitionLoop();
                   },
                   onEnd: () => {
                     if (!isLiveCallActiveRef.current) return;
@@ -478,6 +482,8 @@ Autonomous platform intelligence synchronized across business operations, qualit
       onStart: () => {
         setLiveCallState('ai_speaking');
         liveCallStateRef.current = 'ai_speaking';
+        // Start recognition loop so Boss can interrupt greeting with "Jarvis" or "Friday"
+        startRecognitionLoop();
       },
       onEnd: () => {
         if (isLiveCallActiveRef.current) {
@@ -767,12 +773,104 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 1. TOP MINIMAL EXECUTIVE HEADER BAR                     */}
       {/* ======================================================== */}
-      <header className="px-3.5 sm:px-5 py-2.5 sm:py-3 border-b border-white/10 bg-[#030d14]/90 backdrop-blur-xl shrink-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-4 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
+      
+      {/* Mobile Streamlined Utility Bar (h-11, single row, no wrapping) */}
+      <header className="flex md:hidden items-center justify-between px-3 py-1.5 border-b border-white/10 bg-[#030d14]/90 backdrop-blur-xl shrink-0 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
+        {/* Left: Dual voice toggle + Language pill */}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center p-0.5 rounded-lg bg-black/60 border border-white/10 text-[10px]">
+            <button
+              onClick={() => handleToggleAgentVoice('jarvis')}
+              className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                agentVoice === 'jarvis'
+                  ? 'bg-cyan-500 text-black shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              JARVIS
+            </button>
+            <button
+              onClick={() => handleToggleAgentVoice('friday')}
+              className={`px-2 py-0.5 rounded-md font-bold transition-all cursor-pointer ${
+                agentVoice === 'friday'
+                  ? 'bg-rose-500 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              FRIDAY
+            </button>
+          </div>
+
+          <div className="flex items-center p-0.5 rounded-lg bg-black/60 border border-white/10 text-[9px]">
+            <button
+              onClick={() => handleToggleLanguage('hi-IN')}
+              className={`px-1.5 py-0.5 rounded font-bold transition-all ${
+                speechLang === 'hi-IN' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400'
+              }`}
+            >
+              HI
+            </button>
+            <button
+              onClick={() => handleToggleLanguage('en-US')}
+              className={`px-1.5 py-0.5 rounded font-bold transition-all ${
+                speechLang === 'en-US' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400'
+              }`}
+            >
+              EN
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Live Talk + Audio Toggle + Reset */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={isLiveCallActive ? handleEndLiveCall : handleStartLiveCall}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold font-orbitron tracking-wider transition-all flex items-center gap-1 cursor-pointer shadow-md ${
+              isLiveCallActive
+                ? 'bg-rose-600 text-white animate-pulse'
+                : isFriday
+                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white'
+                  : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-black'
+            }`}
+            title={isLiveCallActive ? 'Terminate Vocal Interface' : 'Launch Live Talk'}
+          >
+            {isLiveCallActive ? <PhoneOff size={11} /> : <Radio size={11} />}
+            <span>{isLiveCallActive ? 'STOP' : 'LIVE'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (isSpeaking) aiDevService.stopSpeaking();
+              setIsVoiceEnabled(!isVoiceEnabled);
+            }}
+            className={`p-1.5 rounded-lg text-xs transition-all border ${
+              isVoiceEnabled ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/40' : 'bg-black/60 text-slate-500 border-white/10'
+            }`}
+            title={isVoiceEnabled ? 'Audio On' : 'Audio Muted'}
+          >
+            {isVoiceEnabled ? <Volume2 size={13} className="text-cyan-400" /> : <VolumeX size={13} />}
+          </button>
+
+          <button
+            onClick={() => {
+              handleStopSpeech();
+              setMessages(messages.slice(0, 1));
+            }}
+            className="p-1.5 rounded-lg bg-black/60 hover:bg-cyan-950/40 text-slate-400 hover:text-cyan-300 border border-white/10 transition-colors cursor-pointer"
+            title="Reset Conversation Stream"
+          >
+            <RotateCcw size={13} />
+          </button>
+        </div>
+      </header>
+
+      {/* Desktop Branded Executive Header (md:flex) */}
+      <header className="hidden md:flex px-5 py-3 border-b border-white/10 bg-[#030d14]/90 backdrop-blur-xl shrink-0 items-center justify-between gap-4 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
         
         {/* Left: Copilot Branding */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-3">
           <div className="relative shrink-0">
-            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg transition-colors ${
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg transition-colors ${
               isFriday 
                 ? 'bg-gradient-to-tr from-rose-600 to-pink-500 shadow-rose-500/20' 
                 : 'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-cyan-500/20'
@@ -785,26 +883,26 @@ Autonomous platform intelligence synchronized across business operations, qualit
           </div>
 
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="text-xs sm:text-sm font-bold tracking-wider font-orbitron text-white">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold tracking-wider font-orbitron text-white">
                 {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'}
               </span>
-              <span className="text-[8px] sm:text-[9px] font-semibold tracking-wider px-1 sm:px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-slate-300">
+              <span className="text-[9px] font-semibold tracking-wider px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-slate-300">
                 MK VII
               </span>
             </div>
-            <span className="text-[9px] sm:text-[10px] tracking-wide text-slate-400 font-sans truncate max-w-[140px] xs:max-w-none">
+            <span className="text-[10px] tracking-wide text-slate-400 font-sans truncate">
               Autonomous Copilot
             </span>
           </div>
         </div>
 
         {/* Center: DUAL VOICE AGENT TOGGLE (MALE JARVIS vs FEMALE FRIDAY) */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="flex items-center p-0.5 sm:p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md shadow-inner">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md shadow-inner">
             <button
               onClick={() => handleToggleAgentVoice('jarvis')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
                 agentVoice === 'jarvis'
                   ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/30 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -812,12 +910,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
               title="Switch to J.A.R.V.I.S. (Male Voice)"
             >
               <span>JARVIS</span>
-              <span className="hidden xs:inline text-[9px] opacity-75">Male</span>
+              <span className="text-[9px] opacity-75">Male</span>
             </button>
 
             <button
               onClick={() => handleToggleAgentVoice('friday')}
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
                 agentVoice === 'friday'
                   ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -825,15 +923,15 @@ Autonomous platform intelligence synchronized across business operations, qualit
               title="Switch to F.R.I.D.A.Y. (Female Voice)"
             >
               <span>FRIDAY</span>
-              <span className="hidden xs:inline text-[9px] opacity-75">Female</span>
+              <span className="text-[9px] opacity-75">Female</span>
             </button>
           </div>
 
           {/* Hindi / English Language Switcher */}
-          <div className="hidden xs:flex items-center p-0.5 sm:p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md text-[10px] sm:text-[11px]">
+          <div className="flex items-center p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md text-[11px]">
             <button
               onClick={() => handleToggleLanguage('hi-IN')}
-              className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
                 speechLang === 'hi-IN'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                   : 'text-slate-400 hover:text-white'
@@ -844,7 +942,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
             </button>
             <button
               onClick={() => handleToggleLanguage('en-US')}
-              className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
                 speechLang === 'en-US'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                   : 'text-slate-400 hover:text-white'
@@ -857,12 +955,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
         </div>
 
         {/* Right: Live Talk Button & Voice Audio Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex items-center gap-2.5">
           
           {/* Prominent Live Voice Call Button */}
           <button
             onClick={isLiveCallActive ? handleEndLiveCall : handleStartLiveCall}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold font-orbitron tracking-wider transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-lg ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold font-orbitron tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg ${
               isLiveCallActive
                 ? 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-400 animate-pulse shadow-rose-600/30'
                 : isFriday
@@ -873,12 +971,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
           >
             {isLiveCallActive ? (
               <>
-                <PhoneOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">TERMINATE</span>
+                <PhoneOff className="w-4 h-4" />
+                <span>TERMINATE</span>
               </>
             ) : (
               <>
-                <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Radio className="w-4 h-4" />
                 <span>LIVE TALK</span>
               </>
             )}
@@ -890,7 +988,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
               if (isSpeaking) aiDevService.stopSpeaking();
               setIsVoiceEnabled(!isVoiceEnabled);
             }}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
               isVoiceEnabled 
                 ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/40 hover:bg-cyan-900/40' 
                 : 'bg-black/60 text-slate-500 border-white/10 hover:text-slate-300'
@@ -900,12 +998,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
             {isVoiceEnabled ? (
               <>
                 <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline text-[11px]">AUDIO ON</span>
+                <span className="text-[11px]">AUDIO ON</span>
               </>
             ) : (
               <>
                 <VolumeX className="w-3.5 h-3.5 text-slate-500" />
-                <span className="hidden sm:inline text-[11px]">MUTED</span>
+                <span className="text-[11px]">MUTED</span>
               </>
             )}
           </button>
@@ -916,10 +1014,10 @@ Autonomous platform intelligence synchronized across business operations, qualit
               handleStopSpeech();
               setMessages(messages.slice(0, 1));
             }}
-            className="p-1.5 sm:p-2 rounded-xl bg-black/60 hover:bg-cyan-950/40 text-slate-400 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/40 transition-colors cursor-pointer"
+            className="p-2 rounded-xl bg-black/60 hover:bg-cyan-950/40 text-slate-400 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/40 transition-colors cursor-pointer"
             title="Reset Conversation Stream"
           >
-            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <RotateCcw className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -927,13 +1025,13 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 2. SUB-BAR: LIVE PLATFORM TELEMETRY PILLS               */}
       {/* ======================================================== */}
-      <div className="px-5 py-2 bg-[#03090e]/90 border-b border-white/10 flex items-center gap-3 text-xs overflow-x-auto shrink-0 select-none backdrop-blur-md z-20">
+      <div className="px-3 sm:px-5 py-1.5 sm:py-2 bg-[#03090e]/90 border-b border-white/10 flex items-center gap-2 sm:gap-3 text-xs overflow-x-auto shrink-0 select-none backdrop-blur-md z-20 scrollbar-none">
         <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 shrink-0 font-mono">
           <Activity className="w-3.5 h-3.5 text-cyan-400" /> Telemetry:
         </span>
 
         {/* Business Feed */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-slate-300 shrink-0 text-[11px]">
+        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-slate-300 shrink-0 text-[11px]">
           <Building2 className="w-3.5 h-3.5 text-cyan-400" />
           <span className="font-semibold text-white">Contracts:</span>
           <span>{liveContext.business.totalContracts} Active</span>
@@ -947,7 +1045,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
         </div>
 
         {/* QA Feed */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-slate-300 shrink-0 text-[11px]">
+        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-slate-300 shrink-0 text-[11px]">
           <CheckSquare className="w-3.5 h-3.5 text-cyan-400" />
           <span className="font-semibold text-white">QA Suites:</span>
           <span>{liveContext.qa.totalTests} Tests</span>
@@ -960,7 +1058,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
         </div>
 
         {/* Sales Feed */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-slate-300 shrink-0 text-[11px]">
+        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-white/[0.03] border border-white/10 text-slate-300 shrink-0 text-[11px]">
           <Bot className="w-3.5 h-3.5 text-cyan-400" />
           <span className="font-semibold text-white">Sales SDR:</span>
           <span>{liveContext.sales.totalLeads} Prospects</span>
@@ -972,7 +1070,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 3. MAIN CHAT CONTAINER (STARK TACTICAL TERMINAL)        */}
       {/* ======================================================== */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 pb-64 md:pb-48 z-10">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-6 pb-36 sm:pb-44 md:pb-36 z-10">
         <div className="max-w-3xl mx-auto w-full space-y-6">
 
           {/* Clean Executive Welcome Hero when starting fresh */}
@@ -1451,11 +1549,11 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 5. BOTTOM FLOATING PROMPTBAR DOCK (STARK CYBER THEME)    */}
       {/* ======================================================== */}
-      <div className="absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom,0px)+4.25rem))] md:bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-[#020609] via-[#020609]/95 to-transparent pt-6 pb-2 md:pb-4 px-3 sm:px-4 flex flex-col items-center pointer-events-auto">
+      <div className="absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom,0px)+4.25rem))] md:bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-[#020609] via-[#020609]/95 to-transparent pt-3 sm:pt-6 pb-2 md:pb-4 px-2 sm:px-4 flex flex-col items-center pointer-events-auto">
         <div className="w-full max-w-3xl flex flex-col items-center">
           
-          <div className="w-full flex items-center gap-2">
-            <div className="flex-1">
+          <div className="w-full flex items-center gap-1.5 sm:gap-2">
+            <div className="flex-1 min-w-0">
               <PromptBar
                 placeholder={isFriday ? "Ask FRIDAY anything in Hindi or English..." : "Ask JARVIS anything in Hindi or English..."}
                 sources={promptSources}
@@ -1489,10 +1587,10 @@ Autonomous platform intelligence synchronized across business operations, qualit
               />
             </div>
 
-            {/* Quick Live Talk Button right next to PromptBar */}
+            {/* Quick Live Talk Button right next to PromptBar (hidden on mobile to give PromptBar full width) */}
             <button
               onClick={handleStartLiveCall}
-              className={`h-12 px-4 rounded-xl font-orbitron font-bold text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 ${
+              className={`hidden sm:flex h-12 px-4 rounded-xl font-orbitron font-bold text-xs items-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 ${
                 isFriday
                   ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-rose-600/30'
                   : 'bg-gradient-to-r from-cyan-400 to-blue-500 text-black shadow-cyan-500/30'
@@ -1500,7 +1598,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
               title="Launch Dynamic Vocal Interface with Boss"
             >
               <Radio className="w-4 h-4" />
-              <span className="hidden sm:inline">LIVE TALK</span>
+              <span>LIVE TALK</span>
             </button>
           </div>
 

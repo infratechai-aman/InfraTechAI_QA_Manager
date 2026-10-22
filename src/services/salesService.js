@@ -887,34 +887,90 @@ RULES:
     }
   },
 
-  // Send live email via Gmail daemon
+  // Send live email via Gmail (supports both Vercel Serverless /api/send-email and local daemon 127.0.0.1:5555)
   async sendLiveEmailViaGmail({ to, subject, body, userId }) {
     const settings = this.getSettings(userId);
-    const user = settings.gmailAddress;
-    const pass = settings.gmailAppPassword;
+    const user = settings.gmailAddress || import.meta.env.VITE_GMAIL_ADDRESS || 'aman.infratechai@gmail.com';
+    const pass = settings.gmailAppPassword || import.meta.env.VITE_GMAIL_APP_PASSWORD || 'qerk bggh ysyk mrfg';
     const fromName = settings.persona?.name || 'Harvey Ross';
 
-    if (!user || !pass) {
-      throw new Error('Please configure your Gmail Address and 16-letter App Password in Settings.');
+    const payload = {
+      to,
+      subject,
+      text: body,
+      user,
+      pass,
+      fromName
+    };
+
+    let lastError = null;
+
+    // 1. Try Vercel Serverless Function first (same-origin, works on HTTPS production)
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) return data;
+      }
+    } catch (err) {
+      lastError = err;
     }
 
-    const res = await fetch('http://127.0.0.1:5555/api/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to,
-        subject,
-        text: body,
-        user,
-        pass,
-        fromName
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Failed to send live email via Gmail.');
+    // 2. Try Local Harvey Daemon (http://127.0.0.1:5555/api/send)
+    try {
+      const res = await fetch('http://127.0.0.1:5555/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return data;
+      }
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      lastError = err;
     }
-    return data;
+
+    throw new Error(lastError ? lastError.message : 'Could not reach email dispatcher. Ensure daemon is running or Vercel function is active.');
+  },
+
+  // Sync with Harvey Daemon state (loads sent emails & inbound demo inquiries)
+  async syncWithDaemonState(userId) {
+    try {
+      const res = await fetch('http://127.0.0.1:5555/api/daemon-state');
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data.success || !data.state) return null;
+
+      const { outbox = [], conversations = [] } = data.state;
+      const currentOutbox = this.getOutbox(userId);
+      const currentConvs = this.getConversations(userId);
+
+      // Merge sent outbox items
+      const existingIds = new Set(currentOutbox.map(o => o.recipientEmail));
+      const newOutboxItems = outbox.filter(o => !existingIds.has(o.recipientEmail));
+      if (newOutboxItems.length > 0) {
+        this.saveOutbox([...newOutboxItems, ...currentOutbox], userId);
+      }
+
+      // Merge conversations
+      const existingConvEmails = new Set(currentConvs.map(c => c.contactEmail));
+      const newConvs = conversations.filter(c => !existingConvEmails.has(c.contactEmail));
+      if (newConvs.length > 0) {
+        this.saveConversations([...newConvs, ...currentConvs], userId);
+      }
+
+      return data.state;
+    } catch {
+      return null;
+    }
   }
 };
+

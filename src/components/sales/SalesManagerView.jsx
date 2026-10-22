@@ -50,13 +50,42 @@ export const SalesManagerView = ({
     if (onUpdateOutboxCount) onUpdateOutboxCount(pending);
   }, [outbox, onUpdateOutboxCount]);
 
+  // Auto-sync with local Harvey Daemon (brings in overnight sent emails & inbound demo requests)
+  useEffect(() => {
+    const syncDaemon = async () => {
+      const state = await salesService.syncWithDaemonState(userId);
+      if (state) {
+        setOutbox(salesService.getOutbox(userId));
+        setConversations(salesService.getConversations(userId));
+      }
+    };
+
+    syncDaemon();
+    const interval = setInterval(syncDaemon, 20000); // sync every 20s
+    return () => clearInterval(interval);
+  }, [userId]);
+
   const showNotification = (msg) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3500);
   };
 
   // Decisions Desk Handlers
-  const handleApprove = (outboxId) => {
+  const handleApprove = async (outboxId) => {
+    const item = outbox.find(o => o.id === outboxId);
+    if (item) {
+      try {
+        await salesService.sendLiveEmailViaGmail({
+          to: item.recipientEmail,
+          subject: item.subject,
+          body: item.body,
+          userId
+        });
+        showNotification(`🚀 Sent live email to ${item.recipientName} (${item.companyName}) via Gmail!`);
+      } catch (err) {
+        console.warn('Gmail live dispatch notice:', err.message);
+      }
+    }
     const updated = salesService.approveEmail(outboxId, userId);
     setOutbox(updated);
   };

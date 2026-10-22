@@ -62,12 +62,26 @@ export const OutboxReviewDesk = ({
     setTimeout(() => setFeedbackToast(null), 3000);
   };
 
-  const handleApprove = () => {
-    if (!activeItem) return;
-    if (onApprove) onApprove(activeItem.id);
-    showToast(`✅ Approved email to ${activeItem.recipientName} (${activeItem.companyName})`);
-    if (selectedIndex >= pendingList.length - 1 && selectedIndex > 0) {
-      setSelectedIndex(prev => prev - 1);
+  const handleApprove = async () => {
+    if (!activeItem || isSendingLive) return;
+    setIsSendingLive(true);
+    try {
+      showToast(`⚡ Dispatching live email to ${activeItem.recipientName} via your Gmail...`);
+      await salesService.sendLiveEmailViaGmail({
+        to: activeItem.recipientEmail,
+        subject: editedSubject || activeItem.subject,
+        body: editedBody || activeItem.body,
+        userId: settings?.userId
+      });
+      showToast(`🚀 Dispatched live email to ${activeItem.recipientName} (${activeItem.companyName})! Check your Gmail Sent folder.`);
+      if (onApprove) onApprove(activeItem.id);
+      if (selectedIndex >= pendingList.length - 1 && selectedIndex > 0) {
+        setSelectedIndex(prev => prev - 1);
+      }
+    } catch (err) {
+      showToast(`❌ Live dispatch failed: ${err.message}`);
+    } finally {
+      setIsSendingLive(false);
     }
   };
 
@@ -78,25 +92,14 @@ export const OutboxReviewDesk = ({
     const body = encodeURIComponent(editedBody || activeItem.body || '');
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`;
     window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-    handleApprove();
+    if (onApprove) onApprove(activeItem.id);
+    if (selectedIndex >= pendingList.length - 1 && selectedIndex > 0) {
+      setSelectedIndex(prev => prev - 1);
+    }
   };
 
   const handleSendLiveViaGmail = async () => {
-    if (!activeItem) return;
-    setIsSendingLive(true);
-    try {
-      await salesService.sendLiveEmailViaGmail({
-        to: activeItem.recipientEmail,
-        subject: editedSubject || activeItem.subject,
-        body: editedBody || activeItem.body
-      });
-      showToast(`🚀 Dispatched live email to ${activeItem.recipientName} via your Gmail!`);
-      handleApprove();
-    } catch (err) {
-      showToast(`❌ Send failed: ${err.message}`);
-    } finally {
-      setIsSendingLive(false);
-    }
+    await handleApprove();
   };
 
   const handleAutoSendAll = async () => {
@@ -462,10 +465,12 @@ export const OutboxReviewDesk = ({
 
                   <button
                     onClick={handleApprove}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer transition-all active:scale-95"
+                    disabled={isSendingLive}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer transition-all active:scale-95"
+                    title="Sends this cold outreach immediately via your personal Gmail account"
                   >
-                    <Check className="w-4 h-4" />
-                    <span>Approve</span>
+                    <Check className={`w-4 h-4 ${isSendingLive ? 'animate-spin' : ''}`} />
+                    <span>{isSendingLive ? 'Dispatching...' : 'Approve & Send via Gmail'}</span>
                     <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-emerald-800/60 rounded text-[10px] font-mono font-bold">A</kbd>
                   </button>
                 </div>

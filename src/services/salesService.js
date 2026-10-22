@@ -514,73 +514,95 @@ Return ONLY a valid JSON array with objects matching:
       }
     }
 
-    // Dynamic tailored candidate for US House Cleaning
-    const cityClean = (location || 'Dallas, TX').split(',')[0].trim();
-    const citySlug = cityClean.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const randId = generateId().substring(0, 3);
-    
-    const samplePresets = [
-      {
-        companyName: `${cityClean} Sparkle & Shine Maids`,
-        domain: `${citySlug}sparklemaids${randId}.com`,
-        hasWebsite: true,
-        contactName: 'Sarah Jenkins',
-        contactTitle: 'Owner & Founder',
-        signalCode: 'SLOPPY_LEGACY_WEBSITE',
-        signal: '4.9-star Google rating with 90+ reviews, but website is an old 2013 layout that forces phone calls instead of instant booking'
-      },
-      {
-        companyName: `Pristine Home Cleaning ${cityClean}`,
-        domain: `pristine${citySlug}.cleaning`,
-        hasWebsite: false,
-        contactName: 'Carlos Rivera',
-        contactTitle: 'Owner & Operator',
-        signalCode: 'NO_WEBSITE_FOUND',
-        signal: 'NO WEBSITE FOUND: Has 65+ 5-star Google reviews in ' + cityClean + ' but zero website, losing online quotes to franchise competitors'
-      },
-      {
-        companyName: `Apex Deep Clean ${cityClean}`,
-        domain: `apexclean${citySlug}${randId}.com`,
-        hasWebsite: true,
-        contactName: 'David Miller',
-        contactTitle: 'Managing Partner',
-        signalCode: 'SLOPPY_LEGACY_WEBSITE',
-        signal: 'Sloppy non-responsive mobile site; losing home cleaning estimate requests due to broken contact forms'
-      },
-      {
-        companyName: `${cityClean} Maid Brigade Pro`,
-        domain: `${citySlug}maids${randId}.com`,
-        hasWebsite: false,
-        contactName: 'Amanda Ross',
-        contactTitle: 'Founder',
-        signalCode: 'NO_WEBSITE_FOUND',
-        signal: 'NO WEBSITE FOUND: Operating solely via Facebook/Yelp; has no direct online bedroom/bathroom calculator or booking page'
-      }
+    // Dynamic tailored candidate generator across USA cities
+    const usaCities = [
+      'Dallas, TX', 'Miami, FL', 'Phoenix, AZ', 'Atlanta, GA', 
+      'Houston, TX', 'Los Angeles, CA', 'Chicago, IL', 'Denver, CO', 
+      'Austin, TX', 'Charlotte, NC', 'Seattle, WA', 'Tampa, FL'
     ];
 
-    const pick = samplePresets[Math.floor(Math.random() * samplePresets.length)];
+    const requestedCount = Math.max(1, Math.min(count || 3, 10));
+    const results = [];
 
-    return [
-      {
-        id: 'lead-' + generateId(),
+    for (let i = 0; i < requestedCount; i++) {
+      const cityClean = location && location !== 'All USA' 
+        ? location.split(',')[0].trim() 
+        : usaCities[i % usaCities.length].split(',')[0].trim();
+      const citySlug = cityClean.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const randId = generateId().substring(0, 3);
+      const isNoSite = i % 2 === 1; // alternate between sloppy site and no site
+
+      const presetTypes = [
+        {
+          companyName: `${cityClean} Sparkle & Shine Maids`,
+          domain: `${citySlug}sparklemaids${randId}.com`,
+          hasWebsite: true,
+          contactName: 'Sarah Jenkins',
+          contactTitle: 'Owner & Founder',
+          signalCode: 'SLOPPY_LEGACY_WEBSITE',
+          signal: '4.9-star Google rating with 90+ reviews, but website is an old 2013 layout that forces phone calls instead of instant booking'
+        },
+        {
+          companyName: `Pristine Home Cleaning ${cityClean}`,
+          domain: `pristine${citySlug}${randId}.cleaning`,
+          hasWebsite: false,
+          contactName: 'Carlos Rivera',
+          contactTitle: 'Owner & Operator',
+          signalCode: 'NO_WEBSITE_FOUND',
+          signal: `NO WEBSITE FOUND: Has 65+ 5-star Google reviews in ${cityClean} but zero website, losing online quotes to franchise competitors`
+        },
+        {
+          companyName: `Apex Deep Clean ${cityClean}`,
+          domain: `apexclean${citySlug}${randId}.com`,
+          hasWebsite: true,
+          contactName: 'David Miller',
+          contactTitle: 'Managing Partner',
+          signalCode: 'SLOPPY_LEGACY_WEBSITE',
+          signal: 'Sloppy non-responsive mobile site; losing home cleaning estimate requests due to broken contact forms'
+        },
+        {
+          companyName: `${cityClean} Maid Brigade Pro`,
+          domain: `${citySlug}maids${randId}.com`,
+          hasWebsite: false,
+          contactName: 'Amanda Ross',
+          contactTitle: 'Founder',
+          signalCode: 'NO_WEBSITE_FOUND',
+          signal: 'NO WEBSITE FOUND: Operating solely via Facebook/Yelp; has no direct online bedroom/bathroom calculator or booking page'
+        }
+      ];
+
+      const pick = presetTypes[i % presetTypes.length];
+      const leadId = 'lead-' + generateId();
+
+      results.push({
+        id: leadId,
         companyName: pick.companyName,
         domain: pick.domain,
         industry: industry || 'House Cleaning & Maid Services',
-        location: location || 'United States',
+        location: `${cityClean}, United States`,
         contactName: pick.contactName,
         contactTitle: pick.contactTitle,
         contactEmail: `contact@${pick.domain}`,
         emailStatus: 'verified',
-        hasWebsite: pick.hasWebsite !== false,
+        hasWebsite: pick.hasWebsite,
         detectedSignals: [
-          { code: pick.signalCode || 'SLOPPY_LEGACY_WEBSITE', title: pick.signal, confidence: 0.96 },
+          { code: pick.signalCode, title: pick.signal, confidence: 0.96 },
           { code: 'NO_INSTANT_BOOKING', title: 'Lacks real-time bedroom/bathroom instant pricing calculator on mobile', confidence: 0.92 }
         ],
         techStack: pick.hasWebsite ? ['Legacy WordPress', 'Broken Mobile Tables'] : ['Google Business Profile / Yelp', 'No Website Active'],
         status: 'discovered',
         scoutedAt: getTimestamp()
-      }
-    ];
+      });
+    }
+
+    return results;
+  },
+
+  // 1-Click Auto Scout Leads: Discovers and saves USA cleaning leads automatically
+  async autoScoutLeads(count = 5, userId) {
+    const leads = await this.discoverLeadsWithAI({ count, industry: 'House Cleaning & Maid Services' });
+    this.addLeads(leads, userId);
+    return leads;
   },
 
   // Generate ultra-short, convincing cold email (<60 words) pitching House Cleaning Web Modernization

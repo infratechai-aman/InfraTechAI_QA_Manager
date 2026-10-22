@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bot, Sparkles, CheckCircle2, Clock, Mail, Users, ArrowUpRight, 
   RefreshCw, Sliders, ShieldCheck, Zap, Flame, Terminal, Plus,
-  ExternalLink, Moon, Sun, DollarSign, Check
+  ExternalLink, Moon, Sun, DollarSign, Check, MessageSquare
 } from 'lucide-react';
 
 export const SalesCockpit = ({ 
@@ -16,6 +16,7 @@ export const SalesCockpit = ({
   onToggleAutopilot,
   onToggleSession,
   sessionActive,
+  onAutoScout,
   onAddConversation
 }) => {
   const [countdown, setCountdown] = useState(15 * 60);
@@ -238,6 +239,14 @@ export const SalesCockpit = ({
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Open Demo Site</span>
           </a>
+          <button
+            onClick={onAutoScout}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all hover:scale-105 active:scale-95"
+            title="Auto-discover 5 USA house cleaning businesses with sloppy or no websites (Zero manual search)"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Auto-Scout 5 USA Cleaners</span>
+          </button>
           <button
             onClick={() => onNavigateTab('leads')}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all"

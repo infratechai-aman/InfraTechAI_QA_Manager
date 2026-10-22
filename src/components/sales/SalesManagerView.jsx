@@ -174,14 +174,34 @@ export const SalesManagerView = ({
     showNotification(newMode ? '🌙 Sleep Autopilot ACTIVE: Autonomous 24/7 negotiation enabled' : '⏸️ Autopilot Standby: Manual review gate active');
   };
 
-  const handleToggleSession = (newStatus) => {
+  const handleToggleSession = async (newStatus) => {
     const updated = salesService.saveSettings({ sessionActive: newStatus }, userId);
     setSettings(updated);
-    showNotification(
-      newStatus
-        ? '🚀 Harvey Working Session STARTED! Actively scanning USA & handling outreach/negotiations.'
-        : '😴 Harvey is now RESTING. Outbound sending & auto-replies paused.'
-    );
+    if (newStatus) {
+      showNotification('🚀 Harvey Working Session STARTED! Actively scanning USA & handling outreach/negotiations.');
+      // Auto-scout immediately if pipeline is empty so user never has to manually search
+      const currentLeads = salesService.getLeads(userId);
+      if (currentLeads.length === 0) {
+        showNotification('🔍 Harvey Scout Agent is auto-discovering USA cleaning businesses...');
+        const newScouted = await salesService.autoScoutLeads(4, userId);
+        const refreshed = salesService.getLeads(userId);
+        setLeads(refreshed);
+        showNotification(`🎯 Auto-scouted ${newScouted.length} USA cleaners! Drafting personalized outreach...`);
+        if (newScouted[0]) {
+          setTimeout(() => handleDraftEmailForLead(newScouted[0]), 1200);
+        }
+      }
+    } else {
+      showNotification('😴 Harvey is now RESTING. Outbound sending & auto-replies paused.');
+    }
+  };
+
+  const handleAutoScout = async () => {
+    showNotification('🔍 Harvey Scout Agent scanning USA cities (Dallas, Miami, Phoenix, LA, Atlanta)...');
+    const newScouted = await salesService.autoScoutLeads(5, userId);
+    const refreshed = salesService.getLeads(userId);
+    setLeads(refreshed);
+    showNotification(`✅ Auto-scouted ${newScouted.length} USA cleaning businesses (Zero manual search needed)!`);
   };
 
   // Reset & Clear All Data
@@ -209,7 +229,15 @@ export const SalesManagerView = ({
     
     // Check if there are uncontacted leads without active drafts
     const draftedLeadIds = new Set(outbox.map(o => o.leadId));
-    const nextLead = leads.find(l => !draftedLeadIds.has(l.id));
+    let nextLead = leads.find(l => !draftedLeadIds.has(l.id));
+
+    if (!nextLead) {
+      showNotification('🔍 Scout Agent auto-discovering fresh USA cleaning leads in background...');
+      const newScouted = await salesService.autoScoutLeads(3, userId);
+      const refreshed = salesService.getLeads(userId);
+      setLeads(refreshed);
+      nextLead = newScouted[0];
+    }
 
     if (nextLead) {
       setTimeout(() => {
@@ -217,11 +245,7 @@ export const SalesManagerView = ({
       }, 1000);
     } else {
       setTimeout(() => {
-        showNotification(
-          leads.length === 0
-            ? '✅ Cycle complete: 0 prospects in pipeline. Add real leads to enable auto-drafting.'
-            : '✅ Cycle complete: All current prospects in pipeline have active drafts or outreach queued.'
-        );
+        showNotification('✅ Cycle complete: Outreach queued.');
       }, 1200);
     }
   };
@@ -345,6 +369,7 @@ export const SalesManagerView = ({
             onToggleAutopilot={handleToggleAutopilot}
             onToggleSession={handleToggleSession}
             sessionActive={settings.sessionActive}
+            onAutoScout={handleAutoScout}
             onAddConversation={handleAddConversation}
           />
         )}

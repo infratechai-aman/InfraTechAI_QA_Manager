@@ -18,22 +18,22 @@ export const LeadsPipelineView = ({
   
   // Modals state
   const [isDiscoveryModalOpen, setIsDiscoveryModalOpen] = useState(false);
-  const [discoveryIndustry, setDiscoveryIndustry] = useState('FinTech SaaS');
-  const [discoveryLocation, setDiscoveryLocation] = useState('Austin, TX');
+  const [discoveryIndustry, setDiscoveryIndustry] = useState('House Cleaning & Maid Services');
+  const [discoveryLocation, setDiscoveryLocation] = useState('Dallas, TX');
   const [isDiscovering, setIsDiscovering] = useState(false);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newLeadForm, setNewLeadForm] = useState({
     companyName: '',
     domain: '',
-    industry: 'FinTech SaaS',
-    location: '',
+    industry: 'House Cleaning & Maid Services',
+    location: 'Dallas, TX',
     contactName: '',
-    contactTitle: 'VP of Engineering',
+    contactTitle: 'Owner & Operator',
     contactEmail: '',
     emailStatus: 'verified',
-    signalText: '',
-    techStackText: ''
+    signalText: 'Sloppy legacy website lacking instant mobile booking calculator',
+    techStackText: 'WordPress (Legacy), PHP'
   });
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -188,10 +188,10 @@ export const LeadsPipelineView = ({
         <div>
           <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <Building className="w-6 h-6 text-indigo-600" />
-            Profiled Prospects & Buying Signals
+            US Cleaning Businesses & Sloppy Site Pipeline
           </h1>
           <p className="text-xs md:text-sm text-slate-500 mt-1">
-            Real target businesses and engineering decision makers. Zero mock data.
+            Target USA cleaning & maid service owners with outdated sites to pitch our modern demo (housecleaning-998d3.web.app).
           </p>
         </div>
 
@@ -680,30 +680,64 @@ export const LeadsPipelineView = ({
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Target Industry / Niche</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700">Target Cleaning Niche</label>
+                  <span className="text-[10px] text-slate-400">USA Cleaners</span>
+                </div>
                 <input
                   type="text"
                   value={discoveryIndustry}
                   onChange={(e) => setDiscoveryIndustry(e.target.value)}
                   className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  placeholder="e.g. FinTech SaaS, HealthTech, Digital Agencies"
+                  placeholder="e.g. House Cleaning & Maid Services"
                 />
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {['House Cleaning & Maid Services', 'Airbnb Turnover Pros', 'Commercial Cleaning'].map(niche => (
+                    <button
+                      key={niche}
+                      type="button"
+                      onClick={() => setDiscoveryIndustry(niche)}
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-medium border cursor-pointer transition-all ${
+                        discoveryIndustry === niche ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {niche}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">City / Region</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700">Target US City / Region</label>
+                  <span className="text-[10px] text-slate-400">High Demand Metro</span>
+                </div>
                 <input
                   type="text"
                   value={discoveryLocation}
                   onChange={(e) => setDiscoveryLocation(e.target.value)}
                   className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  placeholder="e.g. Austin, TX or London, UK"
+                  placeholder="e.g. Dallas, TX or Miami, FL"
                 />
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {['Dallas, TX', 'Miami, FL', 'Atlanta, GA', 'Phoenix, AZ', 'Los Angeles, CA', 'Houston, TX'].map(city => (
+                    <button
+                      key={city}
+                      type="button"
+                      onClick={() => setDiscoveryLocation(city)}
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-medium border cursor-pointer transition-all ${
+                        discoveryLocation === city ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="p-3 bg-indigo-50 rounded-xl text-xs text-indigo-900 border border-indigo-200/60">
-              <span className="font-bold">Neural Engine: </span> Tailored prospect profiling based on InfratechAI QA solution fit.
+              <span className="font-bold">Neural Engine: </span> Finds cleaning companies with outdated sites, lacking online booking, to pitch custom 24-hr previews.
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">

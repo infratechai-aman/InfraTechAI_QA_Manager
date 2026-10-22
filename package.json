@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "daemon": "node scripts/harvey-daemon.cjs",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -18,6 +19,7 @@
     "lucide-react": "^1.42.0",
     "mermaid": "^11.17.2",
     "motion": "^14.5.0",
+    "nodemailer": "^10.2.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",

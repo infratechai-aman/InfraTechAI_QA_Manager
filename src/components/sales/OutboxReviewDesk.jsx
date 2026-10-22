@@ -20,6 +20,7 @@ export const OutboxReviewDesk = ({
   const [editedSubject, setEditedSubject] = useState('');
   const [editedBody, setEditedBody] = useState('');
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isSendingLive, setIsSendingLive] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState(null);
 
   const pendingList = outbox.filter(item => item.status === 'pending_approval');
@@ -80,6 +81,24 @@ export const OutboxReviewDesk = ({
     handleApprove();
   };
 
+  const handleSendLiveViaGmail = async () => {
+    if (!activeItem) return;
+    setIsSendingLive(true);
+    try {
+      await salesService.sendLiveEmailViaGmail({
+        to: activeItem.recipientEmail,
+        subject: editedSubject || activeItem.subject,
+        body: editedBody || activeItem.body
+      });
+      showToast(`🚀 Dispatched live email to ${activeItem.recipientName} via your Gmail!`);
+      handleApprove();
+    } catch (err) {
+      showToast(`❌ Send failed: ${err.message}`);
+    } finally {
+      setIsSendingLive(false);
+    }
+  };
+
   const handleCopyEmail = () => {
     if (!activeItem) return;
     const text = `To: ${activeItem.recipientEmail}\nSubject: ${editedSubject || activeItem.subject}\n\n${editedBody || activeItem.body}`;
@@ -116,12 +135,13 @@ export const OutboxReviewDesk = ({
     if (!activeItem) return;
     const lead = leads.find(l => l.id === activeItem.leadId) || {
       companyName: activeItem.companyName,
-      domain: 'company.com',
-      industry: 'Software / SaaS',
+      domain: 'cleaningservice.com',
+      industry: 'House Cleaning & Maid Services',
+      location: 'United States',
       contactName: activeItem.recipientName,
-      contactTitle: activeItem.recipientTitle,
-      detectedSignals: [{ title: activeItem.signalHook }],
-      techStack: ['React', 'Node.js']
+      contactTitle: activeItem.recipientTitle || 'Owner',
+      detectedSignals: [{ title: activeItem.signalHook || 'Sloppy legacy site lacking mobile booking' }],
+      techStack: ['WordPress 2014', 'PHP']
     };
 
     setIsRegenerating(true);
@@ -129,7 +149,7 @@ export const OutboxReviewDesk = ({
       const generated = await salesService.generateColdEmailWithAI({
         lead,
         framework: activeItem.framework || 'PAS',
-        customNotes: 'Make it even more concise, maximum 50 words'
+        customNotes: 'Keep it strictly under 55 words, highlight the 24-hr custom preview promise and link to https://housecleaning-998d3.web.app/'
       });
       setEditedSubject(generated.subject);
       setEditedBody(generated.body);
@@ -339,8 +359,20 @@ export const OutboxReviewDesk = ({
                     title="Open draft immediately in Gmail Web"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Approve & Open Gmail</span>
+                    <span>Open in Gmail Web</span>
                   </button>
+
+                  {Boolean(settings.gmailAddress && settings.gmailAppPassword) && (
+                    <button
+                      onClick={handleSendLiveViaGmail}
+                      disabled={isSendingLive}
+                      className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                      title="Dispatch directly from your genuine Gmail via Harvey Mailer Daemon"
+                    >
+                      <Zap className={`w-3.5 h-3.5 ${isSendingLive ? 'animate-spin' : ''}`} />
+                      <span>{isSendingLive ? 'Sending via Gmail...' : 'Send Live via Gmail'}</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2.5">

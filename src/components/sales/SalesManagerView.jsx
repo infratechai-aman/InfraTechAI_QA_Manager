@@ -163,6 +163,27 @@ export const SalesManagerView = ({
     setConversations(updated);
   };
 
+  const handleUpdateConversation = (convId, patch) => {
+    const updated = salesService.updateConversation(convId, patch, userId);
+    setConversations(updated);
+  };
+
+  const handleToggleAutopilot = (newMode) => {
+    const updated = salesService.saveSettings({ autopilotMode: newMode }, userId);
+    setSettings(updated);
+    showNotification(newMode ? '🌙 Sleep Autopilot ACTIVE: Autonomous 24/7 negotiation enabled' : '⏸️ Autopilot Standby: Manual review gate active');
+  };
+
+  const handleToggleSession = (newStatus) => {
+    const updated = salesService.saveSettings({ sessionActive: newStatus }, userId);
+    setSettings(updated);
+    showNotification(
+      newStatus
+        ? '🚀 Harvey Working Session STARTED! Actively scanning USA & handling outreach/negotiations.'
+        : '😴 Harvey is now RESTING. Outbound sending & auto-replies paused.'
+    );
+  };
+
   // Reset & Clear All Data
   const handleClearAllData = () => {
     salesService.clearAllSalesData(userId);
@@ -180,6 +201,10 @@ export const SalesManagerView = ({
 
   // Heartbeat Cycle
   const handleRunHeartbeat = async () => {
+    if (settings.sessionActive === false) {
+      showNotification('⏸️ Harvey is currently resting. Click "Start Harvey Working Session" to activate!');
+      return;
+    }
     showNotification('⚡ Harvey heartbeat cycle started...');
     
     // Check if there are uncontacted leads without active drafts
@@ -317,6 +342,10 @@ export const SalesManagerView = ({
             onNavigateTab={(t) => setSalesTab(t)}
             onOpenSettings={() => onOpenSettings ? onOpenSettings() : setIsSettingsOpen(true)}
             onRunHeartbeat={handleRunHeartbeat}
+            onToggleAutopilot={handleToggleAutopilot}
+            onToggleSession={handleToggleSession}
+            sessionActive={settings.sessionActive}
+            onAddConversation={handleAddConversation}
           />
         )}
 
@@ -353,8 +382,11 @@ export const SalesManagerView = ({
             conversations={conversations}
             onSendReply={handleSendReply}
             onAddConversation={handleAddConversation}
+            onUpdateConversation={handleUpdateConversation}
             onDeleteConversation={handleDeleteConversation}
             leads={leads}
+            settings={settings}
+            onToggleAutopilot={handleToggleAutopilot}
           />
         )}
       </div>

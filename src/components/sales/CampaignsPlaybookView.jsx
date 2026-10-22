@@ -1,42 +1,44 @@
 import React, { useState } from 'react';
 import { 
   BookOpen, Sparkles, Check, ShieldAlert, ArrowRight, 
-  Layers, Clock, MessageSquare, Flame, CheckCircle2 
+  Layers, Clock, MessageSquare, Flame, CheckCircle2, ExternalLink
 } from 'lucide-react';
 
 export const CampaignsPlaybookView = () => {
   const [selectedFramework, setSelectedFramework] = useState('PAS');
 
+  const demoUrl = 'https://housecleaning-998d3.web.app/';
+
   const frameworks = [
     {
       id: 'PAS',
       name: 'PAS (Problem - Agitate - Solve)',
-      bestFor: 'Technical leads & engineering heads experiencing sprint bottlenecks',
+      bestFor: 'US Cleaning & Maid service owners with outdated 2012-2015 websites',
       structure: [
-        { label: 'Problem', desc: 'State the observable challenge (e.g., release regressions or slow manual QA).' },
-        { label: 'Agitate', desc: 'Highlight the business cost (e.g., missed deadlines or developer frustration).' },
-        { label: 'Solve', desc: 'Introduce InfratechAI QA Manager as the streamlined fix, with a low-friction CTA.' }
+        { label: 'Problem', desc: 'Point out observable site issue (e.g., no mobile booking or slow cluttered layout).' },
+        { label: 'Agitate', desc: 'Homeowners looking for cleaning on mobile bounce and book the first competitor with instant pricing.' },
+        { label: 'Solve', desc: `Introduce our modern booking engine demo (${demoUrl}) and offer a free 24-hr custom preview.` }
       ]
     },
     {
       id: 'AIDA',
       name: 'AIDA (Attention - Interest - Desire - Action)',
-      bestFor: 'Agencies and digital product studios building multi-client apps',
+      bestFor: 'High-volume residential & commercial cleaning businesses with strong Yelp/Google reviews',
       structure: [
-        { label: 'Attention', desc: 'Hook on their live client portfolio or current tech stack.' },
-        { label: 'Interest', desc: 'Share how other teams execute 200+ tests 3x faster without leaving their keyboards.' },
-        { label: 'Desire', desc: 'Paint the picture of zero-lag defect tracking and Firestore cloud sync.' },
-        { label: 'Action', desc: 'Ask for a quick 5-minute video glance.' }
+        { label: 'Attention', desc: 'Praise their stellar 4.8+ star Google rating in their local city.' },
+        { label: 'Interest', desc: 'Show how modern house cleaning sites convert 3x more bookings with instant bedroom/bathroom pricing.' },
+        { label: 'Desire', desc: `Share the live booking demo (${demoUrl}) to show the exact user experience.` },
+        { label: 'Action', desc: 'Offer to build their company custom preview in 24 hours at zero upfront cost.' }
       ]
     },
     {
       id: 'BAB',
       name: 'BAB (Before - After - Bridge)',
-      bestFor: 'Fast-growing startups with rapid release cycles',
+      bestFor: 'Maid services relying on slow phone calls and back-and-forth email quotes',
       structure: [
-        { label: 'Before', desc: 'Pain of messy spreadsheets and slow Jira clicks during crunch time.' },
-        { label: 'After', desc: 'Clean, hotkey-driven execution with immediate pass/fail/block shortcuts.' },
-        { label: 'Bridge', desc: 'InfratechAI QA Manager bridges the gap in minutes.' }
+        { label: 'Before', desc: 'Losing evening and weekend booking requests because customers hate calling on the phone.' },
+        { label: 'After', desc: 'Customers pick their cleaning frequency, select bedrooms, and book online in 20 seconds.' },
+        { label: 'Bridge', desc: 'We build your custom turnkey website in 24 hours for $499-$899, payable only after you love it.' }
       ]
     }
   ];
@@ -44,24 +46,40 @@ export const CampaignsPlaybookView = () => {
   const currentFw = frameworks.find(f => f.id === selectedFramework) || frameworks[0];
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fadeIn">
+    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-fadeIn pb-32">
       
       {/* Header */}
       <div className="pb-4 border-b border-slate-200">
-        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <Layers className="w-6 h-6 text-indigo-600" />
-          Harvey Campaign Sequence & Copywriting Playbooks
-        </h1>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Layers className="w-6 h-6 text-indigo-600" />
+            House Cleaning Outbound Playbooks & Heuristics
+          </h1>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+            $499 - $899 USD Deals
+          </span>
+        </div>
         <p className="text-xs md:text-sm text-slate-500 mt-1">
-          Based on Harvey's proven 2026 outbound email heuristics: 3-step sequences, under 75 words, zero fluff.
+          Proven 3-step outbound sequences targeting US house cleaners with sloppy sites. Under 60 words, human employee tone, zero AI fluff.
         </p>
       </div>
 
       {/* 3-Step Cold Outreach Sequence Visualizer */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-sm space-y-6">
-        <div>
-          <h2 className="text-base font-bold text-slate-900">Harvey 3-Stage Outreach Engine</h2>
-          <p className="text-xs text-slate-500">Every prospect moves through an automated cadenced sequence until reply or break-up.</p>
+      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Harvey 3-Stage Closing Funnel</h2>
+            <p className="text-xs text-slate-500">Every prospect moves through an automated cadenced sequence until reply or deal closed.</p>
+          </div>
+          <a
+            href={demoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs border border-emerald-200 transition-colors self-start sm:self-auto"
+          >
+            <span>Reference Demo: {demoUrl.replace('https://', '')}</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
@@ -73,34 +91,34 @@ export const CampaignsPlaybookView = () => {
                 1
               </span>
               <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
-                Day 1 • Max 75 Words
+                Day 1 • Max 55 Words
               </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-sm">The Observable Signal Hook</h3>
+            <h3 className="font-bold text-slate-900 text-sm">The Sloppy Site / Mobile Gap Hook</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              References an exact fact from website profiling (e.g. "Saw you're scaling QA for your fintech app"). No generic openers.
+              Points out that their website lacks an instant quote calculator on mobile, losing homeowners to franchise competitors. Links to the live demo.
             </p>
             <div className="text-[11px] font-semibold text-indigo-800 bg-white p-2.5 rounded-xl border border-indigo-100">
-              Goal: Start a conversation, never pitch full pricing immediately.
+              Hook: "Saw your site in Dallas — missing mobile instant booking. Tested this demo: housecleaning-998d3.web.app"
             </div>
           </div>
 
           {/* Step 2 */}
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="w-7 h-7 rounded-lg bg-slate-800 text-white font-bold text-xs flex items-center justify-center">
+              <span className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">
                 2
               </span>
-              <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded-full">
-                Day 4 • Max 75 Words
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                Day 3 • Max 50 Words
               </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-sm">The Specific Case Proof</h3>
+            <h3 className="font-bold text-slate-900 text-sm">The 24-Hour Custom Preview Offer</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Shares concrete workflow contrast (e.g., "Testers execute 200 test cases with P/F/B hotkeys in 12 mins instead of 45 mins in Jira").
+              Offers to build a working, branded preview for their business in 24 hours at zero upfront risk. Removes all friction.
             </p>
-            <div className="text-[11px] font-semibold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
-              Goal: Establish technical credibility and reduce friction.
+            <div className="text-[11px] font-semibold text-emerald-800 bg-white p-2.5 rounded-xl border border-emerald-100">
+              Hook: "Can build your company preview in 24h for free. Test it on your phone — pay only if you love it."
             </div>
           </div>
 
@@ -111,94 +129,76 @@ export const CampaignsPlaybookView = () => {
                 3
               </span>
               <span className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-0.5 rounded-full">
-                Day 8 • Max 40 Words
+                Day 7 • Max 40 Words
               </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-sm">The Polite Break-up</h3>
+            <h3 className="font-bold text-slate-900 text-sm">The $499 Introductory Close / Breakup</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Polite closure: "Assume testing cycles are dialed in right now. I'll step out of your inbox unless you'd like a link to test drive."
+              Polite closure offering a special $499 introductory package to lock in their local territory before reaching out to competing cleaners.
             </p>
             <div className="text-[11px] font-semibold text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200">
-              Highest conversion: 38% of responses occur on the break-up email.
+              Hook: "Closing out our schedule for this week — can hold the $499 rate if you want a peek, otherwise won't bug you."
             </div>
           </div>
 
         </div>
       </div>
 
-      {/* Sales Frameworks & Anti-AI Fluff Rules */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Framework Selector */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-base">Select Framework</h3>
-            <div className="flex gap-1.5">
-              {frameworks.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setSelectedFramework(f.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    selectedFramework === f.id
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {f.id}
-                </button>
-              ))}
-            </div>
+      {/* Copywriting Frameworks Comparison */}
+      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Conversion Copy Frameworks</h2>
+            <p className="text-xs text-slate-500">Select which copywriting structure Harvey should use when drafting cold outreach.</p>
           </div>
-
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-            <div className="font-bold text-sm text-slate-900">{currentFw.name}</div>
-            <div className="text-xs text-slate-500 font-medium">Best for: {currentFw.bestFor}</div>
-
-            <div className="space-y-2 pt-2 border-t border-slate-200">
-              {currentFw.structure.map((item, idx) => (
-                <div key={idx} className="text-xs flex items-start gap-2">
-                  <span className="font-bold text-indigo-700 min-w-[70px] shrink-0">{item.label}:</span>
-                  <span className="text-slate-600">{item.desc}</span>
-                </div>
-              ))}
-            </div>
+          
+          <div className="flex items-center gap-2">
+            {frameworks.map((fw) => (
+              <button
+                key={fw.id}
+                onClick={() => setSelectedFramework(fw.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedFramework === fw.id
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                {fw.id}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* AI Cliché Banned Words Monitor */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-600" />
-            <h3 className="font-bold text-slate-900 text-base">Strict Anti-AI Ban List</h3>
+        {/* Selected Framework Deep Dive */}
+        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-900 text-sm">{currentFw.name}</span>
+            <span className="text-xs text-slate-500 font-medium">Best for: {currentFw.bestFor}</span>
           </div>
-          <p className="text-xs text-slate-500">
-            Harvey rejects any email draft containing these robotic phrases. Humans immediately recognize and delete AI spam.
-          </p>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {[
-              'Hope this finds you well',
-              'I wanted to reach out',
-              'Circling back on this',
-              'Game-changer for your team',
-              'In today’s fast-paced world',
-              'Delve into your workflow',
-              'Revolutionize testing',
-              'Synergy across teams'
-            ].map((phrase, idx) => (
-              <div key={idx} className="flex items-center gap-2 p-2 rounded-xl bg-rose-50/70 border border-rose-200/60 text-rose-900 font-medium text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                <span>"{phrase}"</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            {currentFw.structure.map((part, i) => (
+              <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 space-y-1.5 shadow-2xs">
+                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
+                  Stage {i + 1}: {part.label}
+                </span>
+                <p className="text-xs text-slate-700 leading-relaxed">{part.desc}</p>
               </div>
             ))}
           </div>
-
-          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Harvey writes like a busy founder typing a quick note between meetings.</span>
-          </div>
         </div>
+      </div>
 
+      {/* Harvey Anti-AI Rules & Tone Card */}
+      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 rounded-3xl p-6 md:p-8 text-white space-y-4 border border-indigo-500/20">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="w-5 h-5 text-amber-400" />
+          <h2 className="text-base font-bold text-white">Harvey Human Identity & Anti-AI Directive</h2>
+        </div>
+        <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
+          Harvey never discloses or hints at being an AI or bot. He operates strictly as a real human Senior Web Consultant at InfratechAI.
+          All messages are kept strictly under 60 words, conversational, and direct, ensuring maximum reply and conversion rates with US small business owners.
+        </p>
       </div>
 
     </div>

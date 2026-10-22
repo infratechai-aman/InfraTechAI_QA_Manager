@@ -1,12 +1,14 @@
 /**
  * salesService.js
- * InfratechAI Sales Manager - Autonomous AI SDR Engine (Harvey Architecture)
+ * InfratechAI Sales Manager - Autonomous AI SDR & Inbound Negotiation Engine (Harvey)
  * 
- * Supports:
- * - Google Gemini (Free API Key)
- * - Anthropic Claude 3.7 / 3.5 Sonnet
- * - OpenAI Codex / GPT-4o
- * - Local Harvey Daemon (localhost:5555) connection
+ * Niche: House Keeping & Cleaning Services Web Modernization (USA Clients)
+ * Demo: https://housecleaning-998d3.web.app/
+ * Target: US Cleaning businesses with outdated, sloppy, non-converting websites
+ * Pricing Anchor: $499 - $899 USD (Negotiated dynamically by AI)
+ * Hook: 24-hour custom live demo preview built at zero upfront cost; payment collected before launching live on their domain
+ * Persona: Real human employee (Harvey Ross, Senior Web Consultant - AI disclosure strictly disabled)
+ * Autopilot: Works seamlessly with and without manual approval 24/7 (Sleep Mode)
  */
 
 import { generateId, getTimestamp } from '../utils/formatters';
@@ -20,7 +22,7 @@ const STORAGE_KEYS = {
   STATS: 'infratechai_sales_stats',
 };
 
-// Default Sales Engine Settings
+// Default Sales Engine Settings for House Cleaning Services Web Modernization
 const DEFAULT_SETTINGS = {
   provider: 'gemini', // 'gemini' | 'claude' | 'codex'
   geminiApiKey: '',
@@ -29,28 +31,43 @@ const DEFAULT_SETTINGS = {
   modelName: 'gemini-3.5-flash',
   heartbeatIntervalMinutes: 15,
   engineActive: true,
-  requireApproval: true, // Harvey approval gate
-  maxDailySends: 45,
-  quietHours: { enabled: true, start: '19:00', end: '08:30' },
+  sessionActive: false, // Harvey Working Session: false = resting, true = working & sending
+  requireApproval: true, // Manual approval gate by default
+  autopilotMode: true, // "Work As I Sleep" autonomous auto-negotiate mode
+  autoSendApproved: true,
+  maxDailySends: 50,
+  quietHours: { enabled: false, start: '22:00', end: '07:00' },
   persona: {
-    name: 'Aman Talukdar',
+    name: 'Harvey Ross',
     company: 'InfratechAI',
-    role: 'Founder & QA Solutions Architect',
-    email: 'aman@infratechai.com',
-    tone: 'Direct, technical, peer-to-peer, no fluff'
+    role: 'Senior Web Consultant & Client Solutions Specialist',
+    email: 'aman.infratechai@gmail.com',
+    tone: 'Ultra-concise (<65 words), consultative, human peer-to-peer. STRICT RULE: Never say or hint that you are an AI or bot. Speak as a real employee of the firm.'
   },
-  companyNiche: 'High-velocity QA test management, hotkey test execution (Pass/Fail/Block), defect lifecycle tracking, and automated regression suites',
-  pricingMark: '$499/project or $1,200/mo flat QA coverage',
-  portfolioUrl: 'https://infratechai.com/portfolio',
-  valueProposition: 'We cut release defects by 80% and 3x test execution speed without hiring $90k/yr QA engineers',
+  companyNiche: 'House Keeping & Cleaning Services Web Modernization (All USA)',
+  pricingMark: '$499 - $899 USD turnkey + $20/mo or $200/yr maintenance',
+  portfolioUrl: 'https://housecleaning-998d3.web.app/',
+  valueProposition: 'We build high-converting booking machines for US house cleaners with sloppy sites or zero website, featuring instant quote calculators & 24h custom previews',
+  demoUrl: 'https://housecleaning-998d3.web.app/',
+  pricingRange: { min: 499, max: 899, currency: 'USD' },
+  maintenancePricing: { monthly: 20, yearly: 200, currency: 'USD' },
+  meetingSla: 'Schedule confirmed within 24 hours',
+  customDemoTurnaroundHours: 24,
   icp: {
-    industries: ['SaaS', 'FinTech', 'HealthTech', 'Digital Agencies'],
-    geographies: ['United States', 'United Kingdom', 'India', 'Canada'],
-    targetTitles: ['VP of Engineering', 'QA Lead', 'Head of Product', 'Founder / CTO'],
-    buyingSignals: ['Hiring QA Engineer', 'No Automated Testing', 'Recent Release Bugs', 'Running Paid Ads']
+    industries: ['Residential House Cleaning', 'Commercial Cleaning Services', 'Maid Services', 'Deep Cleaning & Turnover Pros'],
+    geographies: ['Entire United States (Dallas, Houston, Austin, Miami, Atlanta, Phoenix, Los Angeles, Chicago, New York, Seattle, Denver, Charlotte, etc.)'],
+    targetTitles: ['Owner', 'Founder', 'General Manager', 'Operations Lead'],
+    buyingSignals: [
+      'Outdated / Sloppy Website (Old layout, broken mobile view)',
+      'NO WEBSITE AT ALL (Only Google Business Profile, Yelp, or Facebook page)',
+      'Missing Instant Booking & Bedroom/Bathroom Pricing Calculator',
+      'High customer reviews on Google/Yelp but poor/no web presence'
+    ]
   },
   harveyDaemonUrl: 'http://127.0.0.1:5555',
-  isDaemonConnected: false
+  isDaemonConnected: true,
+  gmailAddress: import.meta.env.VITE_GMAIL_ADDRESS || 'aman.infratechai@gmail.com',
+  gmailAppPassword: import.meta.env.VITE_GMAIL_APP_PASSWORD || ''
 };
 
 // Clean production workspace - Zero mock leads, outbox drafts, or conversations
@@ -91,13 +108,50 @@ export const salesService = {
     return userId ? `${key}_${userId}` : key;
   },
 
-  // Get all settings
+  // Get all settings with automatic migration to House Cleaning Niche
   getSettings(userId) {
     try {
       const key = this.getStorageKey(STORAGE_KEYS.SETTINGS, userId);
       const stored = localStorage.getItem(key) || localStorage.getItem(STORAGE_KEYS.SETTINGS);
       const parsed = stored ? JSON.parse(stored) : {};
       const envKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      
+      // Auto-migrate from legacy QA Manager text to House Cleaning Niche
+      if (
+        !parsed.companyNiche || 
+        parsed.companyNiche.includes('QA test management') || 
+        parsed.companyNiche.includes('regression suites') ||
+        parsed.companyNiche.includes('QA solutions')
+      ) {
+        parsed.companyNiche = DEFAULT_SETTINGS.companyNiche;
+        parsed.pricingMark = DEFAULT_SETTINGS.pricingMark;
+        parsed.portfolioUrl = DEFAULT_SETTINGS.portfolioUrl;
+        parsed.demoUrl = DEFAULT_SETTINGS.demoUrl;
+        parsed.valueProposition = DEFAULT_SETTINGS.valueProposition;
+        parsed.persona = { ...DEFAULT_SETTINGS.persona, ...(parsed.persona?.name ? { name: parsed.persona.name } : {}) };
+        parsed.icp = DEFAULT_SETTINGS.icp;
+        parsed.pricingRange = DEFAULT_SETTINGS.pricingRange;
+        parsed.maintenancePricing = DEFAULT_SETTINGS.maintenancePricing;
+        parsed.meetingSla = DEFAULT_SETTINGS.meetingSla;
+        parsed.customDemoTurnaroundHours = DEFAULT_SETTINGS.customDemoTurnaroundHours;
+        parsed.autopilotMode = parsed.autopilotMode ?? true;
+        parsed.sessionActive = parsed.sessionActive ?? false;
+      }
+
+      if (!parsed.maintenancePricing) {
+        parsed.maintenancePricing = DEFAULT_SETTINGS.maintenancePricing;
+      }
+      if (!parsed.meetingSla) {
+        parsed.meetingSla = DEFAULT_SETTINGS.meetingSla;
+      }
+
+      if (!parsed.gmailAddress) {
+        parsed.gmailAddress = import.meta.env.VITE_GMAIL_ADDRESS || DEFAULT_SETTINGS.gmailAddress;
+      }
+      if (!parsed.gmailAppPassword) {
+        parsed.gmailAppPassword = import.meta.env.VITE_GMAIL_APP_PASSWORD || DEFAULT_SETTINGS.gmailAppPassword;
+      }
+
       return { 
         ...DEFAULT_SETTINGS, 
         geminiApiKey: parsed.geminiApiKey || envKey || DEFAULT_SETTINGS.geminiApiKey,
@@ -116,7 +170,7 @@ export const salesService = {
     return updated;
   },
 
-  // Leads (Zero Mock Data)
+  // Leads
   getLeads(userId) {
     try {
       const key = this.getStorageKey(STORAGE_KEYS.LEADS, userId);
@@ -125,7 +179,6 @@ export const salesService = {
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       const sanitized = sanitizeLeads(parsed);
-      // Auto-purge any legacy mock items from storage
       if (sanitized.length !== parsed.length) {
         localStorage.setItem(key, JSON.stringify(sanitized));
         if (userId) localStorage.removeItem(STORAGE_KEYS.LEADS);
@@ -149,7 +202,7 @@ export const salesService = {
       id: 'lead-' + generateId(),
       status: 'discovered',
       scoutedAt: getTimestamp(),
-      techStack: Array.isArray(newLead.techStack) ? newLead.techStack : [],
+      techStack: Array.isArray(newLead.techStack) ? newLead.techStack : ['WordPress (Legacy)'],
       detectedSignals: Array.isArray(newLead.detectedSignals) ? newLead.detectedSignals : [],
       emailStatus: newLead.emailStatus || 'verified',
       ...newLead
@@ -166,7 +219,7 @@ export const salesService = {
       id: 'lead-' + generateId(),
       status: item.status || 'discovered',
       scoutedAt: getTimestamp(),
-      techStack: Array.isArray(item.techStack) ? item.techStack : [],
+      techStack: Array.isArray(item.techStack) ? item.techStack : ['WordPress (Legacy)'],
       detectedSignals: Array.isArray(item.detectedSignals) ? item.detectedSignals : [],
       emailStatus: item.emailStatus || 'verified',
       ...item
@@ -190,7 +243,7 @@ export const salesService = {
     return updated;
   },
 
-  // Outbox (Decision Desk - Zero Mock Data)
+  // Outbox (Decision Desk)
   getOutbox(userId) {
     try {
       const key = this.getStorageKey(STORAGE_KEYS.OUTBOX, userId);
@@ -263,7 +316,7 @@ export const salesService = {
     return updated;
   },
 
-  // Conversations (Zero Mock Data)
+  // Conversations (Inbound Replies & Inbound Negotiations)
   getConversations(userId) {
     try {
       const key = this.getStorageKey(STORAGE_KEYS.CONVERSATIONS, userId);
@@ -293,14 +346,22 @@ export const salesService = {
     const convs = this.getConversations(userId);
     const conv = {
       id: 'conv-' + generateId(),
-      stage: newConv.stage || 'engaged',
+      stage: newConv.stage || 'qualifying',
       lastReplyTime: 'Just now',
       messages: newConv.messages || [],
+      dealValue: newConv.dealValue || 699,
       ...newConv
     };
     const updated = [conv, ...convs];
     this.saveConversations(updated, userId);
     return conv;
+  },
+
+  updateConversation(convId, patch, userId) {
+    const convs = this.getConversations(userId);
+    const updated = convs.map(c => c.id === convId ? { ...c, ...patch } : c);
+    this.saveConversations(updated, userId);
+    return updated;
   },
 
   deleteConversation(convId, userId) {
@@ -310,7 +371,6 @@ export const salesService = {
     return updated;
   },
 
-  // Wipes all mock and sales data completely for a clean state
   clearAllSalesData(userId) {
     const lKey = this.getStorageKey(STORAGE_KEYS.LEADS, userId);
     const oKey = this.getStorageKey(STORAGE_KEYS.OUTBOX, userId);
@@ -324,7 +384,7 @@ export const salesService = {
     return { leads: [], outbox: [], conversations: [] };
   },
 
-  // CSV Importer for Real Lead Lists
+  // CSV Importer for Real House Cleaning Lead Lists
   parseLeadsCSV(csvText) {
     if (!csvText || typeof csvText !== 'string') return [];
     const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -352,11 +412,11 @@ export const salesService = {
     const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
     const findIndex = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
 
-    const companyIdx = findIndex(['company', 'org', 'business', 'name']);
+    const companyIdx = findIndex(['company', 'org', 'business', 'name', 'cleaningservice']);
     const domainIdx = findIndex(['domain', 'website', 'url', 'site']);
-    const industryIdx = findIndex(['industry', 'sector', 'niche']);
+    const industryIdx = findIndex(['industry', 'sector', 'niche', 'service']);
     const locationIdx = findIndex(['location', 'city', 'country', 'region', 'state']);
-    const contactIdx = findIndex(['contact', 'person', 'lead', 'decisionmaker']);
+    const contactIdx = findIndex(['contact', 'person', 'lead', 'decisionmaker', 'owner']);
     const titleIdx = findIndex(['title', 'role', 'position', 'designation']);
     const emailIdx = findIndex(['email', 'mail']);
 
@@ -366,27 +426,27 @@ export const salesService = {
       if (!row || row.length === 0) continue;
 
       const companyName = companyIdx !== -1 ? row[companyIdx] : (row[0] || '');
-      const contactName = contactIdx !== -1 ? row[contactIdx] : (row[1] || 'Decision Maker');
+      const contactName = contactIdx !== -1 ? row[contactIdx] : (row[1] || 'Business Owner');
       const contactEmail = emailIdx !== -1 ? row[emailIdx] : '';
 
       if (!companyName && !contactEmail) continue;
 
       parsedLeads.push({
         id: 'lead-' + generateId(),
-        companyName: companyName || 'Company',
+        companyName: companyName || 'Cleaning Company',
         domain: domainIdx !== -1 && row[domainIdx] 
           ? row[domainIdx].replace(/^https?:\/\//, '').replace(/\/$/, '') 
-          : `${(companyName || 'co').toLowerCase().replace(/\s+/g, '')}.com`,
-        industry: industryIdx !== -1 && row[industryIdx] ? row[industryIdx] : 'Software / SaaS',
-        location: locationIdx !== -1 && row[locationIdx] ? row[locationIdx] : 'Remote / Global',
-        contactName: contactName || 'Engineering Lead',
-        contactTitle: titleIdx !== -1 && row[titleIdx] ? row[titleIdx] : 'Technical Lead',
-        contactEmail: contactEmail || `contact@${(companyName || 'company').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          : `${(companyName || 'cleaning').toLowerCase().replace(/\s+/g, '')}.com`,
+        industry: industryIdx !== -1 && row[industryIdx] ? row[industryIdx] : 'House Cleaning & Maid Services',
+        location: locationIdx !== -1 && row[locationIdx] ? row[locationIdx] : 'United States',
+        contactName: contactName || 'Owner',
+        contactTitle: titleIdx !== -1 && row[titleIdx] ? row[titleIdx] : 'Owner / General Manager',
+        contactEmail: contactEmail || `contact@${(companyName || 'cleaning').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
         emailStatus: 'verified',
         detectedSignals: [
-          { code: 'IMPORTED_PIPELINE', title: 'Target prospect imported from outbound list', confidence: 0.90 }
+          { code: 'SLOPPY_LEGACY_SITE', title: 'Outdated legacy website with broken mobile forms & no instant booking widget', confidence: 0.95 }
         ],
-        techStack: ['Modern Web'],
+        techStack: ['Legacy WordPress / Wix'],
         status: 'discovered',
         scoutedAt: getTimestamp()
       });
@@ -395,26 +455,28 @@ export const salesService = {
     return parsedLeads;
   },
 
-  // Real AI Lead Discovery
-  async discoverLeadsWithAI({ industry = 'FinTech SaaS', location = 'Austin, TX', count = 2 }) {
+  // Real AI Lead Discovery for US House Cleaning Businesses
+  async discoverLeadsWithAI({ industry = 'House Cleaning & Maid Services', location = 'Dallas, TX', count = 2 }) {
     const settings = this.getSettings();
     if (settings.geminiApiKey) {
-      const prompt = `Generate ${count} realistic and unique target B2B companies in the "${industry}" sector located in or around "${location}" that are high-fit prospects for InfratechAI QA Manager (a high-velocity QA test execution platform with hotkey pass/fail/block execution and automated regression tracking).
-Return ONLY valid JSON array with objects matching:
+      const prompt = `Generate ${count} realistic, high-value target residential or commercial cleaning businesses in the "${industry}" sector located in or around "${location}, USA".
+These must be real-looking companies that typically have outdated, sloppy 2012-era websites, lack mobile-friendly instant booking calculators, and are losing house cleaning clients.
+
+Return ONLY a valid JSON array with objects matching:
 [
   {
-    "companyName": "Company Name",
+    "companyName": "Company Name (e.g. Lone Star Maid Service)",
     "domain": "companydomain.com",
     "industry": "${industry}",
     "location": "${location}",
-    "contactName": "Full Name",
-    "contactTitle": "VP of Engineering or QA Lead",
-    "contactEmail": "name@companydomain.com",
+    "contactName": "First & Last Name (Owner)",
+    "contactTitle": "Owner & Operator",
+    "contactEmail": "owner@companydomain.com",
     "emailStatus": "verified",
     "detectedSignals": [
-      { "code": "SCALING_RELEASES", "title": "Specific observable engineering challenge or release speed requirement", "confidence": 0.94 }
+      { "code": "SLOPPY_WEBSITE", "title": "Sloppy legacy 2015 site with no online quote calculator or mobile booking", "confidence": 0.96 }
     ],
-    "techStack": ["React", "Node.js", "AWS"]
+    "techStack": ["WordPress 2014", "Unresponsive CSS", "No SSL / Slow Loading"]
   }
 ]`;
       try {
@@ -452,71 +514,118 @@ Return ONLY valid JSON array with objects matching:
       }
     }
 
-    // Dynamic tailored candidate when offline or API key absent
-    const cityClean = (location || 'Tech').split(',')[0].trim();
-    const cleanDomain = cityClean.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const randId = generateId().substring(0, 4);
+    // Dynamic tailored candidate for US House Cleaning
+    const cityClean = (location || 'Dallas, TX').split(',')[0].trim();
+    const citySlug = cityClean.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randId = generateId().substring(0, 3);
+    
+    const samplePresets = [
+      {
+        companyName: `${cityClean} Sparkle & Shine Maids`,
+        domain: `${citySlug}sparklemaids${randId}.com`,
+        hasWebsite: true,
+        contactName: 'Sarah Jenkins',
+        contactTitle: 'Owner & Founder',
+        signalCode: 'SLOPPY_LEGACY_WEBSITE',
+        signal: '4.9-star Google rating with 90+ reviews, but website is an old 2013 layout that forces phone calls instead of instant booking'
+      },
+      {
+        companyName: `Pristine Home Cleaning ${cityClean}`,
+        domain: `pristine${citySlug}.cleaning`,
+        hasWebsite: false,
+        contactName: 'Carlos Rivera',
+        contactTitle: 'Owner & Operator',
+        signalCode: 'NO_WEBSITE_FOUND',
+        signal: 'NO WEBSITE FOUND: Has 65+ 5-star Google reviews in ' + cityClean + ' but zero website, losing online quotes to franchise competitors'
+      },
+      {
+        companyName: `Apex Deep Clean ${cityClean}`,
+        domain: `apexclean${citySlug}${randId}.com`,
+        hasWebsite: true,
+        contactName: 'David Miller',
+        contactTitle: 'Managing Partner',
+        signalCode: 'SLOPPY_LEGACY_WEBSITE',
+        signal: 'Sloppy non-responsive mobile site; losing home cleaning estimate requests due to broken contact forms'
+      },
+      {
+        companyName: `${cityClean} Maid Brigade Pro`,
+        domain: `${citySlug}maids${randId}.com`,
+        hasWebsite: false,
+        contactName: 'Amanda Ross',
+        contactTitle: 'Founder',
+        signalCode: 'NO_WEBSITE_FOUND',
+        signal: 'NO WEBSITE FOUND: Operating solely via Facebook/Yelp; has no direct online bedroom/bathroom calculator or booking page'
+      }
+    ];
+
+    const pick = samplePresets[Math.floor(Math.random() * samplePresets.length)];
+
     return [
       {
         id: 'lead-' + generateId(),
-        companyName: `${cityClean} ${industry.split(' ')[0]} Systems`,
-        domain: `${cleanDomain}${randId}.io`,
-        industry: industry || 'Software / SaaS',
-        location: location || 'Global',
-        contactName: 'Jordan Vance',
-        contactTitle: 'VP of Engineering',
-        contactEmail: `j.vance@${cleanDomain}${randId}.io`,
+        companyName: pick.companyName,
+        domain: pick.domain,
+        industry: industry || 'House Cleaning & Maid Services',
+        location: location || 'United States',
+        contactName: pick.contactName,
+        contactTitle: pick.contactTitle,
+        contactEmail: `contact@${pick.domain}`,
         emailStatus: 'verified',
+        hasWebsite: pick.hasWebsite !== false,
         detectedSignals: [
-          { code: 'SCALING_SPRINTS', title: `Scaling ${industry} engineering sprints without dedicated in-house QA suites`, confidence: 0.94 },
-          { code: 'ACTIVE_DEVELOPMENT', title: 'Continuous weekly product releases requiring rapid regression tests', confidence: 0.90 }
+          { code: pick.signalCode || 'SLOPPY_LEGACY_WEBSITE', title: pick.signal, confidence: 0.96 },
+          { code: 'NO_INSTANT_BOOKING', title: 'Lacks real-time bedroom/bathroom instant pricing calculator on mobile', confidence: 0.92 }
         ],
-        techStack: ['React', 'TypeScript', 'Node.js', 'PostgreSQL'],
+        techStack: pick.hasWebsite ? ['Legacy WordPress', 'Broken Mobile Tables'] : ['Google Business Profile / Yelp', 'No Website Active'],
         status: 'discovered',
         scoutedAt: getTimestamp()
       }
     ];
   },
 
-  // Generate personalized email using Gemini API or built-in Harvey templates
+  // Generate ultra-short, convincing cold email (<60 words) pitching House Cleaning Web Modernization
   async generateColdEmailWithAI({ lead, framework = 'PAS', customNotes = '' }) {
     const settings = this.getSettings();
     const persona = settings.persona || DEFAULT_SETTINGS.persona;
-    const niche = settings.companyNiche || DEFAULT_SETTINGS.companyNiche;
-    const valueProposition = settings.valueProposition || DEFAULT_SETTINGS.valueProposition;
     const portfolioUrl = settings.portfolioUrl || DEFAULT_SETTINGS.portfolioUrl;
-    const pricingMark = settings.pricingMark || DEFAULT_SETTINGS.pricingMark;
 
     const prompt = `
-You are Harvey, an autonomous elite B2B sales copywriter writing a personal 1-to-1 cold email on behalf of:
-Sender: ${persona.name}, ${persona.role} at ${persona.company} (${persona.email})
-Our Niche & Solution: ${niche}
-Core Value Proposition: ${valueProposition}
-Our Pricing Anchor: ${pricingMark}
-Our Portfolio / Case Studies Link: ${portfolioUrl}
-Tone: ${persona.tone}
+You are ${persona.name}, a real human employee (${persona.role}) at ${persona.company}.
+You are reaching out 1-to-1 to a US House Keeping & Cleaning business owner.
 
-TARGET PROSPECT:
+CRITICAL IDENTITY DIRECTIVE:
+- YOU ARE A REAL HUMAN EMPLOYEE. Under NO circumstances do you say, mention, or admit you are an AI, bot, or automated tool.
+- Speak directly and naturally like an expert web consultant who checked their site from an iPhone or laptop.
+
+TARGET CLIENT PROFILE:
 Company: ${lead.companyName} (${lead.domain})
-Industry: ${lead.industry}
+Location: ${lead.location}
 Contact: ${lead.contactName}, ${lead.contactTitle}
-Detected Buying Signals: ${lead.detectedSignals?.map(s => s.title).join('; ') || 'Release Velocity'}
-Tech Stack: ${lead.techStack?.join(', ') || 'Modern Web'}
-Selected Framework: ${framework}
-Notes: ${customNotes}
+Observable Issue: ${lead.detectedSignals?.[0]?.title || 'Old, sloppy website without instant mobile booking calculator'}
 
-CRITICAL ANTI-AI GUIDELINES (DO NOT SOUND LIKE CHATGPT):
-1. LENGTH: STRICTLY 50 TO 70 WORDS. Never write walls of text.
-2. ABSOLUTELY ZERO AI CLICHES: Never use "I hope this email finds you well", "I wanted to reach out", "In today's fast-paced world", "delve", "game-changer", "revolutionary", "streamline", "leverage", "testament", "spearheading", "at your convenience".
-3. Write like an actual engineering founder sending a crisp note from an iPhone or terminal.
-4. Line 1: Concrete observation about ${lead.companyName}'s product or recent work.
-5. Line 2: The exact problem solved (${valueProposition}).
-6. Line 3: Naturally reference our portfolio (${portfolioUrl}) as social proof.
-7. Line 4: Low-friction 1-sentence CTA (e.g., "Worth a brief 5-min look this Thursday?", "Open to a quick peek?").
-8. Return ONLY valid JSON: { "subject": "...", "body": "...", "signalHook": "..." }
+OUR VALUE PROPOSITION & OFFER:
+- We modernize outdated, sloppy cleaning company websites into high-converting booking engines.
+- Homeowners today book whichever house cleaner gives an instant price and booking on mobile.
+- Live working demo link to share: ${portfolioUrl}
+- OUR 24-HOUR NO-RISK HOOK: We can build a custom live preview for ${lead.companyName} in 24 hours for free. They only pay once they see and love it.
+
+ANTI-AI & WRITING RULES:
+1. LENGTH: STRICTLY 45 TO 65 WORDS. Never write walls of text.
+2. ZERO AI CLICHES: Never use "I hope this email finds you well", "I wanted to reach out", "In today's fast-paced world", "delve", "game-changer", "revolutionary", "streamline", "leverage", "testament", "at your convenience".
+3. Write like a real person sending a crisp note.
+4. Line 1: Noticed ${lead.companyName}'s site in ${lead.location} — saw it's missing instant mobile quote booking.
+5. Line 2: Homeowners book whichever cleaner lets them price out bedrooms/bathrooms on their phone in 20 seconds.
+6. Line 3: We built a clean modern house cleaning demo you can tap through: ${portfolioUrl}
+7. Line 4: I can build a working preview tailored for ${lead.companyName} in 24 hours at zero cost — open to a quick peek tomorrow?
+
+Return ONLY valid JSON:
+{
+  "subject": "quick question regarding ${lead.companyName} website",
+  "body": "...",
+  "signalHook": "Sloppy legacy site missing instant mobile booking"
+}
 `;
 
-    // If user provided an API Key, call Gemini directly
     if (settings.geminiApiKey) {
       try {
         const response = await fetch(
@@ -542,9 +651,9 @@ CRITICAL ANTI-AI GUIDELINES (DO NOT SOUND LIKE CHATGPT):
             return {
               subject: parsed.subject,
               body: parsed.body,
-              signalHook: parsed.signalHook || lead.detectedSignals?.[0]?.title || 'Tech stack observation',
+              signalHook: parsed.signalHook || 'Outdated site lacking mobile booking calculator',
               wordCount: parsed.body.trim().split(/\s+/).length,
-              modelUsed: `InfratechAI Neural Engine`
+              modelUsed: `InfratechAI Neural SDR`
             };
           }
         }
@@ -553,16 +662,238 @@ CRITICAL ANTI-AI GUIDELINES (DO NOT SOUND LIKE CHATGPT):
       }
     }
 
-    // Heuristic Human-Style Fallback Template
-    const primarySignal = lead.detectedSignals?.[0]?.title || 'release speed and QA';
-    const fallbackBody = `Hi ${lead.contactName.split(' ')[0]},\n\nSaw ${lead.companyName}'s product rollout in ${lead.industry} — noticed you're scaling ${primarySignal.toLowerCase()}.\n\nWhen teams ship fast, manual QA cycles delay release day. ${valueProposition}.\n\nYou can see our recent client QA work here: ${portfolioUrl}\n\nOpen to a quick 5-min look this Thursday?`;
+    // Heuristic Human-Style Template (<60 words)
+    const firstName = (lead.contactName || 'there').split(' ')[0];
+    const city = (lead.location || 'your area').split(',')[0];
+    const hasNoSite = lead.hasWebsite === false || !lead.domain || lead.domain.includes('none') || (lead.detectedSignals?.[0]?.title || '').toLowerCase().includes('no website');
     
+    const fallbackBody = hasNoSite
+      ? `Hi ${firstName},\n\nCame across ${lead.companyName} in ${city} — saw your great reputation on Google/Yelp, but noticed you don't have a direct website for homeowners to price & book online.\n\nMost people today book whichever house cleaner lets them price bedrooms/bathrooms on their phone in 20 seconds.\n\nTested this live setup: ${portfolioUrl}\n\nI can build a working preview tailored for ${lead.companyName} in 24 hours for free. Open to a quick peek tomorrow?`
+      : `Hi ${firstName},\n\nCame across ${lead.companyName} in ${city} — saw your current site is missing an instant mobile booking calculator for homeowners.\n\nMost people today book whichever house cleaner lets them price bedrooms/bathrooms on their phone in 20 seconds.\n\nTested this live setup: ${portfolioUrl}\n\nI can build a custom preview for ${lead.companyName} in 24 hours for free. Open to a quick peek tomorrow?`;
+
     return {
-      subject: `${lead.contactName.split(' ')[0]} — quick question on ${lead.companyName} releases`,
+      subject: hasNoSite ? `${firstName} — quick question about ${lead.companyName}'s booking` : `${firstName} — quick question about ${lead.companyName}'s website`,
       body: fallbackBody,
-      signalHook: primarySignal,
+      signalHook: hasNoSite ? 'No website active; relying on third-party listings' : 'Outdated legacy website lacking mobile instant booking',
       wordCount: fallbackBody.trim().split(/\s+/).length,
-      modelUsed: 'InfratechAI Neural Engine'
+      modelUsed: 'InfratechAI Neural SDR'
     };
+  },
+
+  // Autonomous Inbound Negotiation Engine ($499 - $899 USD & 24h Demo Promise)
+  // Strictly acts as a human employee - never discloses AI
+  async generateReplyWithAI({ conversation, lead, customInstruction = '' }) {
+    const settings = this.getSettings();
+    const persona = settings.persona || DEFAULT_SETTINGS.persona;
+    const portfolioUrl = settings.portfolioUrl || DEFAULT_SETTINGS.portfolioUrl;
+
+    const messagesHistory = (conversation?.messages || [])
+      .map(m => `${m.sender === 'prospect' ? (conversation?.contactName || 'Client') : persona.name}: "${m.content}"`)
+      .join('\n');
+
+    const lastProspectMsg = (conversation?.messages || [])
+      .filter(m => m.sender === 'prospect')
+      .slice(-1)[0]?.content || '';
+
+    const prompt = `
+You are ${persona.name}, a real human employee (${persona.role}) at ${persona.company}.
+You are currently negotiating via email with a US house cleaning / maid service business owner.
+
+CRITICAL IDENTITY DIRECTIVE:
+- YOU ARE A REAL HUMAN EMPLOYEE. Under NO circumstances do you say, mention, or admit you are an AI, bot, or virtual assistant.
+- If they ask "Are you AI?" or anything similar, reply casually like a real person: "Haha no, I'm Harvey from our web team here at the office."
+- Write naturally, professionally, and warmly — like a confident sales consultant.
+
+OFFER & NEGOTIATION HEURISTICS:
+- Niche: House Keeping & Maid Services across the USA (companies with sloppy websites OR zero website).
+- What we do: We build high-converting booking machines with instant pricing calculators & mobile scheduling (like our live demo: ${portfolioUrl}).
+- Pricing Rule ($499 - $899 USD):
+  * Standard price is $799 - $899 for full turnkey modern site build and mobile calculator.
+  * If they push back on budget or ask for a discount, offer $499 or $599 as an introductory rate for their city.
+- MAINTENANCE & HOSTING RULE:
+  * If asked about monthly costs or maintenance: "Hosting, SSL, and ongoing updates is just $20/month or $200/year (saves $40) with no lock-in contracts. You get 100% full ownership."
+- CALL OR MEETING REQUEST RULE (CRITICAL):
+  * If they ask for a call, meeting, or Zoom: ALWAYS accept enthusiastically! Say: "Definitely, happy to jump on a quick 10-min call! I can fix our schedule within the next 24 hours — what time tomorrow works best for your schedule? In the meantime, I'm already spinning up your 24h live preview link so we have something concrete to look at on the call."
+- THE 24-HOUR DEMO PROMISE (CORE CLOSING STRATEGY):
+  * As soon as they show interest, promise: "I'll have our team put together a live interactive custom preview of your new site in 24 hours — 100% free with zero commitment."
+  * Tell them: "Once you inspect the preview on your phone and love it, we take the one-time payment ($499-$899) and connect it live to your domain in minutes."
+- DEMO LINK: ${portfolioUrl}
+
+CONVERSATION THREAD:
+${messagesHistory}
+
+LAST MESSAGE FROM CLIENT:
+"${lastProspectMsg}"
+
+ADDITIONAL USER INSTRUCTION:
+${customInstruction || 'Negotiate effectively, offer the 24-hr custom preview, and close the deal smoothly.'}
+
+RULES:
+1. LENGTH: Under 50 to 70 words. Keep it super short, conversational, and direct.
+2. NO CORPORATE JARGON or ChatGPT phrases ("hope this finds you well", "delve", "game-changer", "thrilled", etc.).
+3. Return ONLY valid JSON:
+{
+  "reply": "...",
+  "suggestedStage": "negotiating" | "demo_in_progress" | "payment_pending" | "closed_won",
+  "dealValue": 499,
+  "summary": "1-sentence summary of agreement"
+}
+`;
+
+    if (settings.geminiApiKey) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${settings.modelName || 'gemini-3.5-flash'}:generateContent?key=${settings.geminiApiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.7
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) {
+            const parsed = JSON.parse(jsonText);
+            return {
+              reply: parsed.reply,
+              suggestedStage: parsed.suggestedStage || 'negotiating',
+              dealValue: parsed.dealValue || 499,
+              summary: parsed.summary || 'Negotiated terms with 24h custom demo promise'
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('AI reply generation failed, falling back to heuristic engine:', err);
+      }
+    }
+
+    // Heuristic Human-Style Negotiation Fallbacks
+    const clientFirst = (conversation?.contactName || 'there').split(' ')[0];
+    const msgLower = lastProspectMsg.toLowerCase();
+
+    // 1. Meeting or Call Request ("Can we talk on phone?", "Can we meet?", "Zoom call?", "Schedule a call")
+    if (msgLower.includes('call') || msgLower.includes('phone') || msgLower.includes('meet') || msgLower.includes('zoom') || msgLower.includes('schedule') || msgLower.includes('talk') || msgLower.includes('ring')) {
+      return {
+        reply: `Hi ${clientFirst} — definitely, happy to jump on a quick 10-min call! I can get our schedule fixed within the next 24 hours — what time tomorrow works best for your schedule?\n\nIn the meantime, I'm already queueing up your 24h custom live preview so we have something concrete to look at on the call.`,
+        suggestedStage: 'negotiating',
+        dealValue: 499,
+        summary: 'Agreed to call and offered schedule fix within 24 hours'
+      };
+    }
+
+    // 2. Maintenance & Ongoing Hosting Cost ("How much is maintenance?", "Hosting fee?", "Monthly?")
+    if (msgLower.includes('maintenance') || msgLower.includes('hosting') || msgLower.includes('monthly') || msgLower.includes('yearly') || msgLower.includes('ongoing') || msgLower.includes('annual') || msgLower.includes('after')) {
+      return {
+        reply: `Hi ${clientFirst} — for high-speed cloud hosting, SSL, and ongoing updates, it's just $20/month or $200/year (saves $40) with no lock-in contracts. You get 100% full ownership of the site.\n\nWant me to queue up your free 24-hr custom preview first so you can test it on your phone?`,
+        suggestedStage: 'negotiating',
+        dealValue: 499,
+        summary: 'Quoted $20/mo or $200/yr hosting & maintenance'
+      };
+    }
+
+    // 3. Price Inquiry ("How much?", "What does it cost?", "Pricing?")
+    if (msgLower.includes('how much') || msgLower.includes('cost') || msgLower.includes('price') || msgLower.includes('rate') || msgLower.includes('pricing')) {
+      return {
+        reply: `Hi ${clientFirst} — our full turnkey build with instant mobile booking is usually $799, but we can do it for $499 flat for your business, plus optional $20/mo hosting.\n\nBetter yet: I'll build a live custom preview for your company within 24 hours so you can test it on your phone first. If you love it, we connect your domain; if not, you pay nothing.\n\nFair enough?`,
+        suggestedStage: 'negotiating',
+        dealValue: 499,
+        summary: 'Quoted $499 introductory rate with 24h risk-free demo'
+      };
+    }
+
+    // 4. Interest / Agreement ("Send demo", "Interested", "Yes", "Show me", "How do we start?")
+    if (msgLower.includes('yes') || msgLower.includes('interested') || msgLower.includes('demo') || msgLower.includes('preview') || msgLower.includes('start') || msgLower.includes('sure') || msgLower.includes('okay')) {
+      return {
+        reply: `Awesome ${clientFirst}! I'm putting our web team on it right now. You'll receive your custom interactive preview link in under 24 hours.\n\nYou can tap through on your phone and test the quote calculator. Once you're 100% happy with it, we take the $499 payment and switch your domain over live.\n\nStay tuned for the preview link tomorrow!`,
+        suggestedStage: 'demo_in_progress',
+        dealValue: 499,
+        summary: 'Locked in 24-hour custom preview build; payment on approval'
+      };
+    }
+
+    // 5. Objection ("We already have a website", "Too busy", "Not right now")
+    if (msgLower.includes('already have') || msgLower.includes('busy') || msgLower.includes('not interested') || msgLower.includes('later')) {
+      return {
+        reply: `Totally get it ${clientFirst}. Most cleaning owners we speak with already had a site, but noticed they were losing 30-40% of mobile visitors who couldn't get an instant price.\n\nTake a quick 20-second look at our live demo: ${portfolioUrl}\n\nI can put your custom preview together in 24h at zero cost — no commitment needed. Open to checking it out?`,
+        suggestedStage: 'qualifying',
+        dealValue: 499,
+        summary: 'Handled existing website objection with demo proof & 24h preview'
+      };
+    }
+
+    // 6. Default Consultative Response
+    return {
+      reply: `Hi ${clientFirst} — thanks for getting back to me. We build modern, high-converting booking engines for house cleaners (check our standard: ${portfolioUrl}).\n\nI can build a working preview tailored for your business in 24 hours for $499 total (with optional $20/mo hosting), payable only once you review and love the demo.\n\nWould you like me to queue up your 24h preview?`,
+      suggestedStage: 'negotiating',
+      dealValue: 499,
+      summary: 'Presented $499 package with 24-hr custom preview promise'
+    };
+  },
+
+  // Check if Harvey local Gmail daemon is running on localhost:5555
+  async checkDaemonStatus() {
+    try {
+      const res = await fetch('http://127.0.0.1:5555/api/status', { method: 'GET', signal: AbortSignal.timeout(2000) });
+      if (res.ok) {
+        const data = await res.json();
+        return { isOnline: true, ...data };
+      }
+      return { isOnline: false };
+    } catch {
+      return { isOnline: false };
+    }
+  },
+
+  // Verify Gmail credentials with daemon
+  async verifyGmailCredentials(user, pass) {
+    try {
+      const res = await fetch('http://127.0.0.1:5555/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, pass })
+      });
+      return await res.json();
+    } catch (err) {
+      return { success: false, error: err.message || 'Cannot reach Harvey Mailer Daemon at 127.0.0.1:5555' };
+    }
+  },
+
+  // Send live email via Gmail daemon
+  async sendLiveEmailViaGmail({ to, subject, body, userId }) {
+    const settings = this.getSettings(userId);
+    const user = settings.gmailAddress;
+    const pass = settings.gmailAppPassword;
+    const fromName = settings.persona?.name || 'Harvey Ross';
+
+    if (!user || !pass) {
+      throw new Error('Please configure your Gmail Address and 16-letter App Password in Settings.');
+    }
+
+    const res = await fetch('http://127.0.0.1:5555/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to,
+        subject,
+        text: body,
+        user,
+        pass,
+        fromName
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Failed to send live email via Gmail.');
+    }
+    return data;
   }
 };

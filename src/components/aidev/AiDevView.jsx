@@ -36,7 +36,7 @@ export const AiDevView = ({
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isThinking, setIsThinking] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
-  const [selectedModel, setSelectedModel] = useState('infratech-neural');
+  const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
   const [selectedEffort, setSelectedEffort] = useState('Balanced');
   const messagesEndRef = useRef(null);
 
@@ -165,7 +165,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
   };
 
   // Process and send query
-  const handleSend = useCallback((rawText, meta = {}) => {
+  const handleSend = useCallback(async (rawText, meta = {}) => {
     const query = (rawText || '').trim();
     if (!query && (!meta.attachments || meta.attachments.length === 0)) return;
 
@@ -174,7 +174,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
       sender: 'user',
       text: query,
       attachments: meta.attachments || [],
-      model: meta.model?.name || 'Infratech Neural 4.5',
+      model: meta.model?.name || 'Infratech Neural (Gemini)',
       effort: meta.effort || selectedEffort,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -182,9 +182,11 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
     setMessages(prev => [...prev, userMessage]);
     setIsThinking(true);
 
-    // Evaluate query using real-time service
-    setTimeout(() => {
-      const response = aiDevService.processQuery(query, liveContext);
+    try {
+      const response = await aiDevService.processQuery(query, liveContext, {
+        model: selectedModel,
+        effort: selectedEffort
+      });
       setIsThinking(false);
 
       const aiMessageId = `msg_ai_${Date.now()}`;
@@ -221,8 +223,25 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
           }
         });
       }
-    }, 450);
-  }, [liveContext, isVoiceEnabled, selectedEffort]);
+    } catch (err) {
+      console.error("AI Dev processing error:", err);
+      setIsThinking(false);
+      const fallback = aiDevService.processFallbackQuery(query, liveContext);
+      const aiMessageId = `msg_ai_${Date.now()}`;
+      const aiMessage = {
+        id: aiMessageId,
+        sender: 'ai',
+        markdown: fallback.markdown,
+        spokenText: fallback.spokenText,
+        actionSuggestion: fallback.actionSuggestion,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      if (meta.onResponseReady) {
+        meta.onResponseReady(fallback);
+      }
+    }
+  }, [liveContext, isVoiceEnabled, selectedEffort, selectedModel]);
 
   // ========================================================
   // REAL-TIME CONTINUOUS TWO-WAY VOICE CALL LOOP (GEMINI LIVE)
@@ -288,21 +307,26 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
               try { recognition.stop(); } catch {}
               
               const queryToSend = currentWords.trim();
+              accumulated = '';
+              liveCallStateRef.current = 'thinking';
               setLiveCallState('thinking');
               setLiveTranscript('');
 
               // Send to AI Dev and loop back audio
               handleSend(queryToSend, {
                 onResponseReady: (response) => {
+                  liveCallStateRef.current = 'ai_speaking';
                   setLiveCallState('ai_speaking');
                   setLastAiSpeech(response.spokenText);
 
                   aiDevService.speak(response.spokenText, {
                     onStart: () => {
+                      liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                     },
                     onEnd: () => {
                       if (isLiveCallActiveRef.current) {
+                        liveCallStateRef.current = 'listening';
                         setLiveCallState('listening');
                         // Automatically restart listening for Boss's next command!
                         setTimeout(() => {
@@ -312,6 +336,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
                     },
                     onError: () => {
                       if (isLiveCallActiveRef.current) {
+                        liveCallStateRef.current = 'listening';
                         setLiveCallState('listening');
                         startRecognitionLoop();
                       }
@@ -395,6 +420,7 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
   // Interrupt AI while speaking
   const handleInterruptAi = () => {
     aiDevService.stopSpeaking();
+    liveCallStateRef.current = 'listening';
     setLiveCallState('listening');
     startRecognitionLoop();
   };
@@ -516,8 +542,8 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
 
   // Models for PromptBar model picker
   const promptModels = [
-    { key: 'infratech-neural', name: 'Infratech Neural 4.5', tag: 'Flagship' },
-    { key: 'gemini-2-flash', name: 'Gemini 2.0 Flash', tag: 'Fast' },
+    { key: 'gemini-3.5-flash', name: 'Infratech Neural (Gemini 3.5 Flash)', tag: 'Flagship' },
+    { key: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', tag: 'Fast' },
     { key: 'claude-3-7', name: 'Claude 3.7 Sonnet', tag: 'Deep' }
   ];
 
@@ -1011,14 +1037,17 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
               <button
                 onClick={() => {
                   setLiveTranscript("Kiska contract kabtak hai?");
+                  liveCallStateRef.current = 'thinking';
                   setLiveCallState('thinking');
                   handleSend("Kiska contract kabtak hain aur kab expire hoga?", {
                     onResponseReady: (resp) => {
+                      liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                       setLastAiSpeech(resp.spokenText);
                       aiDevService.speak(resp.spokenText, {
                         onEnd: () => {
                           if (isLiveCallActiveRef.current) {
+                            liveCallStateRef.current = 'listening';
                             setLiveCallState('listening');
                             startRecognitionLoop();
                           }
@@ -1035,14 +1064,17 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
               <button
                 onClick={() => {
                   setLiveTranscript("Critical bugs dikhao");
+                  liveCallStateRef.current = 'thinking';
                   setLiveCallState('thinking');
                   handleSend("Kitne bugs open hain aur critical bugs ki list do", {
                     onResponseReady: (resp) => {
+                      liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                       setLastAiSpeech(resp.spokenText);
                       aiDevService.speak(resp.spokenText, {
                         onEnd: () => {
                           if (isLiveCallActiveRef.current) {
+                            liveCallStateRef.current = 'listening';
                             setLiveCallState('listening');
                             startRecognitionLoop();
                           }
@@ -1059,14 +1091,17 @@ I am your Autonomous Technical Lead & Unified Intelligence Copilot. I hold **liv
               <button
                 onClick={() => {
                   setLiveTranscript("Poora platform briefing do");
+                  liveCallStateRef.current = 'thinking';
                   setLiveCallState('thinking');
                   handleSend("Pura platform ka comprehensive real-time briefing do", {
                     onResponseReady: (resp) => {
+                      liveCallStateRef.current = 'ai_speaking';
                       setLiveCallState('ai_speaking');
                       setLastAiSpeech(resp.spokenText);
                       aiDevService.speak(resp.spokenText, {
                         onEnd: () => {
                           if (isLiveCallActiveRef.current) {
+                            liveCallStateRef.current = 'listening';
                             setLiveCallState('listening');
                             startRecognitionLoop();
                           }

@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS = {
   geminiApiKey: '',
   claudeCliInstalled: true,
   codexEnabled: false,
-  modelName: 'gemini-2.0-flash',
+  modelName: 'gemini-3.5-flash',
   heartbeatIntervalMinutes: 15,
   engineActive: true,
   requireApproval: true, // Harvey approval gate
@@ -419,7 +419,7 @@ Return ONLY valid JSON array with objects matching:
 ]`;
       try {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${settings.modelName || 'gemini-2.0-flash'}:generateContent?key=${settings.geminiApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${settings.modelName || 'gemini-3.5-flash'}:generateContent?key=${settings.geminiApiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -520,7 +520,7 @@ CRITICAL ANTI-AI GUIDELINES (DO NOT SOUND LIKE CHATGPT):
     if (settings.geminiApiKey) {
       try {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${settings.modelName || 'gemini-2.0-flash'}:generateContent?key=${settings.geminiApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${settings.modelName || 'gemini-3.5-flash'}:generateContent?key=${settings.geminiApiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

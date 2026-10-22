@@ -307,7 +307,7 @@ export const SalesManagerView = ({
       </div>
 
       {/* Main Tab Render */}
-      <div className="flex-1 pb-16 md:pb-8">
+      <div className="flex-1 pb-32 md:pb-8">
         {salesTab === 'cockpit' && (
           <SalesCockpit
             leads={leads}

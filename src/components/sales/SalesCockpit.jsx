@@ -44,10 +44,10 @@ export const SalesCockpit = ({
   const readyToBookCount = conversations.filter(c => ['ready_to_book', 'closed_won', 'negotiating'].includes(c.stage)).length;
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-fadeIn">
+    <div className="p-3.5 sm:p-6 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto space-y-5 sm:space-y-6 md:space-y-8 animate-fadeIn">
       
       {/* Top Banner / Harvey SDR Status Bar */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-indigo-500/20">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-indigo-500/20">
         <div className="absolute -right-16 -top-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-32 -bottom-16 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -142,27 +142,27 @@ export const SalesCockpit = ({
       )}
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         
         {/* Metric 1: Pending Approvals (Decisions Desk) */}
         <div 
           onClick={() => onNavigateTab('outbox')}
-          className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group"
+          className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer group"
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Outbox Waiting</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Mail className="w-4 h-4" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Outbox Waiting</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{pendingApprovals.length}</span>
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+          <div className="flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-black text-slate-900">{pendingApprovals.length}</span>
+            <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full border truncate ${
               pendingApprovals.length > 0 
                 ? 'text-amber-600 bg-amber-50 border-amber-200' 
                 : 'text-slate-500 bg-slate-50 border-slate-200'
             }`}>
-              {pendingApprovals.length > 0 ? "Needs Your 'A'" : 'Clean Desk'}
+              {pendingApprovals.length > 0 ? "Pending 'A'" : 'Clean'}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
@@ -174,17 +174,17 @@ export const SalesCockpit = ({
         {/* Metric 2: Discovered Leads */}
         <div 
           onClick={() => onNavigateTab('leads')}
-          className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
+          className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Profiled Companies</span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-4 h-4" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Prospects</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{leads.length}</span>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+          <div className="flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-black text-slate-900">{leads.length}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 sm:px-2 py-0.5 rounded-full border border-indigo-200 truncate">
               {verifiedLeads.length} Verified
             </span>
           </div>
@@ -197,18 +197,18 @@ export const SalesCockpit = ({
         {/* Metric 3: Active Conversations */}
         <div 
           onClick={() => onNavigateTab('conversations')}
-          className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group"
+          className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group"
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Replies & Objections</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Flame className="w-4 h-4" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Replies</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">{activeConversations}</span>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              {readyToBookCount > 0 ? `${readyToBookCount} Ready to Book` : `${activeConversations} Active Threads`}
+          <div className="flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-black text-slate-900">{activeConversations}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-200 truncate">
+              {readyToBookCount > 0 ? `${readyToBookCount} Booked` : `${activeConversations} Threads`}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">
@@ -220,18 +220,18 @@ export const SalesCockpit = ({
         {/* Metric 4: API Cost / Token Burn */}
         <div 
           onClick={onOpenSettings}
-          className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
+          className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
         >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Model Token Cost</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Zap className="w-4 h-4" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider truncate">Model Cost</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">$0.00</span>
-            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-              Zero Per-Token API
+          <div className="flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-black text-slate-900">$0.00</span>
+            <span className="text-[10px] sm:text-xs font-bold text-purple-700 bg-purple-50 px-1.5 sm:px-2 py-0.5 rounded-full border border-purple-200 truncate">
+              Zero Token Cost
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2 flex items-center justify-between">

@@ -13,18 +13,50 @@ export const BusinessCommandCenterView = ({
   qaBugs = [],
   qaTests: _qaTests = [],
   onNavigateToQA,
-  onContractsChange
+  onContractsChange,
+  activeTab: externalActiveTab,
+  onTabChange: externalOnTabChange,
+  triggerAddModal = false
 }) => {
   const userId = currentUser?.uid || 'default';
   
   // State
   const [contracts, setContracts] = useState(() => businessService.getContracts(userId));
-  const [activeTab, setActiveTab] = useState('portfolio'); // 'portfolio' | 'renewals' | 'scope' | 'analytics'
+  const [internalActiveTab, setInternalActiveTab] = useState('portfolio');
+  const activeTab = externalActiveTab || internalActiveTab;
+  const setActiveTab = externalOnTabChange || setInternalActiveTab;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'expiring_soon' | 'active'
   const [selectedContract, setSelectedContract] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
+
+  // Sync external add trigger
+  React.useEffect(() => {
+    if (triggerAddModal) {
+      setEditingContract(null);
+      setFormData({
+        clientName: '',
+        accountName: '',
+        contactPerson: '',
+        contactEmail: '',
+        contractValue: '25000',
+        currency: 'USD',
+        billingCycle: 'monthly',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+        status: 'active',
+        slaTier: '24h Standard Enterprise SLA',
+        qaProjectId: '',
+        techStack: 'React, Node.js, AWS',
+        description: '',
+        scopeOfWork: '',
+        renewalNotes: ''
+      });
+      setIsAddModalOpen(true);
+    }
+  }, [triggerAddModal]);
 
   // New Contract Form State
   const [formData, setFormData] = useState({
@@ -196,21 +228,21 @@ export const BusinessCommandCenterView = ({
   };
 
   return (
-    <div className="w-full min-h-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 pb-16">
+    <div className="w-full min-h-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 pb-32 md:pb-16">
       
       {/* Top Header Card Container */}
-      <div className="max-w-7xl mx-auto px-6 pt-6 md:pt-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 pt-4 sm:pt-6 md:pt-8 space-y-4 sm:space-y-6">
         
         {/* Executive Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-200/80">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                 Enterprise Operations Desk
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
               Business Command Center
             </h1>
             <p className="text-xs md:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
@@ -218,11 +250,11 @@ export const BusinessCommandCenterView = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0 w-full sm:w-auto">
             {contracts.length > 0 && (
               <button
                 onClick={handleExportJSON}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
                 title="Export Portfolio Backup"
               >
                 <Download className="w-3.5 h-3.5 text-slate-400" />
@@ -253,99 +285,99 @@ export const BusinessCommandCenterView = ({
                 });
                 setIsAddModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="flex-1 sm:flex-none justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add Client Contract</span>
+              <span>+ Add Contract</span>
             </button>
           </div>
         </div>
 
         {/* Executive KPI Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
           
           {/* Card 1: Total Active Contracts */}
-          <div className="p-4.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wider mb-2">
-              <span>Active Contracts</span>
-              <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
-                <Building2 className="w-3.5 h-3.5" />
+          <div className="p-3.5 sm:p-4.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider mb-1.5 sm:mb-2">
+              <span className="truncate">Active Contracts</span>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                <Building2 className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-bold tracking-tight text-slate-900">
-              {metrics.totalContracts} <span className="text-xs font-normal text-slate-400">accounts</span>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              {metrics.totalContracts} <span className="text-xs font-normal text-slate-400">acc.</span>
             </div>
-            <div className="text-[11px] mt-1 flex items-center gap-1">
+            <div className="text-[10px] sm:text-[11px] mt-1 flex items-center gap-1 truncate">
               {metrics.totalContracts > 0 ? (
-                <span className="text-emerald-700 font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 font-medium flex items-center gap-1 truncate">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                   {metrics.activeCount} in good standing
                 </span>
               ) : (
-                <span className="text-slate-400">No active client accounts</span>
+                <span className="text-slate-400">No active accounts</span>
               )}
             </div>
           </div>
 
           {/* Card 2: Monthly Recurring Revenue (MRR) */}
-          <div className="p-4.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wider mb-2">
-              <span>Monthly Run Rate</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <DollarSign className="w-3.5 h-3.5" />
+          <div className="p-3.5 sm:p-4.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider mb-1.5 sm:mb-2">
+              <span className="truncate">Monthly Run Rate</span>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <DollarSign className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-bold tracking-tight text-slate-900">
-              ${(metrics.totalMRR).toLocaleString()} <span className="text-xs font-normal text-slate-400">/ mo</span>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 truncate">
+              ${(metrics.totalMRR).toLocaleString()} <span className="text-[11px] font-normal text-slate-400">/mo</span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 mt-1 truncate">
               {metrics.totalValue > 0 ? `Annual: $${metrics.totalValue.toLocaleString()}` : 'No active revenue'}
             </div>
           </div>
 
           {/* Card 3: Expiring Soon (<30 Days) */}
-          <div className={`p-4.5 rounded-xl border transition-colors shadow-xs ${
+          <div className={`p-3.5 sm:p-4.5 rounded-xl border transition-colors shadow-xs ${
             metrics.expiringSoonCount > 0 
               ? 'bg-amber-50/60 border-amber-200' 
               : 'bg-white border-slate-200/80 hover:border-slate-300'
           }`}>
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wider mb-2">
-              <span>Expiring Within 30d</span>
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+            <div className="flex items-center justify-between text-slate-500 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider mb-1.5 sm:mb-2">
+              <span className="truncate">Expiring &lt;30d</span>
+              <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 ${
                 metrics.expiringSoonCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
               }`}>
-                <Clock className="w-3.5 h-3.5" />
+                <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
               </div>
             </div>
-            <div className={`text-2xl font-bold tracking-tight ${metrics.expiringSoonCount > 0 ? 'text-amber-900' : 'text-slate-900'}`}>
+            <div className={`text-xl sm:text-2xl font-bold tracking-tight ${metrics.expiringSoonCount > 0 ? 'text-amber-900' : 'text-slate-900'}`}>
               {metrics.expiringSoonCount} <span className="text-xs font-normal text-slate-400">contracts</span>
             </div>
-            <div className="text-[11px] mt-1 font-medium">
+            <div className="text-[10px] sm:text-[11px] mt-1 font-medium truncate">
               {metrics.expiringSoonCount > 0 ? (
-                <span className="text-amber-800 flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                  Renewal action required
+                <span className="text-amber-800 flex items-center gap-1 truncate">
+                  <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                  Renewal action needed
                 </span>
               ) : (
-                <span className="text-slate-400 font-normal">No upcoming expirations</span>
+                <span className="text-slate-400 font-normal">No expiring terms</span>
               )}
             </div>
           </div>
 
           {/* Card 4: SLA Compliance & QA Health */}
-          <div className="p-4.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wider mb-2">
-              <span>SLA & QA Health</span>
-              <div className="w-7 h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
-                <Shield className="w-3.5 h-3.5" />
+          <div className="p-3.5 sm:p-4.5 rounded-xl bg-white border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider mb-1.5 sm:mb-2">
+              <span className="truncate">SLA & QA Health</span>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                <Shield className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-bold tracking-tight text-slate-900">
-              {contracts.length > 0 ? '99.8%' : '100%'} <span className="text-xs font-medium text-emerald-700">Compliance</span>
+            <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              {contracts.length > 0 ? '99.8%' : '100%'} <span className="text-xs font-medium text-emerald-700">Health</span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>{qaProjects.length} QA Workspace{qaProjects.length === 1 ? '' : 's'} linked</span>
+            <div className="text-[10px] sm:text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="truncate">{qaProjects.length} QA Workspace{qaProjects.length === 1 ? '' : 's'}</span>
             </div>
           </div>
 
@@ -353,29 +385,29 @@ export const BusinessCommandCenterView = ({
 
         {/* View Mode Navigation Tabs (Visible when contracts exist) */}
         {contracts.length > 0 && (
-          <div className="flex items-center gap-1 border-b border-slate-200/80 overflow-x-auto pt-2">
+          <div className="flex items-center gap-1 border-b border-slate-200/80 overflow-x-auto pt-2 scrollbar-none pb-1">
             <button
               onClick={() => setActiveTab('portfolio')}
-              className={`pb-2.5 px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+              className={`pb-2.5 px-3 sm:px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
                 activeTab === 'portfolio'
                   ? 'border-emerald-600 text-emerald-800'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              <span>Active Contracts ({contracts.length})</span>
+              <span>Accounts ({contracts.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('renewals')}
-              className={`pb-2.5 px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+              className={`pb-2.5 px-3 sm:px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
                 activeTab === 'renewals'
                   ? 'border-emerald-600 text-emerald-800'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Renewal Timeline</span>
+              <span>Renewals</span>
               {metrics.expiringSoonCount > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-200">
                   {metrics.expiringSoonCount}
@@ -385,7 +417,7 @@ export const BusinessCommandCenterView = ({
 
             <button
               onClick={() => setActiveTab('scope')}
-              className={`pb-2.5 px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+              className={`pb-2.5 px-3 sm:px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
                 activeTab === 'scope'
                   ? 'border-emerald-600 text-emerald-800'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -397,7 +429,7 @@ export const BusinessCommandCenterView = ({
 
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`pb-2.5 px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+              className={`pb-2.5 px-3 sm:px-3.5 text-xs font-semibold transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0 ${
                 activeTab === 'analytics'
                   ? 'border-emerald-600 text-emerald-800'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -412,7 +444,7 @@ export const BusinessCommandCenterView = ({
       </div>
 
       {/* Main Content Viewport */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6">
         
         {contracts.length === 0 ? (
           /* ======================================================== */
@@ -1018,14 +1050,14 @@ export const BusinessCommandCenterView = ({
       {/* MODAL: ADD / EDIT CLIENT CONTRACT                       */}
       {/* ======================================================== */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+            <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 shrink-0">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900">
                   {editingContract ? 'Edit Client Contract' : 'Add New Client Contract'}
                 </h3>
               </div>
@@ -1038,7 +1070,7 @@ export const BusinessCommandCenterView = ({
             </div>
 
             {/* Modal Body Form */}
-            <form onSubmit={handleSaveContract} className="p-6 overflow-y-auto space-y-4 text-xs">
+            <form onSubmit={handleSaveContract} className="p-4 sm:p-6 overflow-y-auto space-y-3.5 sm:space-y-4 text-xs">
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1214,14 +1246,14 @@ export const BusinessCommandCenterView = ({
       {/* DRAWER / MODAL: VIEW FULL CONTRACT SCOPE                 */}
       {/* ======================================================== */}
       {selectedContract && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
             
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+            <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 shrink-0">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900">
-                  {selectedContract.clientName} — Full Scope Brief
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate max-w-[240px] sm:max-w-none">
+                  {selectedContract.clientName} — Full Scope
                 </h3>
               </div>
               <button 
@@ -1232,7 +1264,7 @@ export const BusinessCommandCenterView = ({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-5 text-xs">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 text-xs">
               
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>

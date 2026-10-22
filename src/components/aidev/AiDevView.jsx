@@ -30,14 +30,41 @@ export const AiDevView = ({
   leads = [],
   outbox = [],
   syncStatus = 'synced',
-  onSwitchApp
+  onSwitchApp,
+  agentVoice: externalAgentVoice,
+  onAgentVoiceChange,
+  speechLang: externalSpeechLang,
+  onSpeechLangChange,
+  isLiveCallActive: externalLiveCallActive,
+  onLiveCallActiveChange,
+  isVoiceEnabled: externalVoiceEnabled,
+  onVoiceEnabledChange,
+  resetSignal
 }) => {
   // Voice Agent Selection: 'jarvis' (Male) | 'friday' (Female)
-  const [agentVoice, setAgentVoice] = useState('jarvis');
-  const [speechLang, setSpeechLang] = useState('hi-IN'); // 'hi-IN' | 'en-US'
+  const [internalAgentVoice, setInternalAgentVoice] = useState('jarvis');
+  const agentVoice = externalAgentVoice !== undefined ? externalAgentVoice : internalAgentVoice;
+  const setAgentVoice = (newV) => {
+    setInternalAgentVoice(newV);
+    onAgentVoiceChange?.(newV);
+  };
+
+  const [internalSpeechLang, setInternalSpeechLang] = useState('hi-IN'); // 'hi-IN' | 'en-US'
+  const speechLang = externalSpeechLang !== undefined ? externalSpeechLang : internalSpeechLang;
+  const setSpeechLang = (newLang) => {
+    setInternalSpeechLang(newLang);
+    onSpeechLangChange?.(newLang);
+  };
 
   // Speech & Voice State
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [internalVoiceEnabled, setInternalVoiceEnabled] = useState(true);
+  const isVoiceEnabled = externalVoiceEnabled !== undefined ? externalVoiceEnabled : internalVoiceEnabled;
+  const setIsVoiceEnabled = (val) => {
+    const next = typeof val === 'function' ? val(isVoiceEnabled) : val;
+    setInternalVoiceEnabled(next);
+    onVoiceEnabledChange?.(next);
+  };
+
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeakingId, setCurrentSpeakingId] = useState(null);
   const [isThinking, setIsThinking] = useState(false);
@@ -49,7 +76,13 @@ export const AiDevView = ({
   // ========================================================
   // REAL-TIME TALKING / LIVE VOICE CALL MODE STATE
   // ========================================================
-  const [isLiveCallActive, setIsLiveCallActive] = useState(false);
+  const [internalLiveCallActive, setInternalLiveCallActive] = useState(false);
+  const isLiveCallActive = externalLiveCallActive !== undefined ? externalLiveCallActive : internalLiveCallActive;
+  const setIsLiveCallActive = (val) => {
+    const next = typeof val === 'function' ? val(isLiveCallActive) : val;
+    setInternalLiveCallActive(next);
+    onLiveCallActiveChange?.(next);
+  };
   const [liveCallState, setLiveCallState] = useState('idle'); // 'connecting' | 'listening' | 'user_speaking' | 'thinking' | 'ai_speaking'
   const [liveTranscript, setLiveTranscript] = useState('');
   const [lastAiSpeech, setLastAiSpeech] = useState('');
@@ -407,6 +440,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
   // Start Real-Time Live Voice Call
   const handleStartLiveCall = () => {
     setIsLiveCallActive(true);
+    onLiveCallActiveChange?.(true);
     setLiveCallState('connecting');
     setLiveTranscript('');
     setLastAiSpeech('');
@@ -455,10 +489,30 @@ Autonomous platform intelligence synchronized across business operations, qualit
     }
     aiDevService.stopSpeaking();
     setIsLiveCallActive(false);
+    onLiveCallActiveChange?.(false);
     setLiveCallState('idle');
     liveCallStateRef.current = 'idle';
     setLiveTranscript('');
   };
+
+  // Sync external live call trigger from mobile bottom nav
+  useEffect(() => {
+    if (externalLiveCallActive !== undefined) {
+      if (externalLiveCallActive && !isLiveCallActiveRef.current) {
+        handleStartLiveCall();
+      } else if (!externalLiveCallActive && isLiveCallActiveRef.current) {
+        handleEndLiveCall();
+      }
+    }
+  }, [externalLiveCallActive]);
+
+  // Sync external conversation reset signal
+  useEffect(() => {
+    if (resetSignal) {
+      handleStopSpeech();
+      setMessages(prev => prev.slice(0, 1));
+    }
+  }, [resetSignal]);
 
   // Interrupt AI while speaking - foolproof instant restart
   const handleInterruptAi = useCallback(() => {
@@ -509,6 +563,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
   const handleToggleAgentVoice = (newAgent) => {
     setAgentVoice(newAgent);
     agentVoiceRef.current = newAgent;
+    onAgentVoiceChange?.(newAgent);
     if (isLiveCallActive) {
       const notice = newAgent === 'friday'
         ? "Friday vocal core online. Listening Boss."
@@ -535,6 +590,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
   const handleToggleLanguage = (newLang) => {
     setSpeechLang(newLang);
     speechLangRef.current = newLang;
+    onSpeechLangChange?.(newLang);
     if (isLiveCallActive && liveCallState === 'listening') {
       startRecognitionLoop();
     }
@@ -692,12 +748,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 1. TOP MINIMAL EXECUTIVE HEADER BAR                     */}
       {/* ======================================================== */}
-      <header className="px-5 py-3 border-b border-white/10 bg-[#030d14]/90 backdrop-blur-xl shrink-0 flex items-center justify-between gap-4 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
+      <header className="px-3.5 sm:px-5 py-2.5 sm:py-3 border-b border-white/10 bg-[#030d14]/90 backdrop-blur-xl shrink-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-4 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
         
         {/* Left: Copilot Branding */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg transition-colors ${
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="relative shrink-0">
+            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg transition-colors ${
               isFriday 
                 ? 'bg-gradient-to-tr from-rose-600 to-pink-500 shadow-rose-500/20' 
                 : 'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-cyan-500/20'
@@ -710,26 +766,26 @@ Autonomous platform intelligence synchronized across business operations, qualit
           </div>
 
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold tracking-wider font-orbitron text-white">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm font-bold tracking-wider font-orbitron text-white">
                 {isFriday ? 'F.R.I.D.A.Y.' : 'J.A.R.V.I.S.'}
               </span>
-              <span className="text-[9px] font-semibold tracking-wider px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-slate-300">
+              <span className="text-[8px] sm:text-[9px] font-semibold tracking-wider px-1 sm:px-1.5 py-0.2 rounded bg-white/5 border border-white/10 text-slate-300">
                 MK VII
               </span>
             </div>
-            <span className="text-[10px] tracking-wide text-slate-400 font-sans">
-              Autonomous Vocal Copilot • Executive Mode
+            <span className="text-[9px] sm:text-[10px] tracking-wide text-slate-400 font-sans truncate max-w-[140px] xs:max-w-none">
+              Autonomous Copilot
             </span>
           </div>
         </div>
 
         {/* Center: DUAL VOICE AGENT TOGGLE (MALE JARVIS vs FEMALE FRIDAY) */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md shadow-inner">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center p-0.5 sm:p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md shadow-inner">
             <button
               onClick={() => handleToggleAgentVoice('jarvis')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
                 agentVoice === 'jarvis'
                   ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/30 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -737,12 +793,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
               title="Switch to J.A.R.V.I.S. (Male Voice)"
             >
               <span>JARVIS</span>
-              <span className="text-[10px] opacity-75">Male</span>
+              <span className="hidden xs:inline text-[9px] opacity-75">Male</span>
             </button>
 
             <button
               onClick={() => handleToggleAgentVoice('friday')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
                 agentVoice === 'friday'
                   ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30 font-bold'
                   : 'text-slate-400 hover:text-white'
@@ -750,15 +806,15 @@ Autonomous platform intelligence synchronized across business operations, qualit
               title="Switch to F.R.I.D.A.Y. (Female Voice)"
             >
               <span>FRIDAY</span>
-              <span className="text-[10px] opacity-75">Female</span>
+              <span className="hidden xs:inline text-[9px] opacity-75">Female</span>
             </button>
           </div>
 
           {/* Hindi / English Language Switcher */}
-          <div className="hidden sm:flex items-center p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md text-[11px]">
+          <div className="hidden xs:flex items-center p-0.5 sm:p-1 rounded-xl bg-black/60 border border-white/10 backdrop-blur-md text-[10px] sm:text-[11px]">
             <button
               onClick={() => handleToggleLanguage('hi-IN')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold transition-all ${
                 speechLang === 'hi-IN'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                   : 'text-slate-400 hover:text-white'
@@ -769,7 +825,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
             </button>
             <button
               onClick={() => handleToggleLanguage('en-US')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold transition-all ${
                 speechLang === 'en-US'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                   : 'text-slate-400 hover:text-white'
@@ -782,12 +838,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
         </div>
 
         {/* Right: Live Talk Button & Voice Audio Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           
           {/* Prominent Live Voice Call Button */}
           <button
             onClick={isLiveCallActive ? handleEndLiveCall : handleStartLiveCall}
-            className={`px-4 py-2 rounded-xl text-xs font-bold font-orbitron tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow-lg ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold font-orbitron tracking-wider transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-lg ${
               isLiveCallActive
                 ? 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-400 animate-pulse shadow-rose-600/30'
                 : isFriday
@@ -798,12 +854,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
           >
             {isLiveCallActive ? (
               <>
-                <PhoneOff className="w-4 h-4" />
-                <span>TERMINATE</span>
+                <PhoneOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">TERMINATE</span>
               </>
             ) : (
               <>
-                <Radio className="w-4 h-4" />
+                <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>LIVE TALK</span>
               </>
             )}
@@ -815,7 +871,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
               if (isSpeaking) aiDevService.stopSpeaking();
               setIsVoiceEnabled(!isVoiceEnabled);
             }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
               isVoiceEnabled 
                 ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/40 hover:bg-cyan-900/40' 
                 : 'bg-black/60 text-slate-500 border-white/10 hover:text-slate-300'
@@ -825,12 +881,12 @@ Autonomous platform intelligence synchronized across business operations, qualit
             {isVoiceEnabled ? (
               <>
                 <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-[11px]">AUDIO ON</span>
+                <span className="hidden sm:inline text-[11px]">AUDIO ON</span>
               </>
             ) : (
               <>
                 <VolumeX className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-[11px]">MUTED</span>
+                <span className="hidden sm:inline text-[11px]">MUTED</span>
               </>
             )}
           </button>
@@ -841,10 +897,10 @@ Autonomous platform intelligence synchronized across business operations, qualit
               handleStopSpeech();
               setMessages(messages.slice(0, 1));
             }}
-            className="p-2 rounded-xl bg-black/60 hover:bg-cyan-950/40 text-slate-400 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/40 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl bg-black/60 hover:bg-cyan-950/40 text-slate-400 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/40 transition-colors cursor-pointer"
             title="Reset Conversation Stream"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </header>
@@ -897,7 +953,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 3. MAIN CHAT CONTAINER (STARK TACTICAL TERMINAL)        */}
       {/* ======================================================== */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 pb-48 z-10">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 pb-64 md:pb-48 z-10">
         <div className="max-w-3xl mx-auto w-full space-y-6">
 
           {/* Clean Executive Welcome Hero when starting fresh */}
@@ -1246,7 +1302,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
           <div className="relative z-20 flex flex-col items-center justify-end flex-1 pb-4 pointer-events-auto">
             
             {/* Spacer */}
-            <div className="h-[44vh] sm:h-[46vh] pointer-events-none" />
+            <div className="h-[28vh] sm:h-[44vh] pointer-events-none" />
 
             {/* TAP TO INTERRUPT / TERMINATE BUTTON */}
             {liveCallState === 'ai_speaking' ? (
@@ -1404,7 +1460,7 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* ======================================================== */}
       {/* 5. BOTTOM FLOATING PROMPTBAR DOCK (STARK CYBER THEME)    */}
       {/* ======================================================== */}
-      <div className="absolute bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-[#020609] via-[#020609]/95 to-transparent pt-8 pb-4 px-4 flex flex-col items-center pointer-events-auto">
+      <div className="absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom,0px)+4.25rem))] md:bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-[#020609] via-[#020609]/95 to-transparent pt-6 pb-2 md:pb-4 px-3 sm:px-4 flex flex-col items-center pointer-events-auto">
         <div className="w-full max-w-3xl flex flex-col items-center">
           
           <div className="w-full flex items-center gap-2">

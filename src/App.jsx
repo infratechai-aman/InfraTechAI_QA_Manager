@@ -70,6 +70,13 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     }
   });
   const contractMetrics = useMemo(() => businessService.getPortfolioMetrics(contracts), [contracts]);
+  const [businessTab, setBusinessTab] = useState('portfolio');
+  const [triggerAddContractModal, setTriggerAddContractModal] = useState(false);
+  const [aiDevVoice, setAiDevVoice] = useState('jarvis');
+  const [aiDevLang, setAiDevLang] = useState('hi-IN');
+  const [aiDevLiveCallActive, setAiDevLiveCallActive] = useState(false);
+  const [aiDevVoiceEnabled, setAiDevVoiceEnabled] = useState(true);
+  const [aiDevResetSignal, setAiDevResetSignal] = useState(0);
   const [activeTab, setActiveTab] = useState('projects');
   const [projects, setProjects] = useState([]);
   const [files, setFiles] = useState([]);
@@ -1322,6 +1329,9 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             qaBugs={bugs}
             qaTests={tests}
             onContractsChange={(updated) => setContracts(updated)}
+            activeTab={businessTab}
+            onTabChange={setBusinessTab}
+            triggerAddModal={triggerAddContractModal}
             onNavigateToQA={(projectId) => {
               setActiveApp('qa');
               if (projectId) {
@@ -1347,17 +1357,25 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             outbox={salesService.getOutbox(userId)}
             syncStatus={syncStatus}
             onSwitchApp={(targetApp) => setActiveApp(targetApp)}
+            agentVoice={aiDevVoice}
+            onAgentVoiceChange={setAiDevVoice}
+            speechLang={aiDevLang}
+            onSpeechLangChange={setAiDevLang}
+            isLiveCallActive={aiDevLiveCallActive}
+            onLiveCallActiveChange={setAiDevLiveCallActive}
+            isVoiceEnabled={aiDevVoiceEnabled}
+            onVoiceEnabledChange={setAiDevVoiceEnabled}
+            resetSignal={aiDevResetSignal}
           />
         )}
       </main>
 
-      {/* Mobile Floating Glass Dock & Options Sheet (shown when inside QA or Sales) */}
-      {(activeApp === 'qa' || activeApp === 'sales') && (
+      {/* Mobile Floating Glass Dock & Options Sheet (shown across ecosystem apps) */}
+      {activeApp !== 'hub' && (
         <MobileBottomNav
           activeApp={activeApp}
-          salesTab={salesTab}
-          setSalesTab={setSalesTab}
-          pendingOutboxCount={pendingOutboxCount}
+          onSwitchApp={(newApp) => setActiveApp(newApp)}
+          // QA Props
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           activeProjectId={activeProjectId}
@@ -1368,6 +1386,30 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             setActiveFileId(null);
           }}
           openBugsCount={openBugsCount}
+          onTriggerNewFile={() => setTriggerNewFileModal(prev => !prev)}
+          onTriggerNewBug={() => setTriggerNewBugModal(prev => !prev)}
+          // Sales Props
+          salesTab={salesTab}
+          setSalesTab={setSalesTab}
+          pendingOutboxCount={pendingOutboxCount}
+          // Business Props
+          businessTab={businessTab}
+          setBusinessTab={setBusinessTab}
+          contractsCount={contracts.length}
+          expiringSoonCount={contractMetrics.expiringSoonCount}
+          onTriggerAddContract={() => setTriggerAddContractModal(prev => !prev)}
+          // AI Dev Vocal Copilot Props
+          aidevTab={aiDevLiveCallActive ? 'live' : 'chat'}
+          isLiveCallActive={aiDevLiveCallActive}
+          onToggleLiveCall={() => setAiDevLiveCallActive(prev => !prev)}
+          agentVoice={aiDevVoice}
+          onToggleAgentVoice={() => setAiDevVoice(prev => prev === 'jarvis' ? 'friday' : 'jarvis')}
+          speechLang={aiDevLang}
+          onToggleSpeechLang={() => setAiDevLang(prev => prev === 'hi-IN' ? 'en-US' : 'hi-IN')}
+          isVoiceEnabled={aiDevVoiceEnabled}
+          onToggleVoiceEnabled={() => setAiDevVoiceEnabled(prev => !prev)}
+          onResetConversation={() => setAiDevResetSignal(prev => prev + 1)}
+          // Options Sheet & Global Controls
           isOptionsOpen={isMobileOptionsOpen}
           setIsOptionsOpen={setIsMobileOptionsOpen}
           onOpenInviteModal={() => setIsInviteModalOpen(true)}
@@ -1377,8 +1419,6 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           onExitProject={handleExitProject}
           onLogout={logout}
           currentUser={currentUser}
-          onTriggerNewFile={() => setTriggerNewFileModal(prev => !prev)}
-          onTriggerNewBug={() => setTriggerNewBugModal(prev => !prev)}
         />
       )}
 

@@ -146,7 +146,7 @@ export const OutboxReviewDesk = ({
   const isOverWordCap = wordCount > 75;
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 animate-fadeIn">
+    <div className="p-3.5 sm:p-6 md:p-8 pb-32 md:pb-8 max-w-7xl mx-auto space-y-6 animate-fadeIn">
       
       {/* Toast Notification */}
       {feedbackToast && (

@@ -6,15 +6,14 @@ import {
   Building2
 } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
+import { businessService } from '../../services/businessService';
 
 export const AppLibraryView = ({
   onLaunchApp,
   projects = [],
   openBugsCount = 0,
   pendingOutboxCount = 0,
-  contractsCount = 4,
-  contractsExpiringSoon = 2,
-  contractsMRR = 123000,
+  contracts = [],
   currentUser,
   onLogout,
   onOpenSettings
@@ -22,6 +21,8 @@ export const AppLibraryView = ({
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'business' | 'aidev' | 'qa' | 'sales'
   const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
   const userColor = getUserColor(currentUser?.email || 'user');
+
+  const businessMetrics = businessService.getPortfolioMetrics(contracts);
 
   const apps = [
     {
@@ -31,12 +32,12 @@ export const AppLibraryView = ({
       description: 'Full active enterprise client portfolios, contract expiration tracking, renewal countdowns, SLA guarantees, retainers/MRR, and detailed technical project scopes.',
       icon: Building2,
       iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
-      badge: 'Live Portfolio Active',
+      badge: contracts.length > 0 ? 'Live Portfolio Active' : 'Production Ready',
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       metrics: [
-        { label: 'Active Accounts', value: `${contractsCount} Contracts` },
-        { label: 'Portfolio MRR', value: `$${contractsMRR.toLocaleString()}` },
-        { label: 'Expiring Soon', value: `${contractsExpiringSoon} Accounts`, highlight: contractsExpiringSoon > 0 }
+        { label: 'Active Accounts', value: `${contracts.length} Accounts` },
+        { label: 'Portfolio MRR', value: `$${businessMetrics.totalMRR.toLocaleString()}` },
+        { label: 'Expiring Soon', value: `${businessMetrics.expiringSoonCount} Accounts`, highlight: businessMetrics.expiringSoonCount > 0 }
       ],
       features: [
         'Contract Expiration Countdown & Renewal Timeline',
@@ -205,21 +206,21 @@ export const AppLibraryView = ({
       </header>
 
       {/* Main Workspace Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 sm:px-10 py-8 space-y-8 animate-fadeIn">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-10 py-6 sm:py-8 pb-20 sm:pb-8 space-y-6 sm:space-y-8 animate-fadeIn">
         
         {/* Hero Section (Matching ProjectsView Header exactly) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Applications & Workspaces
             </h1>
-            <p className="text-slate-500 mt-1 text-sm">
+            <p className="text-slate-500 mt-1 text-xs sm:text-sm">
               Select an enterprise application below to launch its workspace.
             </p>
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs self-start sm:self-auto overflow-x-auto max-w-full pb-1 sm:pb-0">
             <button
               onClick={() => setActiveFilter('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${

@@ -959,9 +959,44 @@ RULES:
     throw new Error(lastError ? lastError.message : 'Could not reach email dispatcher. Ensure daemon is running or Vercel function is active.');
   },
 
-  // Sync with Harvey Daemon state (loads sent emails & inbound demo inquiries)
+  // Purge any residual mock inquiries (Robert, Jessica, Michael, Steve)
+  purgeMockConversations(userId) {
+    const mockEmails = new Set(['info@morehands.com', 'info@sunlifemaids.com', 'support@cleanzen.com', 'info@tampacleaningcompany.com']);
+    const current = this.getConversations(userId);
+    const cleaned = current.filter(c => !mockEmails.has(c.contactEmail) && !c.id.startsWith('conv-17927'));
+    this.saveConversations(cleaned, userId);
+    return cleaned;
+  },
+
+  // 100% Real Live Gmail Sync via local Harvey IMAP poller
+  async syncRealGmailInbox(userId) {
+    try {
+      const res = await fetch('http://127.0.0.1:5555/api/sync-real-inbox');
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data.success) return null;
+
+      // Update outbox with real delivery & bounce statuses
+      if (data.outbox) {
+        this.saveOutbox(data.outbox, userId);
+      }
+
+      // Overwrite conversations strictly with real replies from inbox
+      this.saveConversations(data.conversations || [], userId);
+
+      return data;
+    } catch (err) {
+      console.warn('Real Gmail inbox sync failed:', err.message);
+      return null;
+    }
+  },
+
+  // Sync with Harvey Daemon state (loads sent emails & real replies only)
   async syncWithDaemonState(userId) {
     try {
+      // First purge any mock data
+      this.purgeMockConversations(userId);
+
       const res = await fetch('http://127.0.0.1:5555/api/daemon-state');
       if (!res.ok) return null;
       const data = await res.json();
@@ -969,7 +1004,6 @@ RULES:
 
       const { outbox = [], conversations = [] } = data.state;
       const currentOutbox = this.getOutbox(userId);
-      const currentConvs = this.getConversations(userId);
 
       // Merge sent outbox items
       const existingIds = new Set(currentOutbox.map(o => o.recipientEmail));
@@ -978,12 +1012,10 @@ RULES:
         this.saveOutbox([...newOutboxItems, ...currentOutbox], userId);
       }
 
-      // Merge conversations
-      const existingConvEmails = new Set(currentConvs.map(c => c.contactEmail));
-      const newConvs = conversations.filter(c => !existingConvEmails.has(c.contactEmail));
-      if (newConvs.length > 0) {
-        this.saveConversations([...newConvs, ...currentConvs], userId);
-      }
+      // Strictly real conversations
+      const mockEmails = new Set(['info@morehands.com', 'info@sunlifemaids.com', 'support@cleanzen.com', 'info@tampacleaningcompany.com']);
+      const realConvs = conversations.filter(c => !mockEmails.has(c.contactEmail) && !c.id.startsWith('conv-17927'));
+      this.saveConversations(realConvs, userId);
 
       return data.state;
     } catch {

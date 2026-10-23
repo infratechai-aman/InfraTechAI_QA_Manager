@@ -494,6 +494,18 @@ export const SalesManagerView = ({
             onAddConversation={handleAddConversation}
             onUpdateConversation={handleUpdateConversation}
             onDeleteConversation={handleDeleteConversation}
+            onSyncRealInbox={async () => {
+              const res = await salesService.syncRealGmailInbox(userId);
+              if (res) {
+                setConversations(salesService.getConversations(userId));
+                setOutbox(salesService.getOutbox(userId));
+              }
+              return res;
+            }}
+            onPurgeMockData={() => {
+              const cleaned = salesService.purgeMockConversations(userId);
+              setConversations(cleaned);
+            }}
             leads={leads}
             settings={settings}
             onToggleAutopilot={handleToggleAutopilot}

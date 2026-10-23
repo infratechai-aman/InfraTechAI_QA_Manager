@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Mail, Users, Layers, MessageSquare, Sliders
+  LayoutDashboard, Mail, Users, Layers, MessageSquare, Sliders, Calendar
 } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 import { SalesCockpit } from './SalesCockpit';
@@ -8,6 +8,7 @@ import { OutboxReviewDesk } from './OutboxReviewDesk';
 import { LeadsPipelineView } from './LeadsPipelineView';
 import { CampaignsPlaybookView } from './CampaignsPlaybookView';
 import { ConversationsView } from './ConversationsView';
+import { ClientBookingView } from './ClientBookingView';
 import { HarveySettingsModal } from './HarveySettingsModal';
 
 export const SalesManagerView = ({ 
@@ -428,6 +429,18 @@ export const SalesManagerView = ({
             )}
           </button>
 
+          <button
+            onClick={() => setSalesTab('bookings')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              salesTab === 'bookings'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Bookings & Calculator</span>
+          </button>
+
         </div>
 
         {/* Right Settings Gear */}
@@ -509,6 +522,13 @@ export const SalesManagerView = ({
             leads={leads}
             settings={settings}
             onToggleAutopilot={handleToggleAutopilot}
+          />
+        )}
+
+        {salesTab === 'bookings' && (
+          <ClientBookingView
+            settings={settings}
+            onAddConversation={handleAddConversation}
           />
         )}
       </div>

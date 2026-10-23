@@ -27,49 +27,29 @@ const STATE_FILE = path.join(__dirname, 'overnight-state.json');
 const DEFAULT_USER = process.env.VITE_GMAIL_ADDRESS || 'aman.infratechai@gmail.com';
 const DEFAULT_PASS = process.env.VITE_GMAIL_APP_PASSWORD || 'qerk bggh ysyk mrfg';
 
-// 40 VERIFIED Real USA House Cleaning Businesses with Active MX Records
-const VERIFIED_USA_CLEANING_PROSPECTS = [
-  { companyName: "Dallas Maids", contactName: "Greg Shepard", contactEmail: "service@dallasmaids.com", domain: "dallasmaids.com", city: "Dallas, TX" },
-  { companyName: "Emily's Maids", contactName: "Emily", contactEmail: "service@emilysmaids.com", domain: "emilysmaids.com", city: "Dallas, TX" },
-  { companyName: "MoreHands Maid Service", contactName: "Robert", contactEmail: "info@morehands.com", domain: "morehands.com", city: "Austin, TX" },
-  { companyName: "The Maid Crew", contactName: "Brad", contactEmail: "info@themaidcrew.com", domain: "themaidcrew.com", city: "Richmond, VA" },
-  { companyName: "Cleanzen Cleaning", contactName: "Michael", contactEmail: "support@cleanzen.com", domain: "cleanzen.com", city: "Chicago, IL" },
-  { companyName: "Denver Cleaning Service", contactName: "Dave", contactEmail: "info@denvercleaningservice.com", domain: "denvercleaningservice.com", city: "Denver, CO" },
-  { companyName: "Seattle Cleaning Service", contactName: "Chris", contactEmail: "info@seattlecleaningservice.com", domain: "seattlecleaningservice.com", city: "Seattle, WA" },
-  { companyName: "Tampa Cleaning Company", contactName: "Jessica", contactEmail: "info@tampacleaningcompany.com", domain: "tampacleaningcompany.com", city: "Tampa, FL" },
-  { companyName: "Charlotte Maid Service", contactName: "Brian", contactEmail: "info@charlottemaidservice.com", domain: "charlottemaidservice.com", city: "Charlotte, NC" },
-  { companyName: "Better Life Maids", contactName: "Matt", contactEmail: "info@betterlifemaids.com", domain: "betterlifemaids.com", city: "St. Louis, MO" },
-  { companyName: "CottageCare", contactName: "Tom", contactEmail: "info@cottagecare.com", domain: "cottagecare.com", city: "Kansas City, MO" },
-  { companyName: "King of Maids", contactName: "Filip", contactEmail: "contact@kingofmaids.com", domain: "kingofmaids.com", city: "Chicago, IL" },
-  { companyName: "MaidPro", contactName: "Richard", contactEmail: "info@maidpro.com", domain: "maidpro.com", city: "Boston, MA" },
-  { companyName: "Two Maids", contactName: "Ron", contactEmail: "info@twomaidscleaning.com", domain: "twomaidscleaning.com", city: "Orlando, FL" },
-  { companyName: "Buckets & Bows Maid Service", contactName: "Doreen", contactEmail: "info@bucketsandbows.com", domain: "bucketsandbows.com", city: "Dallas, TX" },
-  { companyName: "MyClean", contactName: "Michael", contactEmail: "clean@myclean.com", domain: "myclean.com", city: "New York, NY" },
-  { companyName: "Clean My Space", contactName: "Melissa", contactEmail: "info@cleanmyspace.com", domain: "cleanmyspace.com", city: "Phoenix, AZ" },
-  { companyName: "Atlanta Green Maids", contactName: "David", contactEmail: "info@atlantagreenmaids.com", domain: "atlantagreenmaids.com", city: "Atlanta, GA" },
-  { companyName: "Pure House Cleaning", contactName: "Adrianna", contactEmail: "info@purehousecleaning.com", domain: "purehousecleaning.com", city: "Seattle, WA" },
-  { companyName: "Maggy Maid", contactName: "Mark", contactEmail: "info@maggymaid.com", domain: "maggymaid.com", city: "Los Angeles, CA" },
-  { companyName: "Aloha Maids", contactName: "Lana", contactEmail: "info@alohamaids.com", domain: "alohamaids.com", city: "Los Angeles, CA" },
-  { companyName: "Sun Life Maids", contactName: "Steve", contactEmail: "info@sunlifemaids.com", domain: "sunlifemaids.com", city: "Phoenix, AZ" },
-  { companyName: "Sparkle Cleaners", contactName: "George", contactEmail: "info@sparklecleaners.com", domain: "sparklecleaners.com", city: "Tucson, AZ" },
-  { companyName: "Dust Queen", contactName: "Linda", contactEmail: "info@dustqueen.com", domain: "dustqueen.com", city: "Minneapolis, MN" },
-  { companyName: "Coast Cleaners", contactName: "Eric", contactEmail: "info@coastcleaners.com", domain: "coastcleaners.com", city: "San Diego, CA" },
-  { companyName: "Pristine Clean", contactName: "Tyler", contactEmail: "info@pristinecleanteam.com", domain: "pristinecleanteam.com", city: "Cleveland, OH" },
-  { companyName: "Green Clean Maine", contactName: "Joe", contactEmail: "info@greencleanmaine.com", domain: "greencleanmaine.com", city: "Portland, ME" },
-  { companyName: "Castle Keepers", contactName: "Tom", contactEmail: "info@castle-keepers.com", domain: "castle-keepers.com", city: "Charleston, SC" },
-  { companyName: "White Glove Cleaning", contactName: "Gary", contactEmail: "info@whiteglovecleaning.com", domain: "whiteglovecleaning.com", city: "New York, NY" },
-  { companyName: "Merry Maids", contactName: "Sarah", contactEmail: "customercare@merrymaids.com", domain: "merrymaids.com", city: "Memphis, TN" },
-  { companyName: "Molly Maid", contactName: "Jennifer", contactEmail: "customercare@mollymaid.com", domain: "mollymaid.com", city: "Ann Arbor, MI" },
-  { companyName: "Maid Brigade", contactName: "Kevin", contactEmail: "customercare@maidbrigade.com", domain: "maidbrigade.com", city: "Atlanta, GA" },
-  { companyName: "The Cleaning Authority", contactName: "Jason", contactEmail: "info@thecleaningauthority.com", domain: "thecleaningauthority.com", city: "Columbia, MD" },
-  { companyName: "You've Got Maids", contactName: "Frank", contactEmail: "info@youvegotmaids.com", domain: "youvegotmaids.com", city: "Charleston, SC" },
-  { companyName: "Homeaglow", contactName: "Support", contactEmail: "support@homeaglow.com", domain: "homeaglow.com", city: "San Francisco, CA" },
-  { companyName: "Handy Cleaning", contactName: "Operations", contactEmail: "support@handy.com", domain: "handy.com", city: "New York, NY" },
-  { companyName: "Tidy Services", contactName: "Customer Support", contactEmail: "support@tidy.com", domain: "tidy.com", city: "Irvine, CA" },
-  { companyName: "Cleanly Pro", contactName: "Management", contactEmail: "support@cleanly.com", domain: "cleanly.com", city: "New York, NY" },
-  { companyName: "Hux Cleaners", contactName: "Solutions", contactEmail: "support@hux.com", domain: "hux.com", city: "Atlanta, GA" },
-  { companyName: "Maid Sailors", contactName: "Joe", contactEmail: "support@maidsailors.com", domain: "maidsailors.com", city: "New York, NY" }
-];
+// 240 VERIFIED USA Cleaning Businesses with Active MX Records (for 24-hour non-stop campaign)
+const PROSPECTS_240_FILE = path.join(__dirname, 'prospects-240.json');
+let VERIFIED_USA_CLEANING_PROSPECTS = [];
+
+try {
+  if (fs.existsSync(PROSPECTS_240_FILE)) {
+    VERIFIED_USA_CLEANING_PROSPECTS = JSON.parse(fs.readFileSync(PROSPECTS_240_FILE, 'utf8'));
+    console.log(`[Harvey Daemon] 📋 Loaded ${VERIFIED_USA_CLEANING_PROSPECTS.length} verified 24h campaign prospects with active MX records!`);
+  }
+} catch (e) {
+  console.warn('[Harvey Daemon] Notice reading prospects-240.json:', e.message);
+}
+
+if (VERIFIED_USA_CLEANING_PROSPECTS.length === 0) {
+  VERIFIED_USA_CLEANING_PROSPECTS = [
+    { companyName: "Dallas Maids", contactName: "Greg Shepard", contactEmail: "service@dallasmaids.com", domain: "dallasmaids.com", city: "Dallas, TX" },
+    { companyName: "Emily's Maids", contactName: "Emily", contactEmail: "service@emilysmaids.com", domain: "emilysmaids.com", city: "Dallas, TX" },
+    { companyName: "MoreHands Maid Service", contactName: "Robert", contactEmail: "info@morehands.com", domain: "morehands.com", city: "Austin, TX" },
+    { companyName: "Cleanzen Cleaning", contactName: "Michael", contactEmail: "support@cleanzen.com", domain: "cleanzen.com", city: "Chicago, IL" },
+    { companyName: "Pure House Cleaning", contactName: "Adrianna", contactEmail: "info@purehousecleaning.com", domain: "purehousecleaning.com", city: "Seattle, WA" },
+    { companyName: "Pristine Clean", contactName: "Tyler", contactEmail: "info@pristinecleanteam.com", domain: "pristinecleanteam.com", city: "Cleveland, OH" }
+  ];
+}
 
 // Real IMAP Inbox and Bounce Poller (100% Real Data - ZERO Mock)
 function fetchRealGmailStatus(user = DEFAULT_USER, pass = DEFAULT_PASS) {
@@ -160,13 +140,21 @@ function fetchRealGmailStatus(user = DEFAULT_USER, pass = DEFAULT_PASS) {
           if (fromMatch) {
             const rawFrom = fromMatch[1].trim();
             const lowerFrom = rawFrom.toLowerCase();
-            if (!lowerFrom.includes('google') && 
-                !lowerFrom.includes('vercel') && 
-                !lowerFrom.includes('emergent') && 
-                !lowerFrom.includes('infratechai') &&
-                !lowerFrom.includes('noreply') &&
-                !lowerFrom.includes('no-reply') &&
-                !lowerFrom.includes('mailer-daemon')) {
+            const isSystemOrSocial = 
+              lowerFrom.includes('google') ||
+              lowerFrom.includes('vercel') ||
+              lowerFrom.includes('emergent') ||
+              lowerFrom.includes('infratechai') ||
+              lowerFrom.includes('noreply') ||
+              lowerFrom.includes('no-reply') ||
+              lowerFrom.includes('instagram') ||
+              lowerFrom.includes('facebook') ||
+              lowerFrom.includes('linkedin') ||
+              lowerFrom.includes('twitter') ||
+              lowerFrom.includes('notifications') ||
+              lowerFrom.includes('mailer-daemon');
+
+            if (!isSystemOrSocial) {
               
               const emailMatch = rawFrom.match(/<([^>]+)>/) || rawFrom.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
               const contactEmail = emailMatch ? emailMatch[1] : rawFrom;
@@ -410,8 +398,93 @@ async function executeOvernightSendStep() {
   }
 }
 
-// 1 email every ~12 minutes (720,000 ms). In 8 hours = ~40 emails dispatched!
-const SEND_INTERVAL_MS = 12 * 60 * 1000;
+// Autonomous Inbound Auto-Responder: Checks Gmail every 3 mins and immediately responds to client inquiries
+const INBOX_CHECK_INTERVAL_MS = 3 * 60 * 1000;
+let inboxCheckTimer = null;
+let respondedEmailIds = new Set(daemonState.respondedEmailIds || []);
+
+async function executeInboundAutoReplyCheck() {
+  try {
+    const status = await fetchRealGmailStatus();
+    if (!status || !status.replies || status.replies.length === 0) return;
+
+    for (const reply of status.replies) {
+      if (respondedEmailIds.has(reply.id) || respondedEmailIds.has(reply.contactEmail.toLowerCase())) continue;
+
+      console.log(`\n🎉 [Inbound Auto-Responder] 🎯 REAL CLIENT REPLY DETECTED from ${reply.contactName} (${reply.contactEmail})!`);
+
+      const replySubject = `Re: Online Estimate & Booking System for ${reply.companyName}`;
+      const replyBody = `Hi ${reply.contactName},
+
+Thanks for getting back to me! We would love to build a 100% FREE custom interactive preview for ${reply.companyName} within the next 24 hours.
+
+You can inspect our live interactive mobile calculator here (1-click):
+https://housecleaning-998d3.web.app/
+
+Here is what we configure for your team:
+• Instant bedroom/bathroom online estimate calculator
+• Mobile-first 60-second customer booking system
+• Automated SMS & email alerts for new bookings
+• Modern, high-speed layout with service area radius
+
+We fetch your logo, services, and color scheme directly — or just reply with your logo/colors.
+
+If you ever decide to launch, turnkey setup is just $499 one-time, plus $20/month for hosting & maintenance (zero upfront cost, zero obligation).
+
+Would tomorrow afternoon work for a quick 5-minute walk-through, or would you like us to assemble your free 24-hr preview first?
+
+Best regards,
+Harvey Ross
+Client Solutions Specialist | InfraTech AI
+aman.infratechai@gmail.com`;
+
+      try {
+        const info = await sendEmail({
+          to: reply.contactEmail,
+          subject: replySubject,
+          text: replyBody
+        });
+        console.log(`[Inbound Auto-Responder] ⚡ Auto-replied to ${reply.contactName} (${reply.contactEmail})! MsgId: ${info.messageId}`);
+
+        respondedEmailIds.add(reply.id);
+        respondedEmailIds.add(reply.contactEmail.toLowerCase());
+        daemonState.respondedEmailIds = Array.from(respondedEmailIds);
+
+        // Record real conversation thread
+        const convIndex = daemonState.conversations.findIndex(c => c.contactEmail.toLowerCase() === reply.contactEmail.toLowerCase());
+        const autoSentMsg = {
+          id: `harvey-${Date.now()}`,
+          sender: 'harvey',
+          senderName: 'Harvey Ross (AI Consultant)',
+          text: replyBody,
+          timestamp: new Date().toISOString()
+        };
+
+        if (convIndex >= 0) {
+          daemonState.conversations[convIndex].messages.push(autoSentMsg);
+          daemonState.conversations[convIndex].stage = 'negotiating';
+        } else {
+          daemonState.conversations.unshift({
+            ...reply,
+            stage: 'negotiating',
+            messages: [
+              ...(reply.messages || []),
+              autoSentMsg
+            ]
+          });
+        }
+        saveState(daemonState);
+      } catch (sendErr) {
+        console.error(`[Inbound Auto-Responder] ❌ Error auto-replying to ${reply.contactEmail}:`, sendErr.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[Inbound Auto-Responder] Check notice:', err.message);
+  }
+}
+
+// 10 emails every hour = 1 email every 6 minutes (360,000 ms). In 24 hours = 240 emails!
+const SEND_INTERVAL_MS = 6 * 60 * 1000;
 let overnightTimer = null;
 
 function startOvernightAutopilot() {
@@ -421,9 +494,20 @@ function startOvernightAutopilot() {
   // Send first email immediately
   executeOvernightSendStep();
 
+  // Run inbound auto-responder check immediately
+  executeInboundAutoReplyCheck();
+
   if (overnightTimer) clearInterval(overnightTimer);
   overnightTimer = setInterval(executeOvernightSendStep, SEND_INTERVAL_MS);
-  console.log(`[Harvey Daemon] 🚀 Harvey Working Session STARTED: Dispatching 1 email every 12 mins across USA cleaning services.`);
+
+  if (inboxCheckTimer) clearInterval(inboxCheckTimer);
+  inboxCheckTimer = setInterval(executeInboundAutoReplyCheck, INBOX_CHECK_INTERVAL_MS);
+
+  console.log(`\n======================================================`);
+  console.log(`🚀 HARVEY 24-HOUR AUTONOMOUS OUTBOUND & AUTO-RESPONDER ACTIVE!`);
+  console.log(`   Speed: 10 emails/hour (1 every 6 mins) for next 24 hours`);
+  console.log(`   Inbox Poller: Checking every 3 mins & auto-negotiating $499 24h custom demo`);
+  console.log(`======================================================\n`);
 }
 
 function stopOvernightAutopilot() {
@@ -432,8 +516,12 @@ function stopOvernightAutopilot() {
     clearInterval(overnightTimer);
     overnightTimer = null;
   }
+  if (inboxCheckTimer) {
+    clearInterval(inboxCheckTimer);
+    inboxCheckTimer = null;
+  }
   saveState(daemonState);
-  console.log(`[Harvey Daemon] ⏸️ Harvey is now at REST. Ready for session start.`);
+  console.log(`[Harvey Daemon] ⏸️ Harvey is now at REST.`);
 }
 
 // Helper to parse JSON body

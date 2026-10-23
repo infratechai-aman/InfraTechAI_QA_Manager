@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, Bot, Send, Clock, Trash2, Plus, X, UserCheck,
   Sparkles, DollarSign, ExternalLink, Moon, ShieldCheck, CheckCircle2,
-  RefreshCw, Play, Check, FileText
+  RefreshCw, Play, Check, FileText, Copy, Mail, Zap
 } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 import { getTimestamp } from '../../utils/formatters';
@@ -182,19 +182,48 @@ export const ConversationsView = ({
     showToast(`✅ Response sent to ${activeConv.contactName}`);
   };
 
-  const handleSendCustomReply = (e) => {
+  const handleCopyEmail = () => {
+    if (!activeConv?.contactEmail) return;
+    navigator.clipboard.writeText(activeConv.contactEmail);
+    showToast(`📋 Copied ${activeConv.contactEmail} to clipboard!`);
+  };
+
+  const handleOpenGmailWeb = () => {
+    if (!activeConv?.contactEmail) return;
+    const to = encodeURIComponent(activeConv.contactEmail);
+    const su = encodeURIComponent(`Re: ${activeConv.companyName} Custom Demo & Web Setup`);
+    const body = encodeURIComponent(`Hi ${activeConv.contactName},\n\nFollowing up on your custom demo: ${demoUrl}\n\nBest,\nHarvey Ross\nInfraTech AI\naman.infratechai@gmail.com`);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`;
+    window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleSendCustomReply = async (e) => {
     e.preventDefault();
     if (!replyText.trim() || !activeConv) return;
+    const textToSend = replyText.trim();
     const sentMsg = {
       sender: 'harvey',
       sentAt: 'Just now',
-      content: replyText.trim()
+      content: textToSend
     };
     if (onSendReply) {
       onSendReply(activeConv.id, sentMsg);
     }
     setReplyText('');
-    showToast(`✅ Reply sent to ${activeConv.contactName}`);
+    showToast(`✅ Reply recorded for ${activeConv.contactName}`);
+
+    // Live send via Gmail
+    try {
+      await salesService.sendLiveEmailViaGmail({
+        to: activeConv.contactEmail,
+        subject: `Re: ${activeConv.companyName} Online Booking Demo`,
+        body: textToSend,
+        userId: settings?.userId
+      });
+      showToast(`🚀 Dispatched live email to ${activeConv.contactEmail} via your Gmail!`);
+    } catch (err) {
+      console.warn('Live Gmail send on reply notice:', err.message);
+    }
   };
 
   const handleCreateInboundLog = async (e) => {
@@ -455,7 +484,27 @@ export const ConversationsView = ({
                         Deal: ${activeConv.dealValue || 499} USD
                       </span>
                     </div>
-                    <span className="text-xs font-mono text-slate-500">{activeConv.contactEmail}</span>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        {activeConv.contactEmail}
+                      </span>
+                      <button
+                        onClick={handleCopyEmail}
+                        className="px-2 py-0.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                        title="Copy email address"
+                      >
+                        <Copy className="w-3 h-3 text-slate-500" />
+                        <span>Copy</span>
+                      </button>
+                      <button
+                        onClick={handleOpenGmailWeb}
+                        className="px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                        title="Open email compose tab directly in Gmail Web"
+                      >
+                        <ExternalLink className="w-3 h-3 text-indigo-600" />
+                        <span>Open in Gmail Web</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -632,14 +681,14 @@ export const ConversationsView = ({
                         className={`flex flex-col ${isHarvey ? 'items-end' : 'items-start'} space-y-1`}
                       >
                         <span className="text-[10px] font-bold text-slate-400 px-1">
-                          {isHarvey ? 'Harvey Ross (InfratechAI)' : activeConv.contactName} • {msg.sentAt}
+                          {isHarvey ? 'Harvey Ross (InfratechAI)' : (msg.senderName || activeConv.contactName)} • {msg.sentAt || (msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now')}
                         </span>
                         <div className={`p-3.5 sm:p-4 rounded-2xl text-xs leading-relaxed max-w-xl whitespace-pre-wrap ${
                           isHarvey
                             ? 'bg-indigo-600 text-white rounded-br-xs shadow-xs'
                             : 'bg-slate-100 text-slate-800 rounded-bl-xs'
                         }`}>
-                          {msg.content}
+                          {msg.content || msg.text}
                         </div>
                       </div>
                     );

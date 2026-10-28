@@ -17,6 +17,8 @@ import { AppLibraryView } from './components/hub/AppLibraryView';
 import { SalesManagerView } from './components/sales/SalesManagerView';
 import { BusinessCommandCenterView } from './components/business/BusinessCommandCenterView';
 import { AiDevView } from './components/aidev/AiDevView';
+import { VirtualCompanyView } from './components/company/VirtualCompanyView';
+import { VirtualCustomerView } from './components/customers/VirtualCustomerView';
 import { HarveySettingsModal } from './components/sales/HarveySettingsModal';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { InviteMemberModal } from './components/modals/InviteMemberModal';
@@ -1111,6 +1113,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           <span className={activeApp === 'aidev' ? 'text-slate-600' : 'text-[#AEAEB2]'}>•</span>
           <span className={`font-semibold ${activeApp === 'aidev' ? 'text-white' : 'text-[#1D1D1F]'}`}>
             {activeApp === 'hub' ? 'Launchpad' :
+             activeApp === 'company' ? 'Virtual Company • Stark Cyberpunk HQ' :
+             activeApp === 'customers' ? 'Virtual Customer Swarm • MiroFish' :
              activeApp === 'qa' ? (activeProject?.name ? `${activeProject.name} — Workspace` : 'QA Manager') :
              activeApp === 'sales' ? 'Harvey AI SDR' :
              activeApp === 'business' ? 'Business Operations' :
@@ -1147,8 +1151,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           />
         )}
 
-        {/* Desktop Sidebar Navigation (shown only when inside QA or Sales, hidden on Apps Library Hub) */}
-        {activeApp !== 'hub' && (
+        {/* Desktop Sidebar Navigation (shown only when inside QA or Sales, hidden on Apps Library Hub, Cyberpunk Decks and AI Dev) */}
+        {activeApp !== 'hub' && activeApp !== 'company' && activeApp !== 'customers' && activeApp !== 'aidev' && (
           <Sidebar
             activeApp={activeApp}
             onReturnToHub={() => setActiveApp('hub')}
@@ -1177,15 +1181,15 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
         {/* Main Content Area */}
         <main className={`flex-1 relative flex flex-col min-w-0 ${
-          activeApp === 'aidev'
-            ? 'bg-[#020609] h-full overflow-hidden p-0 m-0'
+          activeApp === 'aidev' || activeApp === 'company' || activeApp === 'customers'
+            ? 'bg-[#030712] h-full overflow-y-auto p-0 m-0'
             : activeApp === 'hub'
               ? 'bg-[#F5F5F7] overflow-y-auto'
               : 'bg-[#FFFFFF] overflow-y-auto pb-dock-safe md:pb-0'
         }`}>
         
-        {/* Mobile Header Bar (hidden on desktop and hub) */}
-        {activeApp !== 'hub' && (
+        {/* Mobile Header Bar (hidden on desktop, hub, and cyberpunk command views) */}
+        {activeApp !== 'hub' && activeApp !== 'company' && activeApp !== 'customers' && (
           <MobileHeader
             activeApp={activeApp}
             setActiveApp={setActiveApp}
@@ -1412,6 +1416,30 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             isVoiceEnabled={aiDevVoiceEnabled}
             onVoiceEnabledChange={setAiDevVoiceEnabled}
             resetSignal={aiDevResetSignal}
+          />
+        )}
+
+        {/* ======================================================== */}
+        {/* MODE 5: VIRTUAL COMPANY (STARK CYBERPUNK HQ & HARVEY)    */}
+        {/* ======================================================== */}
+        {activeApp === 'company' && (
+          <VirtualCompanyView
+            currentUser={currentUser}
+            projects={projects}
+            tests={tests}
+            bugs={bugs}
+            contracts={contracts}
+            onNavigateToApp={(appId) => setActiveApp(appId)}
+            onOpenHarveySettings={() => setIsHarveySettingsOpen(true)}
+          />
+        )}
+
+        {/* ======================================================== */}
+        {/* MODE 6: VIRTUAL CUSTOMER SWARM (MIROFISH MULTI-AGENT)    */}
+        {/* ======================================================== */}
+        {activeApp === 'customers' && (
+          <VirtualCustomerView
+            currentUser={currentUser}
           />
         )}
       </main>

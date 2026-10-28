@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  CheckSquare, Bot, Layers, Building2, Cpu
+  CheckSquare, Bot, Layers, Building2, Cpu, Users
 } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
 
@@ -59,7 +59,46 @@ export const AppRail = ({
             </span>
           </button>
 
-          {/* APP 1: QA MANAGER */}
+          {/* APP 1: VIRTUAL COMPANY (STARK CYBERPUNK HQ & HARVEY SALES) */}
+          <button
+            onClick={() => setActiveApp('company')}
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
+              activeApp === 'company'
+                ? 'bg-gradient-to-br from-[#06B6D4] to-[#3B82F6] text-white shadow-[0_3px_12px_rgba(6,182,212,0.45)]'
+                : 'text-[#636366] hover:text-[#06B6D4] hover:bg-black/[0.04]'
+            }`}
+            title="Virtual Company — Stark Cyberpunk HQ (Sales, Support Bot, QA, Daily Logs)"
+          >
+            {activeApp === 'company' && (
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
+            )}
+            <Building2 className="w-5 h-5 transition-transform group-hover:scale-105 text-cyan-400" strokeWidth={activeApp === 'company' ? 2.4 : 1.8} />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#06B6D4] border-2 border-white animate-pulse" />
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              Virtual Company HQ
+            </span>
+          </button>
+
+          {/* APP 2: VIRTUAL CUSTOMERS (MIROFISH SWARM ENGINE) */}
+          <button
+            onClick={() => setActiveApp('customers')}
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
+              activeApp === 'customers'
+                ? 'bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-white shadow-[0_3px_12px_rgba(168,85,247,0.45)]'
+                : 'text-[#636366] hover:text-[#A855F7] hover:bg-black/[0.04]'
+            }`}
+            title="Virtual Customers — MiroFish Multi-Agent Swarm Intelligence"
+          >
+            {activeApp === 'customers' && (
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
+            )}
+            <Users className="w-5 h-5 transition-transform group-hover:scale-105 text-purple-400" strokeWidth={activeApp === 'customers' ? 2.4 : 1.8} />
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              Virtual Customer Swarm (MiroFish)
+            </span>
+          </button>
+
+          {/* APP 3: QA MANAGER */}
           <button
             onClick={() => setActiveApp('qa')}
             className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
@@ -87,35 +126,7 @@ export const AppRail = ({
             </span>
           </button>
 
-          {/* APP 2: SALES MANAGER (HARVEY AI SDR) */}
-          <button
-            onClick={() => setActiveApp('sales')}
-            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
-              activeApp === 'sales'
-                ? 'bg-[#FF9500] text-white shadow-[0_3px_10px_rgba(255,149,0,0.35)]'
-                : 'text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04]'
-            }`}
-            title="Sales Manager — Harvey Autonomous AI SDR"
-          >
-            {activeApp === 'sales' && (
-              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
-            )}
-
-            <Bot className="w-5 h-5 transition-transform group-hover:scale-105" strokeWidth={activeApp === 'sales' ? 2.4 : 1.8} />
-
-            {/* Outbox Pending Approvals Badge */}
-            {pendingOutboxCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-[#FF9500] text-white font-semibold text-[10px] flex items-center justify-center border border-white shadow-sm">
-                {pendingOutboxCount}
-              </span>
-            )}
-
-            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
-              Sales Manager (Harvey)
-            </span>
-          </button>
-
-          {/* APP 3: BUSINESS COMMAND CENTER */}
+          {/* APP 4: BUSINESS COMMAND CENTER */}
           <button
             onClick={() => setActiveApp('business')}
             className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
@@ -139,7 +150,7 @@ export const AppRail = ({
             </span>
           </button>
 
-          {/* APP 4: AI DEV (AUTONOMOUS TECHNICAL COPILOT) */}
+          {/* APP 5: AI DEV (AUTONOMOUS TECHNICAL COPILOT) */}
           <button
             onClick={() => setActiveApp('aidev')}
             className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${

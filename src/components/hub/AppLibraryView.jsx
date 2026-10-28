@@ -3,7 +3,7 @@ import {
   Play, Bot, CheckSquare, Sparkles, Shield, ArrowRight, 
   Layers, CheckCircle2, Cpu, Globe, Sliders, LogOut,
   ChevronRight, RefreshCw, Briefcase, Zap, Flame, ExternalLink,
-  Building2
+  Building2, Users
 } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
 import { businessService } from '../../services/businessService';
@@ -25,6 +25,52 @@ export const AppLibraryView = ({
   const businessMetrics = businessService.getPortfolioMetrics(contracts);
 
   const apps = [
+    {
+      id: 'company',
+      name: 'Virtual Company (Stark Cyberpunk HQ)',
+      category: 'Autonomous Enterprise Operations',
+      description: 'Stark Industries cybernetic command center: Tony Stark J.A.R.V.I.S. holographic vocal core, Harvey Autonomous Outbound Sales, Sentinel-9 Query & Ticket Resolution AI Bot, QA telemetry, daily employee work logs, and EOD executive brief generator.',
+      icon: Building2,
+      iconBg: 'bg-gradient-to-br from-[#06B6D4] to-[#3B82F6] text-white',
+      badge: 'Flagship Autonomous HQ',
+      badgeClass: 'bg-[#06B6D4]/10 text-[#06B6D4] border-[#06B6D4]/30',
+      metrics: [
+        { label: 'Autonomous Depts', value: '4 Active' },
+        { label: 'Support SLA', value: '100% Met' },
+        { label: 'Outbound Batch', value: '10 Sent Today' }
+      ],
+      features: [
+        'Tony Stark J.A.R.V.I.S. Holographic Vocal Core',
+        'Harvey Autonomous Outbound Sales Division',
+        'Sentinel-9 Query & Ticket Auto-Diagnosis Bot',
+        'Daily Operations Work Logs & EOD Brief Generator'
+      ],
+      ctaText: 'Enter Command Deck',
+      isReady: true
+    },
+    {
+      id: 'customers',
+      name: 'Virtual Customer Swarm (MiroFish)',
+      category: 'Multi-Agent Market Intelligence',
+      description: 'Next-gen multi-agent sandbox powered by MiroFish technology. Spawns diverse virtual customer minds to debate product offerings, objections, Willingness-to-Pay (WTP) curves, and emergent consensus forecasts.',
+      icon: Users,
+      iconBg: 'bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-white',
+      badge: 'MiroFish Swarm Live',
+      badgeClass: 'bg-[#A855F7]/10 text-[#A855F7] border-[#A855F7]/30',
+      metrics: [
+        { label: 'Neural Personas', value: '5 Swarm Minds' },
+        { label: 'Consensus Fit', value: '84% Intent' },
+        { label: 'Simulation', value: 'Multi-Round' }
+      ],
+      features: [
+        'Multi-Agent Neural Personas (CTO, Solo Dev, Agency, Skeptic, SMB)',
+        'Live Unfiltered Persona Debate & Sentiment Shifting',
+        'Price Elasticity & Willingness-To-Pay (WTP) Curve',
+        'MiroFish Emergent Conversion & Objection Predictions'
+      ],
+      ctaText: 'Launch Swarm Simulator',
+      isReady: true
+    },
     {
       id: 'business',
       name: 'Business Command Center',

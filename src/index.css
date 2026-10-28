@@ -426,3 +426,106 @@
   transition: border-color 160ms ease;
 }
 .luxury-card:hover { border-color: var(--c-muted); }
+
+/* ============================================================
+   APPLE FLUID & STITCH DECORATIONS (FROM REFERENCE code.html)
+   ============================================================ */
+.hero-apple-mesh {
+  background: 
+    radial-gradient(ellipse 85% 75% at 85% 15%, rgba(80, 84, 94, 0.55) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 60% at 20% 90%, rgba(43, 45, 51, 0.85) 0%, transparent 70%),
+    radial-gradient(circle at 60% 40%, rgba(154, 160, 172, 0.18) 0%, transparent 75%),
+    linear-gradient(135deg, #141518 0%, #1e2024 45%, #2B2D33 100%);
+}
+
+.glass-specular {
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.85), inset 0 -1px 1px rgba(0, 0, 0, 0.03), 0 10px 30px -5px rgba(20, 21, 24, 0.04);
+}
+
+.dark-glass-specular {
+  box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.16), 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+}
+
+.apple-motion {
+  transition: all 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.apple-motion-quick {
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shadow-apple-card {
+  box-shadow: 0 12px 36px -6px rgba(20, 21, 24, 0.05), 0 4px 12px -2px rgba(20, 21, 24, 0.02);
+}
+
+.shadow-apple-hover {
+  box-shadow: 0 28px 52px -10px rgba(20, 21, 24, 0.16), 0 10px 24px -4px rgba(20, 21, 24, 0.06);
+}
+
+.shadow-apple-sm {
+  box-shadow: 0 2px 8px -2px rgba(20, 21, 24, 0.04), 0 1px 3px -1px rgba(20, 21, 24, 0.02);
+}
+
+.btn-shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  transform: rotate(25deg);
+  transition: all 750ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.btn-shine-effect:hover::after {
+  left: 140%;
+}
+
+.ios-spinner {
+  position: relative;
+  width: 38px;
+  height: 38px;
+}
+
+.ios-spinner-blade {
+  position: absolute;
+  left: 46%;
+  top: 30%;
+  width: 8%;
+  height: 24%;
+  background-color: #141518;
+  border-radius: 9999px;
+  animation: ios-fade 1s linear infinite;
+  transform-origin: center bottom;
+}
+
+.ios-spinner-blade:nth-child(1)  { transform: rotate(0deg) translate(0, -140%); animation-delay: 0s; }
+.ios-spinner-blade:nth-child(2)  { transform: rotate(30deg) translate(0, -140%); animation-delay: -0.916s; }
+.ios-spinner-blade:nth-child(3)  { transform: rotate(60deg) translate(0, -140%); animation-delay: -0.833s; }
+.ios-spinner-blade:nth-child(4)  { transform: rotate(90deg) translate(0, -140%); animation-delay: -0.75s; }
+.ios-spinner-blade:nth-child(5)  { transform: rotate(120deg) translate(0, -140%); animation-delay: -0.666s; }
+.ios-spinner-blade:nth-child(6)  { transform: rotate(150deg) translate(0, -140%); animation-delay: -0.583s; }
+.ios-spinner-blade:nth-child(7)  { transform: rotate(180deg) translate(0, -140%); animation-delay: -0.5s; }
+.ios-spinner-blade:nth-child(8)  { transform: rotate(210deg) translate(0, -140%); animation-delay: -0.416s; }
+.ios-spinner-blade:nth-child(9)  { transform: rotate(240deg) translate(0, -140%); animation-delay: -0.333s; }
+.ios-spinner-blade:nth-child(10) { transform: rotate(270deg) translate(0, -140%); animation-delay: -0.25s; }
+.ios-spinner-blade:nth-child(11) { transform: rotate(300deg) translate(0, -140%); animation-delay: -0.166s; }
+.ios-spinner-blade:nth-child(12) { transform: rotate(330deg) translate(0, -140%); animation-delay: -0.083s; }
+
+@keyframes ios-fade {
+  0% { opacity: 1; }
+  100% { opacity: 0.15; }
+}

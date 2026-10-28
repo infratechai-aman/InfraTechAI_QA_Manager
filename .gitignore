@@ -27,3 +27,7 @@ dist-ssr
 *.sln
 *.sw?
 scripts/overnight-state.json
+
+# Skills CLI duplicate symlink roots
+.claude/
+agent/

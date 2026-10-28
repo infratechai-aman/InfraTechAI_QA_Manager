@@ -291,30 +291,35 @@ export const MobileBottomNav = ({
 
       {/* Floating iOS Glassmorphic Dock (Visible on mobile/tablet screens: md:hidden) */}
       <nav 
-        className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] inset-x-3 max-w-lg mx-auto z-40 md:hidden glass-dock rounded-3xl p-1.5 flex items-center justify-between"
+        className={`fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0.75rem))] inset-x-3 max-w-lg mx-auto z-40 md:hidden rounded-[22px] p-1.5 flex items-center justify-between transition-colors ${
+          activeApp === 'aidev'
+            ? 'glass-dock text-white'
+            : 'ios-glass-dock text-[#1D1D1F]'
+        }`}
         aria-label="Mobile Navigation Dock"
       >
         {/* Left items */}
         {navItems.slice(0, 2).map((item) => {
           const Icon = item.icon;
+          const isAiDev = activeApp === 'aidev';
           return (
             <button
               key={item.id}
               disabled={item.disabled}
               onClick={item.onClick}
-              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl relative transition-all active-spring ${
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-[16px] relative transition-all apple-press ${
                 item.disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
               } ${
                 item.isActive 
-                  ? 'text-white bg-white/10 font-bold shadow-inner' 
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? isAiDev ? 'text-white bg-white/10 font-semibold' : 'text-[#007AFF] bg-black/[0.04] font-semibold' 
+                  : isAiDev ? 'text-slate-400' : 'text-[#8E8E93] hover:text-[#1D1D1F]'
               }`}
             >
               <div className="relative">
-                <Icon size={18} className={item.isActive ? (activeApp === 'business' ? 'text-emerald-400' : activeApp === 'aidev' ? 'text-cyan-400' : 'text-indigo-400') : ''} />
+                <Icon size={18} strokeWidth={item.isActive ? 2.3 : 1.8} className={item.isActive ? (isAiDev ? 'text-cyan-400' : 'text-[#007AFF]') : ''} />
                 {item.badge && (
-                  <span className={`absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full text-white text-[9px] font-black flex items-center justify-center px-1 shadow-sm ${
-                    item.badgeColor === 'amber' ? 'bg-amber-500 text-slate-950' : 'bg-rose-500'
+                  <span className={`absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-sm ${
+                    item.badgeColor === 'amber' ? 'bg-[#FF9500]' : 'apple-badge'
                   }`}>
                     {item.badge}
                   </span>
@@ -322,7 +327,7 @@ export const MobileBottomNav = ({
               </div>
               <span className="text-[10px] mt-0.5 tracking-tight truncate max-w-[64px]">{item.label}</span>
               {item.isActive && (
-                <span className={`w-1 h-1 rounded-full absolute bottom-1 ${activeApp === 'business' ? 'bg-emerald-400' : activeApp === 'aidev' ? 'bg-cyan-400' : 'bg-indigo-400'}`} />
+                <span className={`w-1 h-1 rounded-full absolute bottom-1 ${isAiDev ? 'bg-cyan-400' : 'bg-[#007AFF]'}`} />
               )}
             </button>
           );
@@ -332,25 +337,26 @@ export const MobileBottomNav = ({
         <div className="px-1 shrink-0">
           <button
             onClick={() => setIsOptionsOpen(!isOptionsOpen)}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg active-spring relative ${
+            className={`w-11 h-11 rounded-[15px] flex items-center justify-center transition-all duration-200 apple-press relative ${
               isOptionsOpen
-                ? 'bg-rose-600 text-white rotate-45 shadow-rose-500/40'
-                : `bg-gradient-to-tr ${centerButtonGradient} hover:scale-105 active:scale-95`
+                ? 'bg-[#FF3B30] text-white rotate-45 shadow-[0_4px_14px_rgba(255,59,48,0.35)]'
+                : activeApp === 'aidev'
+                  ? `bg-gradient-to-tr ${centerButtonGradient} shadow-md`
+                  : 'bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,0.35)] hover:scale-105'
             }`}
             title="Open Quick Options"
             aria-label="Toggle Options Menu"
           >
-            <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 hover:opacity-100 transition-opacity" />
             {isOptionsOpen ? (
-              <X size={22} className="shrink-0 text-white" />
+              <X size={20} className="shrink-0 text-white" />
             ) : activeApp === 'business' ? (
-              <Building2 size={20} className="shrink-0 text-white" />
+              <Building2 size={18} className="shrink-0 text-white" />
             ) : activeApp === 'sales' ? (
-              <Bot size={20} className="shrink-0 text-white" />
+              <Bot size={18} className="shrink-0 text-white" />
             ) : activeApp === 'aidev' ? (
-              <Radio size={20} className={`shrink-0 ${centerIconColor}`} />
+              <Radio size={18} className={`shrink-0 ${centerIconColor}`} />
             ) : (
-              <Sparkles size={20} className="shrink-0 text-white animate-pulse" />
+              <Sparkles size={18} className="shrink-0 text-white" />
             )}
           </button>
         </div>
@@ -358,24 +364,25 @@ export const MobileBottomNav = ({
         {/* Right items */}
         {navItems.slice(2).map((item) => {
           const Icon = item.icon;
+          const isAiDev = activeApp === 'aidev';
           return (
             <button
               key={item.id}
               disabled={item.disabled}
               onClick={item.onClick}
-              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl relative transition-all active-spring ${
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-[16px] relative transition-all apple-press ${
                 item.disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'
               } ${
                 item.isActive 
-                  ? 'text-white bg-white/10 font-bold shadow-inner' 
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? isAiDev ? 'text-white bg-white/10 font-semibold' : 'text-[#007AFF] bg-black/[0.04] font-semibold' 
+                  : isAiDev ? 'text-slate-400' : 'text-[#8E8E93] hover:text-[#1D1D1F]'
               }`}
             >
               <div className="relative">
-                <Icon size={18} className={item.isActive ? (activeApp === 'business' ? 'text-emerald-400' : activeApp === 'aidev' ? 'text-cyan-400' : 'text-indigo-400') : ''} />
+                <Icon size={18} strokeWidth={item.isActive ? 2.3 : 1.8} className={item.isActive ? (isAiDev ? 'text-cyan-400' : 'text-[#007AFF]') : ''} />
                 {item.badge && (
-                  <span className={`absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full text-white text-[9px] font-black flex items-center justify-center px-1 shadow-sm ${
-                    item.badgeColor === 'amber' ? 'bg-amber-500 text-slate-950' : 'bg-rose-500'
+                  <span className={`absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-sm ${
+                    item.badgeColor === 'amber' ? 'bg-[#FF9500]' : 'apple-badge'
                   }`}>
                     {item.badge}
                   </span>
@@ -383,7 +390,7 @@ export const MobileBottomNav = ({
               </div>
               <span className="text-[10px] mt-0.5 tracking-tight truncate max-w-[64px]">{item.label}</span>
               {item.isActive && (
-                <span className={`w-1 h-1 rounded-full absolute bottom-1 ${activeApp === 'business' ? 'bg-emerald-400' : activeApp === 'aidev' ? 'bg-cyan-400' : 'bg-indigo-400'}`} />
+                <span className={`w-1 h-1 rounded-full absolute bottom-1 ${isAiDev ? 'bg-cyan-400' : 'bg-[#007AFF]'}`} />
               )}
             </button>
           );
@@ -400,20 +407,36 @@ export const MobileBottomNav = ({
           />
 
           {/* Glass Bottom Sheet */}
-          <div className="relative z-10 w-full max-w-lg mx-auto glass-sheet rounded-t-[2.5rem] p-5 pb-safe animate-slideUp max-h-[85vh] overflow-y-auto">
+          <div className={`relative z-10 w-full max-w-lg mx-auto rounded-t-[28px] p-5 pb-safe animate-slideUp max-h-[85vh] overflow-y-auto ${
+            activeApp === 'aidev'
+              ? 'glass-sheet text-white'
+              : 'bg-white/95 text-[#1D1D1F] border-t border-black/10 backdrop-blur-3xl shadow-[0_-16px_50px_rgba(0,0,0,0.15)]'
+          }`}>
             
             {/* iOS Grab Handle */}
-            <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 shrink-0" />
+            <div className={`w-9 h-1 rounded-full mx-auto mb-3 shrink-0 ${
+              activeApp === 'aidev' ? 'bg-white/20' : 'bg-[#D1D1D6]'
+            }`} />
 
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
+            <div className={`flex items-center justify-between pb-3 mb-3 border-b ${
+              activeApp === 'aidev' ? 'border-white/10' : 'border-black/[0.06]'
+            }`}>
               <div className="flex items-center gap-2">
-                <div className={`p-1.5 rounded-xl bg-gradient-to-tr ${centerButtonGradient} text-white`}>
+                <div className={`p-1.5 rounded-xl ${
+                  activeApp === 'aidev'
+                    ? `bg-gradient-to-tr ${centerButtonGradient} text-white`
+                    : 'bg-[#007AFF] text-white shadow-xs'
+                }`}>
                   <Sparkles size={16} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-white tracking-tight">Quick Actions & Options</h3>
-                  <p className="text-[11px] text-slate-400 truncate max-w-[220px]">
+                  <h3 className={`text-sm font-semibold tracking-tight ${
+                    activeApp === 'aidev' ? 'text-white' : 'text-[#1D1D1F]'
+                  }`}>Quick Actions & Options</h3>
+                  <p className={`text-[11px] truncate max-w-[220px] ${
+                    activeApp === 'aidev' ? 'text-slate-400' : 'text-[#86868B]'
+                  }`}>
                     {activeAppLabel}
                   </p>
                 </div>
@@ -421,47 +444,55 @@ export const MobileBottomNav = ({
 
               <button
                 onClick={() => setIsOptionsOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors active-spring cursor-pointer"
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors apple-press cursor-pointer ${
+                  activeApp === 'aidev'
+                    ? 'bg-white/10 hover:bg-white/20 text-slate-300'
+                    : 'bg-black/[0.05] hover:bg-black/[0.1] text-[#636366]'
+                }`}
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             </div>
 
             {/* 1-Tap App Switcher Capsule inside Sheet */}
             {onSwitchApp && (
               <div className="mb-4">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1 block mb-1.5">
+                <span className={`text-[10px] font-semibold uppercase tracking-wider px-1 block mb-1.5 ${
+                  activeApp === 'aidev' ? 'text-slate-400' : 'text-[#8E8E93]'
+                }`}>
                   Switch Active Workspace
                 </span>
-                <div className="grid grid-cols-4 gap-1.5 bg-white/5 p-1 rounded-2xl border border-white/10 text-xs">
+                <div className={`grid grid-cols-4 gap-1 p-1 rounded-xl text-xs ${
+                  activeApp === 'aidev' ? 'bg-white/5 border border-white/10' : 'bg-black/[0.05] border border-black/[0.04]'
+                }`}>
                   <button
                     onClick={() => { onSwitchApp('qa'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                      activeApp === 'qa' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                      activeApp === 'qa' ? 'bg-[#007AFF] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
                     QA Manager
                   </button>
                   <button
                     onClick={() => { onSwitchApp('sales'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                      activeApp === 'sales' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-400 hover:text-white'
+                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                      activeApp === 'sales' ? 'bg-[#FF9500] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
                     Sales AI
                   </button>
                   <button
                     onClick={() => { onSwitchApp('business'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                      activeApp === 'business' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                      activeApp === 'business' ? 'bg-[#34C759] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
                     Business
                   </button>
                   <button
                     onClick={() => { onSwitchApp('aidev'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                      activeApp === 'aidev' ? 'bg-cyan-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                      activeApp === 'aidev' ? 'bg-[#007AFF] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
                     AI Dev

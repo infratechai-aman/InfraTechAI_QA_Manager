@@ -28,45 +28,45 @@ export const AppLibraryView = ({
     {
       id: 'business',
       name: 'Business Command Center',
-      category: 'Executive Operations & Revenue',
-      description: 'Full active enterprise client portfolios, contract expiration tracking, renewal countdowns, SLA guarantees, retainers/MRR, and detailed technical project scopes.',
+      category: 'Enterprise Revenue & SLA',
+      description: 'Active client portfolios, contract renewal countdowns, enterprise SLA guarantees, retainers/MRR, and detailed technical project scopes.',
       icon: Building2,
-      iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
-      badge: contracts.length > 0 ? 'Live Portfolio Active' : 'Production Ready',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      iconBg: 'bg-gradient-to-b from-[#34C759] to-[#28A745] text-white',
+      badge: contracts.length > 0 ? 'Active Portfolio' : 'Ready',
+      badgeClass: 'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20',
       metrics: [
-        { label: 'Active Accounts', value: `${contracts.length} Accounts` },
+        { label: 'Accounts', value: `${contracts.length} Active` },
         { label: 'Portfolio MRR', value: `$${businessMetrics.totalMRR.toLocaleString()}` },
-        { label: 'Expiring Soon', value: `${businessMetrics.expiringSoonCount} Accounts`, highlight: businessMetrics.expiringSoonCount > 0 }
+        { label: 'Expiring Soon', value: `${businessMetrics.expiringSoonCount}`, highlight: businessMetrics.expiringSoonCount > 0 }
       ],
       features: [
-        'Contract Expiration Countdown & Renewal Timeline',
+        'Contract Expiration & Renewal Timeline',
         'Project Scopes & Deliverables Checklist',
         'Enterprise SLA Tiers & Retainer Tracking'
       ],
-      ctaText: 'Launch Command Center',
+      ctaText: 'Open',
       isReady: true
     },
     {
       id: 'aidev',
-      name: 'AI DEV (Autonomous Copilot)',
-      category: 'Unified Voice Intelligence',
-      description: 'Autonomous technical lead with 100% real-time awareness across QA test suites, open defects, sales outbox, and contracts. Fetches live data and speaks aloud via Web Speech synthesis.',
+      name: 'AI DEV Copilot',
+      category: 'Voice Intelligence Engine',
+      description: 'Autonomous technical lead with 100% real-time awareness across QA test suites, open defects, sales outbox, and contracts. Voice synthesis via Web Speech.',
       icon: Cpu,
-      iconBg: 'bg-cyan-50 text-cyan-600 border border-cyan-100',
-      badge: 'Real-Time Voice Active',
-      badgeClass: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+      iconBg: 'bg-gradient-to-b from-[#5856D6] to-[#007AFF] text-white',
+      badge: 'Live Voice Active',
+      badgeClass: 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/20',
       metrics: [
-        { label: 'Audio Engine', value: 'Live Web Speech' },
-        { label: 'Platform Telemetry', value: '100% Real-Time' },
+        { label: 'Voice Link', value: 'Web Speech' },
+        { label: 'Telemetry', value: '100% Live' },
         { label: 'Model Cost', value: '$0.00' }
       ],
       features: [
-        'Live Web Speech Synthesis (Answers spoken aloud in real-time)',
-        'Full Multi-App Telemetry Inspector across QA, Sales & Business',
-        'Natural Language Comprehension (Hinglish & English)'
+        'Live Web Speech Audio Engine',
+        'Full Multi-App Telemetry Across QA, Sales & Biz',
+        'Natural Language Comprehension (Hinglish/English)'
       ],
-      ctaText: 'Launch AI Dev',
+      ctaText: 'Open',
       isReady: true
     },
     {
@@ -75,42 +75,42 @@ export const AppLibraryView = ({
       category: 'Quality Engineering',
       description: 'High-velocity test execution with Linear-style hotkeys (P/F/B), full defect lifecycle tracking, test suites management, and real-time Firebase collaboration.',
       icon: CheckSquare,
-      iconBg: 'bg-indigo-50 text-indigo-600 border border-indigo-100',
+      iconBg: 'bg-gradient-to-b from-[#007AFF] to-[#0051A8] text-white',
       badge: 'Core Installed',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      badgeClass: 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/20',
       metrics: [
         { label: 'Workspaces', value: `${projects.length} Active` },
         { label: 'Defects', value: `${openBugsCount} Open`, highlight: openBugsCount > 0 },
-        { label: 'Cloud Sync', value: 'Live' }
+        { label: 'iCloud Sync', value: 'Live' }
       ],
       features: [
         'Linear-style Hotkeys (P: Pass, F: Fail, B: Block)',
         'Defect Tracking with Severity & Lifecycle',
         'Real-time Multi-User Cloud Collaboration'
       ],
-      ctaText: 'Launch QA Manager',
+      ctaText: 'Open',
       isReady: true
     },
     {
       id: 'sales',
-      name: 'Sales Manager (Harvey AI SDR)',
+      name: 'Sales Manager (Harvey)',
       category: 'Autonomous Sales AI',
-      description: 'Autonomous B2B outbound prospecting engine. Discovers website buying signals, crafts hyper-personalized sequences, and queues human-vetted drafts in the Decisions Desk.',
+      description: 'Autonomous B2B outbound prospecting engine. Discovers website buying signals, crafts hyper-personalized sequences, and queues human-vetted drafts in Decisions Desk.',
       icon: Bot,
-      iconBg: 'bg-amber-50 text-amber-600 border border-amber-100',
-      badge: 'Autonomous SDR Active',
-      badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      iconBg: 'bg-gradient-to-b from-[#FF9500] to-[#E07A00] text-white',
+      badge: 'SDR Engine Active',
+      badgeClass: 'bg-[#FF9500]/10 text-[#FF9500] border-[#FF9500]/20',
       metrics: [
-        { label: 'Outbox Desk', value: `${pendingOutboxCount} Pending`, highlight: pendingOutboxCount > 0 },
-        { label: 'SDR Engine', value: 'Infratech Neural' },
+        { label: 'Decisions Desk', value: `${pendingOutboxCount} Pending`, highlight: pendingOutboxCount > 0 },
+        { label: 'Engine', value: 'Neural SDR' },
         { label: 'Model Cost', value: '$0.00' }
       ],
       features: [
-        'Harvey Decisions Desk (Keyboard A / R Approval)',
-        'Anti-AI Fluff Policy (Banned robotic phrases)',
-        'Inbound Replies & LAARC Objection Handling'
+        'Decisions Desk (Keyboard A / R Approval)',
+        'Anti-AI Fluff Policy (Strict Quality Standards)',
+        'Inbound Replies & Objection Handling'
       ],
-      ctaText: 'Launch Sales Manager',
+      ctaText: 'Open',
       isReady: true
     },
     {
@@ -119,11 +119,11 @@ export const AppLibraryView = ({
       category: 'CI/CD & Deployment',
       description: 'Continuous staging regression analysis, automated canary rollouts verification, and deployment readiness scoring before promoting builds.',
       icon: Shield,
-      iconBg: 'bg-slate-100 text-slate-500 border border-slate-200',
-      badge: 'Roadmap Preview',
-      badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+      iconBg: 'bg-gradient-to-b from-[#8E8E93] to-[#636366] text-white',
+      badge: 'Preview',
+      badgeClass: 'bg-black/[0.05] text-[#8E8E93] border-black/[0.08]',
       metrics: [
-        { label: 'Integrations', value: 'GitHub Actions' },
+        { label: 'CI/CD', value: 'GitHub Actions' },
         { label: 'Readiness', value: '99.8%' },
         { label: 'Status', value: 'Preview' }
       ],
@@ -132,7 +132,7 @@ export const AppLibraryView = ({
         'Staging Deployment Blockers Auto-Flagging',
         'Zero-Config Webhook Integrations'
       ],
-      ctaText: 'Preview Roadmap',
+      ctaText: 'Preview',
       isReady: false
     }
   ];
@@ -146,179 +146,155 @@ export const AppLibraryView = ({
   });
 
   return (
-    <div className="w-full min-h-full bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="w-full min-h-full bg-[#F5F5F7] flex flex-col font-sans text-[#1D1D1F]">
       
-      {/* Top Clean Executive Header */}
-      <header className="bg-white border-b border-slate-200/90 px-6 sm:px-10 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+      {/* Top Apple Navigation Header */}
+      <header className="mac-titlebar px-5 sm:px-10 py-3 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
-          <img 
-            src="/qa-logo.png" 
-            alt="InfratechAI" 
-            className="w-9 h-9 object-contain shrink-0 rounded-lg shadow-2xs" 
-          />
+          <div className="w-8 h-8 rounded-[10px] bg-white shadow-2xs border border-black/5 p-1 flex items-center justify-center">
+            <img 
+              src="/qa-logo.png" 
+              alt="InfratechAI" 
+              className="w-full h-full object-contain" 
+            />
+          </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-slate-900 text-base tracking-tight leading-tight">
-                InfratechAI
+              <span className="font-semibold text-[#1D1D1F] text-sm tracking-tight">
+                InfratechAI Launchpad
               </span>
-              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Suite Hub
+              <span className="text-[10px] font-medium text-[#007AFF] bg-[#007AFF]/10 border border-[#007AFF]/20 px-2 py-0.5 rounded-full">
+                App Store
               </span>
             </div>
-            <p className="text-[11px] text-slate-500">Enterprise Unified Application Platform</p>
+            <p className="text-[11px] text-[#86868B]">Enterprise Operations & Engineering</p>
           </div>
         </div>
 
-        {/* Right status & profile */}
+        {/* Right user & system status */}
         <div className="flex items-center gap-3">
-          
-          {/* System Engine Indicator */}
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-full text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-500">System:</span>
-            <span className="font-bold text-slate-800">InfratechAI Neural Engine</span>
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-black/[0.04] border border-black/[0.05] rounded-full text-xs">
+            <span className="w-2 h-2 rounded-full bg-[#34C759]" />
+            <span className="text-[#8E8E93]">System:</span>
+            <span className="font-medium text-[#1D1D1F]">Neural Core Online</span>
           </div>
 
-          {/* User Capsule */}
-          <div className="flex items-center gap-2.5 pl-2">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white shadow-2xs ${userColor?.badge || 'bg-indigo-600'}`}>
+          <div className="flex items-center gap-2 pl-2">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-medium text-xs text-white bg-[#007AFF] shadow-xs">
               {userInitial}
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-xs font-bold text-slate-800 leading-none truncate max-w-[150px]">
+              <p className="text-xs font-medium text-[#1D1D1F] leading-none truncate max-w-[140px]">
                 {currentUser?.email?.split('@')[0] || 'User'}
-              </p>
-              <p className="text-[10px] text-slate-500 truncate max-w-[150px]">
-                {currentUser?.email || 'Logged In'}
               </p>
             </div>
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer ml-1"
+                className="p-1 text-[#8E8E93] hover:text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-md transition-colors cursor-pointer ml-1"
                 title="Sign Out"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Workspace Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-10 py-6 sm:py-8 pb-20 sm:pb-8 space-y-6 sm:space-y-8 animate-fadeIn">
+      {/* Main Launchpad Grid */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-10 py-6 sm:py-8 pb-24 sm:pb-10 space-y-6 animate-fadeIn">
         
-        {/* Hero Section (Matching ProjectsView Header exactly) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+        {/* Apple Segmented Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-black/[0.06]">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Applications & Workspaces
+            <h1 className="text-xl sm:text-2xl font-semibold text-[#1D1D1F] tracking-tight">
+              Ecosystem Applications
             </h1>
-            <p className="text-slate-500 mt-1 text-xs sm:text-sm">
-              Select an enterprise application below to launch its workspace.
+            <p className="text-[#86868B] mt-0.5 text-xs sm:text-sm">
+              Launch enterprise workspaces, AI copilots and defect suites.
             </p>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs self-start sm:self-auto overflow-x-auto max-w-full pb-1 sm:pb-0">
+          {/* Apple Segmented Switcher */}
+          <div className="mac-segmented self-start sm:self-auto overflow-x-auto max-w-full">
             <button
               onClick={() => setActiveFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'all'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'all' ? 'mac-segmented-item-active' : ''}`}
             >
-              All Modules ({apps.length})
-            </button>
-            <button
-              onClick={() => setActiveFilter('business')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'business'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              Business Operations
-            </button>
-            <button
-              onClick={() => setActiveFilter('aidev')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'aidev'
-                  ? 'bg-cyan-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              AI Dev Copilot
+              All ({apps.length})
             </button>
             <button
               onClick={() => setActiveFilter('qa')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'qa'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'qa' ? 'mac-segmented-item-active' : ''}`}
             >
-              QA Engineering
+              QA Manager
             </button>
             <button
               onClick={() => setActiveFilter('sales')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeFilter === 'sales'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
+              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'sales' ? 'mac-segmented-item-active' : ''}`}
             >
-              Autonomous Sales AI
+              Sales AI
+            </button>
+            <button
+              onClick={() => setActiveFilter('business')}
+              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'business' ? 'mac-segmented-item-active' : ''}`}
+            >
+              Business
+            </button>
+            <button
+              onClick={() => setActiveFilter('aidev')}
+              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'aidev' ? 'mac-segmented-item-active' : ''}`}
+            >
+              AI Dev
             </button>
           </div>
         </div>
 
-        {/* Clean Application Cards Grid (Matching ProjectsView Card Language) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Application Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredApps.map((app) => {
             const Icon = app.icon;
             return (
               <div
                 key={app.id}
                 onClick={() => app.isReady && onLaunchApp(app.id)}
-                className={`group p-6 rounded-2xl border transition-all duration-200 flex flex-col justify-between min-h-[340px] ${
+                className={`group p-5 rounded-[20px] transition-all duration-200 flex flex-col justify-between min-h-[320px] border ${
                   app.isReady
-                    ? 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-lg cursor-pointer'
-                    : 'bg-slate-50/80 border-slate-200/60 opacity-80 cursor-default'
+                    ? 'bg-white border-black/[0.06] hover:border-black/[0.12] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.07)] cursor-pointer apple-press'
+                    : 'bg-white/60 border-black/[0.04] opacity-70 cursor-default'
                 }`}
               >
-                {/* Card Header */}
-                <div className="space-y-4">
+                {/* Card Header with Squircle Icon */}
+                <div className="space-y-3.5">
                   <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-xl shadow-2xs ${app.iconBg} group-hover:scale-105 transition-transform`}>
+                    <div className={`w-12 h-12 rounded-[14px] shadow-[0_4px_12px_rgba(0,0,0,0.12)] flex items-center justify-center p-2.5 ${app.iconBg} group-hover:scale-105 transition-transform`}>
                       <Icon size={22} strokeWidth={2.2} />
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase tracking-wider ${app.badgeClass}`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${app.badgeClass}`}>
                       {app.badge}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">
+                    <span className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider block mb-0.5">
                       {app.category}
                     </span>
-                    <h2 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    <h2 className="text-base font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">
                       {app.name}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
+                    <p className="text-xs text-[#86868B] mt-1.5 line-clamp-3 leading-relaxed">
                       {app.description}
                     </p>
                   </div>
 
                   {/* Clean Metrics Strip */}
-                  <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100">
+                  <div className="grid grid-cols-3 gap-2 py-2 border-y border-black/[0.05]">
                     {app.metrics.map((m, idx) => (
                       <div key={idx} className="text-center">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                        <span className="text-[9px] font-medium text-[#8E8E93] uppercase tracking-wider block">
                           {m.label}
                         </span>
-                        <span className={`text-xs font-bold ${m.highlight ? 'text-amber-600' : 'text-slate-800'}`}>
+                        <span className={`text-xs font-semibold ${m.highlight ? 'text-[#FF9500]' : 'text-[#1D1D1F]'}`}>
                           {m.value}
                         </span>
                       </div>
@@ -326,31 +302,29 @@ export const AppLibraryView = ({
                   </div>
 
                   {/* Highlights checklist */}
-                  <div className="space-y-1.5 pt-1">
+                  <div className="space-y-1 pt-0.5">
                     {app.features.map((f, fIdx) => (
-                      <div key={fIdx} className="flex items-center gap-2 text-[11px] text-slate-600 font-medium">
-                        <CheckCircle2 size={13} className="text-indigo-500 shrink-0" />
+                      <div key={fIdx} className="flex items-center gap-2 text-[11px] text-[#636366]">
+                        <CheckCircle2 size={13} className="text-[#007AFF] shrink-0" />
                         <span className="truncate">{f}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Card Bottom CTA */}
-                <div className="pt-5 mt-4 border-t border-slate-100">
+                {/* Card Bottom CTA — Apple App Store Style Pill Button */}
+                <div className="pt-4 mt-3 border-t border-black/[0.05] flex items-center justify-between">
+                  <span className="text-xs text-[#8E8E93] font-medium">Free • Workspace</span>
                   <button
                     disabled={!app.isReady}
-                    className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all apple-press cursor-pointer flex items-center gap-1.5 ${
                       app.isReady
-                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs group-hover:shadow-md'
-                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                        ? 'bg-[#007AFF] hover:bg-[#0071E3] text-white shadow-xs'
+                        : 'bg-black/[0.05] text-[#AEAEB2] cursor-not-allowed'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Play size={13} className="fill-current" />
-                      <span>{app.ctaText}</span>
-                    </div>
-                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    <span>{app.ctaText}</span>
+                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 </div>
 

@@ -1,0 +1,247 @@
+[
+  {
+    "companyName": "Austin Maid Service",
+    "contactName": "Brian",
+    "contactEmail": "service@austinmaidservice.com",
+    "domain": "austinmaidservice.com",
+    "city": "Austin, TX"
+  },
+  {
+    "companyName": "EcoClean Austin",
+    "contactName": "Rachel",
+    "contactEmail": "info@ecocleanaustin.com",
+    "domain": "ecocleanaustin.com",
+    "city": "Austin, TX"
+  },
+  {
+    "companyName": "Austin's Maid Service",
+    "contactName": "David",
+    "contactEmail": "contact@austinsmaidservice.com",
+    "domain": "austinsmaidservice.com",
+    "city": "Austin, TX"
+  },
+  {
+    "companyName": "The Boardwalk Cleaning Co.",
+    "contactName": "Mark",
+    "contactEmail": "info@boardwalkcleaning.com",
+    "domain": "boardwalkcleaning.com",
+    "city": "Austin, TX"
+  },
+  {
+    "companyName": "Highland Park Housekeeping",
+    "contactName": "Elena",
+    "contactEmail": "info@highlandparkhousekeeping.com",
+    "domain": "highlandparkhousekeeping.com",
+    "city": "Dallas, TX"
+  },
+  {
+    "companyName": "DFW Clean",
+    "contactName": "Marcus",
+    "contactEmail": "service@dfwclean.com",
+    "domain": "dfwclean.com",
+    "city": "Dallas, TX"
+  },
+  {
+    "companyName": "Modern Maids Dallas",
+    "contactName": "Justin",
+    "contactEmail": "support@modernmaidsdallas.com",
+    "domain": "modernmaidsdallas.com",
+    "city": "Dallas, TX"
+  },
+  {
+    "companyName": "Dallas Cleaning Crew",
+    "contactName": "Sarah",
+    "contactEmail": "info@dallascleaningcrew.com",
+    "domain": "dallascleaningcrew.com",
+    "city": "Dallas, TX"
+  },
+  {
+    "companyName": "Natural Care Cleaning Service",
+    "contactName": "Angela",
+    "contactEmail": "info@naturalcarecleaningservice.com",
+    "domain": "naturalcarecleaningservice.com",
+    "city": "Houston, TX"
+  },
+  {
+    "companyName": "That's Clean Maids",
+    "contactName": "Jason",
+    "contactEmail": "info@thatscleanmaids.com",
+    "domain": "thatscleanmaids.com",
+    "city": "Houston, TX"
+  },
+  {
+    "companyName": "Maid in Allen",
+    "contactName": "Laura",
+    "contactEmail": "info@maidinallen.com",
+    "domain": "maidinallen.com",
+    "city": "Plano, TX"
+  },
+  {
+    "companyName": "Cowtown Maids",
+    "contactName": "Bill",
+    "contactEmail": "info@cowtownmaids.com",
+    "domain": "cowtownmaids.com",
+    "city": "Fort Worth, TX"
+  },
+  {
+    "companyName": "Sunshine Maid Service",
+    "contactName": "Brandon",
+    "contactEmail": "info@sunshinemaidservice.com",
+    "domain": "sunshinemaidservice.com",
+    "city": "Orlando, FL"
+  },
+  {
+    "companyName": "Central Florida Maids",
+    "contactName": "Jessica",
+    "contactEmail": "info@centralfloridamaids.com",
+    "domain": "centralfloridamaids.com",
+    "city": "Orlando, FL"
+  },
+  {
+    "companyName": "Bay Area Cleaning Pros",
+    "contactName": "Heather",
+    "contactEmail": "info@bayareacleaningpros.com",
+    "domain": "bayareacleaningpros.com",
+    "city": "St. Petersburg, FL"
+  },
+  {
+    "companyName": "Buckhead Cleaners",
+    "contactName": "Victoria",
+    "contactEmail": "service@buckheadcleaners.com",
+    "domain": "buckheadcleaners.com",
+    "city": "Atlanta, GA"
+  },
+  {
+    "companyName": "Triangle Green Cleaning",
+    "contactName": "Nicole",
+    "contactEmail": "info@trianglegreencleaning.com",
+    "domain": "trianglegreencleaning.com",
+    "city": "Raleigh, NC"
+  },
+  {
+    "companyName": "Palmetto Cleaners",
+    "contactName": "Lucas",
+    "contactEmail": "info@palmettocleaners.com",
+    "domain": "palmettocleaners.com",
+    "city": "Charleston, SC"
+  },
+  {
+    "companyName": "Holy City Maids",
+    "contactName": "Brooke",
+    "contactEmail": "contact@holycitymaids.com",
+    "domain": "holycitymaids.com",
+    "city": "Charleston, SC"
+  },
+  {
+    "companyName": "Angel City Cleaners",
+    "contactName": "Ryan",
+    "contactEmail": "service@angelcitycleaners.com",
+    "domain": "angelcitycleaners.com",
+    "city": "Los Angeles, CA"
+  },
+  {
+    "companyName": "Silicon Valley Cleaners",
+    "contactName": "Vikram",
+    "contactEmail": "info@siliconvalleycleaners.com",
+    "domain": "siliconvalleycleaners.com",
+    "city": "San Jose, CA"
+  },
+  {
+    "companyName": "OC Clean Team",
+    "contactName": "Justin",
+    "contactEmail": "service@occleanteam.com",
+    "domain": "occleanteam.com",
+    "city": "Irvine, CA"
+  },
+  {
+    "companyName": "Windy City Maids",
+    "contactName": "Sean",
+    "contactEmail": "info@windycitymaids.com",
+    "domain": "windycitymaids.com",
+    "city": "Chicago, IL"
+  },
+  {
+    "companyName": "Indy Clean Team",
+    "contactName": "Kyle",
+    "contactEmail": "service@indycleanteam.com",
+    "domain": "indycleanteam.com",
+    "city": "Indianapolis, IN"
+  },
+  {
+    "companyName": "Buckeye Cleaners",
+    "contactName": "Dan",
+    "contactEmail": "info@buckeyecleaners.com",
+    "domain": "buckeyecleaners.com",
+    "city": "Columbus, OH"
+  },
+  {
+    "companyName": "Motor City Cleaners",
+    "contactName": "Jerome",
+    "contactEmail": "info@motorcitycleaners.com",
+    "domain": "motorcitycleaners.com",
+    "city": "Detroit, MI"
+  },
+  {
+    "companyName": "Twin Cities Maids",
+    "contactName": "Heidi",
+    "contactEmail": "service@twincitiesmaids.com",
+    "domain": "twincitiesmaids.com",
+    "city": "Minneapolis, MN"
+  },
+  {
+    "companyName": "North Star Cleaning Co.",
+    "contactName": "Lars",
+    "contactEmail": "info@northstarcleaningco.com",
+    "domain": "northstarcleaningco.com",
+    "city": "Minneapolis, MN"
+  },
+  {
+    "companyName": "Mile High Maids",
+    "contactName": "Cody",
+    "contactEmail": "service@milehighmaids.com",
+    "domain": "milehighmaids.com",
+    "city": "Denver, CO"
+  },
+  {
+    "companyName": "Rocky Mountain Cleaners",
+    "contactName": "Sierra",
+    "contactEmail": "info@rockymountaincleaners.com",
+    "domain": "rockymountaincleaners.com",
+    "city": "Denver, CO"
+  },
+  {
+    "companyName": "Scottsdale Maid Service",
+    "contactName": "Tiffany",
+    "contactEmail": "info@scottsdalemaidservice.com",
+    "domain": "scottsdalemaidservice.com",
+    "city": "Scottsdale, AZ"
+  },
+  {
+    "companyName": "Silver State Cleaners",
+    "contactName": "Manny",
+    "contactEmail": "service@silverstatecleaners.com",
+    "domain": "silverstatecleaners.com",
+    "city": "Las Vegas, NV"
+  },
+  {
+    "companyName": "Bean Town Cleaners",
+    "contactName": "Fiona",
+    "contactEmail": "info@beantowncleaners.com",
+    "domain": "beantowncleaners.com",
+    "city": "Boston, MA"
+  },
+  {
+    "companyName": "District Cleaners",
+    "contactName": "Marshall",
+    "contactEmail": "info@districtcleaners.com",
+    "domain": "districtcleaners.com",
+    "city": "Washington, DC"
+  },
+  {
+    "companyName": "Music City Cleaners",
+    "contactName": "Caleb",
+    "contactEmail": "service@musiccitycleaners.com",
+    "domain": "musiccitycleaners.com",
+    "city": "Nashville, TN"
+  }
+]

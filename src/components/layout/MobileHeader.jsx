@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, UserPlus, Users, Sparkles, FolderOpen, ArrowLeft, Building2, Bot } from 'lucide-react';
+import { Briefcase, UserPlus, Sparkles, Building2, Bot } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
 
 export const MobileHeader = ({
@@ -19,66 +19,69 @@ export const MobileHeader = ({
   const isAiDev = activeApp === 'aidev';
 
   return (
-    <header className={`flex md:hidden items-center justify-between px-3 py-2 sticky top-0 z-30 shrink-0 transition-colors ${
+    <header className={`flex md:hidden items-center justify-between px-3 py-2.5 sticky top-0 z-30 shrink-0 transition-colors ios-glass-header ${
       isAiDev
-        ? 'bg-[#030d14]/95 border-b border-white/10 text-white backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)]'
-        : 'bg-white border-b border-slate-200 text-slate-900 shadow-2xs'
-    }`}>
+        ? 'bg-[#1C1C1E]/90 border-b border-white/10 text-white'
+        : 'text-[#1D1D1F]'
+    }`} style={{ paddingTop: 'max(8px, env(safe-area-inset-top, 8px))' }}>
+      
       {/* Brand & Project Info */}
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
         <button
           onClick={onSelectProjectsTab}
-          className="flex items-center gap-1.5 shrink-0 group active:scale-95 transition-transform"
+          className="flex items-center gap-1.5 shrink-0 apple-press cursor-pointer"
           title="InfratechAI Platform Hub"
         >
-          <img 
-            src="/qa-logo.png" 
-            alt="App Logo" 
-            className="w-7 h-7 object-contain rounded-lg shadow-2xs"
-          />
+          <div className="w-7 h-7 rounded-[8px] bg-white shadow-2xs border border-black/5 p-1 flex items-center justify-center">
+            <img 
+              src="/qa-logo.png" 
+              alt="App Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
         </button>
 
-        {/* Mobile App Switcher Capsule */}
+        {/* iOS Native Segmented Picker Capsule */}
         {setActiveApp && (
-          <div className={`flex items-center p-0.5 rounded-lg border text-xs shrink-0 overflow-x-auto scrollbar-none max-w-[240px] ${
-            isAiDev ? 'bg-black/60 border-white/10' : 'bg-slate-100 border-slate-200'
+          <div className={`flex items-center p-0.5 rounded-[9px] border text-xs shrink-0 overflow-x-auto scrollbar-none max-w-[230px] ${
+            isAiDev ? 'bg-black/50 border-white/10' : 'bg-black/[0.06] border-black/[0.04]'
           }`}>
             <button
               onClick={() => setActiveApp('qa')}
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2 py-0.5 rounded-[7px] text-[11px] font-medium transition-all whitespace-nowrap cursor-pointer apple-press ${
                 activeApp === 'qa' 
-                  ? 'bg-indigo-600 text-white shadow-2xs' 
-                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#007AFF] shadow-xs font-semibold' 
+                  : isAiDev ? 'text-slate-400' : 'text-[#636366]'
               }`}
             >
               QA
             </button>
             <button
               onClick={() => setActiveApp('sales')}
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2 py-0.5 rounded-[7px] text-[11px] font-medium transition-all whitespace-nowrap cursor-pointer apple-press ${
                 activeApp === 'sales' 
-                  ? 'bg-amber-500 text-slate-950 shadow-2xs' 
-                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#FF9500] shadow-xs font-semibold' 
+                  : isAiDev ? 'text-slate-400' : 'text-[#636366]'
               }`}
             >
               Sales
             </button>
             <button
               onClick={() => setActiveApp('business')}
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2 py-0.5 rounded-[7px] text-[11px] font-medium transition-all whitespace-nowrap cursor-pointer apple-press ${
                 activeApp === 'business' 
-                  ? 'bg-emerald-600 text-white shadow-2xs' 
-                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#34C759] shadow-xs font-semibold' 
+                  : isAiDev ? 'text-slate-400' : 'text-[#636366]'
               }`}
             >
-              Business
+              Biz
             </button>
             <button
               onClick={() => setActiveApp('aidev')}
-              className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2 py-0.5 rounded-[7px] text-[11px] font-medium transition-all whitespace-nowrap cursor-pointer apple-press ${
                 activeApp === 'aidev' 
-                  ? 'bg-cyan-500 text-black shadow-2xs font-extrabold' 
-                  : isAiDev ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#007AFF] text-white shadow-xs font-semibold' 
+                  : isAiDev ? 'text-slate-400' : 'text-[#636366]'
               }`}
             >
               AI Dev
@@ -86,66 +89,33 @@ export const MobileHeader = ({
           </div>
         )}
 
-        {/* Context Pill based on Active App */}
+        {/* Active Project Pill */}
         {activeApp === 'qa' && activeProjectId && (
-          <div className="hidden min-[400px]:flex items-center gap-1 min-w-0 bg-indigo-50 border border-indigo-200 rounded-full py-0.5 px-2">
-            <Briefcase size={10} className="text-indigo-600 shrink-0" />
-            <span className="text-[10px] font-bold text-slate-800 truncate max-w-[70px]">
+          <div className="hidden min-[420px]:flex items-center gap-1 min-w-0 bg-black/[0.04] border border-black/[0.06] rounded-full py-0.5 px-2">
+            <Briefcase size={10} className="text-[#007AFF] shrink-0" />
+            <span className="text-[10px] font-medium text-[#1D1D1F] truncate max-w-[65px]">
               {activeProject?.name || 'Project'}
-            </span>
-          </div>
-        )}
-
-        {activeApp === 'business' && (
-          <div className="hidden min-[400px]:flex items-center gap-1 min-w-0 bg-emerald-50 border border-emerald-200 rounded-full py-0.5 px-2">
-            <Building2 size={10} className="text-emerald-700 shrink-0" />
-            <span className="text-[10px] font-bold text-emerald-800 truncate">
-              Command
-            </span>
-          </div>
-        )}
-
-        {activeApp === 'sales' && (
-          <div className="hidden min-[400px]:flex items-center gap-1 min-w-0 bg-amber-50 border border-amber-200 rounded-full py-0.5 px-2">
-            <Bot size={10} className="text-amber-700 shrink-0" />
-            <span className="text-[10px] font-bold text-amber-800 truncate">
-              Harvey
-            </span>
-          </div>
-        )}
-
-        {activeApp === 'aidev' && (
-          <div className="hidden min-[400px]:flex items-center gap-1 min-w-0 bg-cyan-950/60 border border-cyan-500/40 rounded-full py-0.5 px-2">
-            <Sparkles size={10} className="text-cyan-400 shrink-0" />
-            <span className="text-[10px] font-bold text-cyan-300 truncate">
-              Copilot
             </span>
           </div>
         )}
       </div>
 
       {/* Right Controls: Invite & User Avatar / Options */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {activeProjectId && onOpenInviteModal && (
           <button
             onClick={onOpenInviteModal}
-            className={`p-2 rounded-full border active-spring ${
-              isAiDev
-                ? 'bg-cyan-950/50 hover:bg-cyan-900/50 text-cyan-300 border-cyan-500/40'
-                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-200'
-            }`}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-black/[0.04] hover:bg-black/[0.08] text-[#007AFF] transition-colors apple-press cursor-pointer border border-black/[0.06]"
             title="Invite Collaborator"
           >
-            <UserPlus size={14} />
+            <UserPlus size={13} />
           </button>
         )}
 
         <button
           onClick={onOpenOptionsSheet}
-          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-1 ${
-            isAiDev ? 'ring-cyan-500/30' : 'ring-white/20'
-          } active-spring ${userColor?.badge || 'bg-indigo-600 text-white'}`}
-          title="User menu & options"
+          className="w-7 h-7 rounded-full flex items-center justify-center font-medium text-xs text-white shadow-xs apple-press cursor-pointer bg-[#007AFF]"
+          title="Account & Settings"
         >
           {userInitial}
         </button>

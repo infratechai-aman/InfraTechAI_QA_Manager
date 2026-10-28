@@ -1,12 +1,11 @@
 import React from 'react';
 import { 
-  CheckSquare, Bot, Sparkles, Sliders, LogOut, 
-  HelpCircle, ShieldCheck, Flame, Layers, Building2, Cpu
+  CheckSquare, Bot, Layers, Building2, Cpu
 } from 'lucide-react';
 import { getUserInitial, getUserColor } from '../../utils/formatters';
 
 export const AppRail = ({
-  activeApp = 'qa', // 'qa' | 'sales' | 'business' | 'aidev'
+  activeApp = 'qa', // 'qa' | 'sales' | 'business' | 'aidev' | 'hub'
   setActiveApp,
   openBugsCount = 0,
   pendingOutboxCount = 0,
@@ -19,72 +18,71 @@ export const AppRail = ({
 
   return (
     <nav 
-      aria-label="InfratechAI App Dock"
-      className="hidden md:flex w-[68px] h-full flex-col items-center justify-between py-4 bg-slate-950 border-r border-slate-800 shrink-0 z-30 select-none"
+      aria-label="macOS App Dock"
+      className="hidden md:flex w-[68px] h-full flex-col items-center justify-between py-3 mac-sidebar select-none shrink-0 z-30 transition-colors"
     >
-      {/* Top: Suite Brand Logo */}
-      <div className="flex flex-col items-center gap-4">
-        <div 
-          className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 p-2 cursor-pointer group"
-          title="InfratechAI Enterprise Suite"
+      {/* Top: Suite Brand App Icon */}
+      <div className="flex flex-col items-center gap-3">
+        <button 
+          onClick={() => setActiveApp('hub')}
+          className="w-10 h-10 rounded-[12px] bg-gradient-to-b from-white to-[#F2F2F7] flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.08)] p-1.5 cursor-pointer apple-press group"
+          title="InfratechAI Launchpad"
         >
           <img 
             src="/qa-logo.png" 
             alt="InfratechAI" 
-            className="w-full h-full object-contain filter drop-shadow group-hover:scale-105 transition-transform" 
+            className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform" 
           />
-        </div>
+        </button>
 
-        <div className="w-8 h-[1px] bg-slate-800/80 my-1" />
+        <div className="w-8 h-[1px] bg-black/[0.08] my-0.5" />
 
         {/* Primary Apps */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-2.5">
           
           {/* APPS LIBRARY / HUB */}
           <button
             onClick={() => setActiveApp('hub')}
-            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
               activeApp === 'hub'
-                ? 'bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/40'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#AF52DE] text-white shadow-[0_3px_10px_rgba(175,82,222,0.35)]'
+                : 'text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04]'
             }`}
-            title="Apps Hub"
+            title="Launchpad & App Store"
           >
             {activeApp === 'hub' && (
-              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-indigo-400 rounded-r-full shadow-sm" />
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
             )}
-            <Layers className="w-5 h-5 transition-transform group-hover:scale-110" />
-            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
-              Apps Hub
+            <Layers className="w-5 h-5 transition-transform group-hover:scale-105" strokeWidth={activeApp === 'hub' ? 2.4 : 1.8} />
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              Apps Launchpad
             </span>
           </button>
 
           {/* APP 1: QA MANAGER */}
           <button
             onClick={() => setActiveApp('qa')}
-            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
               activeApp === 'qa'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#007AFF] text-white shadow-[0_3px_10px_rgba(0,122,255,0.35)]'
+                : 'text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04]'
             }`}
             title="QA Manager — Test Execution & Bug Tracking"
           >
-            {/* Active Pill Bar Indicator */}
             {activeApp === 'qa' && (
-              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-indigo-500 rounded-r-full shadow-sm" />
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
             )}
 
-            <CheckSquare className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <CheckSquare className="w-5 h-5 transition-transform group-hover:scale-105" strokeWidth={activeApp === 'qa' ? 2.4 : 1.8} />
 
             {/* Bugs Badge */}
             {openBugsCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center shadow-sm border border-slate-950">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 apple-badge text-[10px] flex items-center justify-center border border-white">
                 {openBugsCount}
               </span>
             )}
 
-            {/* Hover Tooltip */}
-            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
               QA Manager
             </span>
           </button>
@@ -92,29 +90,27 @@ export const AppRail = ({
           {/* APP 2: SALES MANAGER (HARVEY AI SDR) */}
           <button
             onClick={() => setActiveApp('sales')}
-            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
               activeApp === 'sales'
-                ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 text-white shadow-lg shadow-amber-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#FF9500] text-white shadow-[0_3px_10px_rgba(255,149,0,0.35)]'
+                : 'text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04]'
             }`}
             title="Sales Manager — Harvey Autonomous AI SDR"
           >
-            {/* Active Pill Bar Indicator */}
             {activeApp === 'sales' && (
-              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-amber-400 rounded-r-full shadow-sm" />
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
             )}
 
-            <Bot className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <Bot className="w-5 h-5 transition-transform group-hover:scale-105" strokeWidth={activeApp === 'sales' ? 2.4 : 1.8} />
 
             {/* Outbox Pending Approvals Badge */}
             {pendingOutboxCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-sm border border-slate-950 animate-pulse">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-[#FF9500] text-white font-semibold text-[10px] flex items-center justify-center border border-white shadow-sm">
                 {pendingOutboxCount}
               </span>
             )}
 
-            {/* Hover Tooltip */}
-            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
               Sales Manager (Harvey)
             </span>
           </button>
@@ -122,23 +118,23 @@ export const AppRail = ({
           {/* APP 3: BUSINESS COMMAND CENTER */}
           <button
             onClick={() => setActiveApp('business')}
-            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
               activeApp === 'business'
-                ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#34C759] text-white shadow-[0_3px_10px_rgba(52,199,89,0.35)]'
+                : 'text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04]'
             }`}
             title="Business Command Center — Contracts & Scopes"
           >
             {activeApp === 'business' && (
-              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-emerald-400 rounded-r-full shadow-sm" />
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
             )}
-            <Building2 className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <Building2 className="w-5 h-5 transition-transform group-hover:scale-105" strokeWidth={activeApp === 'business' ? 2.4 : 1.8} />
             {contractsExpiringSoon > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-sm border border-slate-950 animate-pulse">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-[#FF9500] text-white font-semibold text-[10px] flex items-center justify-center border border-white shadow-sm">
                 {contractsExpiringSoon}
               </span>
             )}
-            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
               Business Command Center
             </span>
           </button>
@@ -146,48 +142,48 @@ export const AppRail = ({
           {/* APP 4: AI DEV (AUTONOMOUS TECHNICAL COPILOT) */}
           <button
             onClick={() => setActiveApp('aidev')}
-            className={`relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer group ${
+            className={`relative w-10 h-10 rounded-[12px] flex items-center justify-center transition-all duration-150 cursor-pointer apple-press group ${
               activeApp === 'aidev'
-                ? 'bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/40 ring-1 ring-cyan-400/50'
-                : 'text-slate-400 hover:text-cyan-400 hover:bg-slate-900'
+                ? 'bg-gradient-to-b from-[#5856D6] to-[#007AFF] text-white shadow-[0_3px_10px_rgba(88,86,214,0.35)]'
+                : 'text-[#636366] hover:text-[#007AFF] hover:bg-black/[0.04]'
             }`}
-            title="AI DEV — Autonomous Real-Time Voice Copilot"
+            title="AI DEV — Voice Copilot"
           >
             {activeApp === 'aidev' && (
-              <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-cyan-400 rounded-r-full shadow-sm" />
+              <span className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-1 h-5 bg-[#007AFF] rounded-r-full" />
             )}
-            <Cpu className="w-5 h-5 transition-transform group-hover:scale-110" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
-            <span className="absolute left-16 px-2.5 py-1 rounded-lg bg-slate-900 text-cyan-300 text-xs font-bold whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
-              AI DEV (Voice Copilot)
+            <Cpu className="w-5 h-5 transition-transform group-hover:scale-105" strokeWidth={activeApp === 'aidev' ? 2.4 : 1.8} />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#34C759] border border-white" />
+            <span className="absolute left-16 px-2.5 py-1 rounded-md bg-[#1D1D1F]/95 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              AI Dev Copilot
             </span>
           </button>
 
         </div>
       </div>
 
-      {/* Bottom: Heartbeat pulse & User Profile */}
+      {/* Bottom: Apple System Status & User Profile */}
       <div className="flex flex-col items-center gap-3">
-        {/* Harvey Heartbeat Pulse Indicator */}
+        {/* Heartbeat Status Indicator */}
         <div 
           className="flex flex-col items-center gap-1 group relative cursor-pointer"
-          title="Harvey Engine Heartbeat: Live & Listening"
+          title="Engine Status: Online & Synced"
         >
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34C759] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#34C759]"></span>
           </span>
-          <span className="absolute left-14 bottom-0 px-2.5 py-1 rounded-lg bg-slate-900 text-emerald-400 text-[11px] font-mono whitespace-nowrap shadow-xl border border-slate-800 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
-            Engine Heartbeat: Online
+          <span className="absolute left-14 bottom-0 px-2 py-0.5 rounded-md bg-[#1D1D1F]/95 text-[#34C759] text-[10px] font-mono whitespace-nowrap shadow-lg backdrop-blur-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            System Online
           </span>
         </div>
 
-        <div className="w-8 h-[1px] bg-slate-800/80 my-1" />
+        <div className="w-8 h-[1px] bg-black/[0.08] my-0.5" />
 
         {/* User Avatar */}
         <div 
-          className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs text-white shadow-sm ring-1 ring-white/10 ${userColor?.badge || 'bg-indigo-600'}`}
-          title={currentUser?.email || 'User Profile'}
+          className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs text-white shadow-sm ring-1 ring-black/5 bg-[#007AFF]"
+          title={currentUser?.email || 'User Account'}
         >
           {userInitial}
         </div>

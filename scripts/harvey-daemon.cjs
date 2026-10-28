@@ -20,6 +20,15 @@ const dns = require('dns').promises;
 const fs = require('fs');
 const path = require('path');
 
+// Process-level crash prevention to keep Harvey running 24/7
+process.on('uncaughtException', (err) => {
+  console.error('[Harvey Daemon] ⚠️ Uncaught Exception caught (preventing crash):', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Harvey Daemon] ⚠️ Unhandled Rejection caught (preventing crash):', reason);
+});
+
 const PORT = 5555;
 const STATE_FILE = path.join(__dirname, 'overnight-state.json');
 
@@ -649,18 +658,24 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Start Overnight Loop (Harvey Working Session)
-  if (url.pathname === '/api/start-overnight' && req.method === 'POST') {
+  if ((url.pathname === '/api/start-overnight' || url.pathname === '/api/resume') && (req.method === 'POST' || req.method === 'GET')) {
     startOvernightAutopilot();
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true, message: 'Harvey Working Session Started' }));
+    res.end(JSON.stringify({ 
+      success: true, 
+      message: 'Harvey Working Session Resumed & Active',
+      overnightActive: daemonState.overnightActive,
+      currentIndex: daemonState.currentIndex,
+      sentCount: daemonState.sentCount
+    }));
     return;
   }
 
   // Stop Overnight Loop (Harvey Rest Mode)
-  if (url.pathname === '/api/stop-overnight' && req.method === 'POST') {
+  if ((url.pathname === '/api/stop-overnight' || url.pathname === '/api/pause') && (req.method === 'POST' || req.method === 'GET')) {
     stopOvernightAutopilot();
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true, message: 'Harvey is now Resting' }));
+    res.end(JSON.stringify({ success: true, message: 'Harvey is now Resting', overnightActive: false }));
     return;
   }
 
@@ -725,6 +740,12 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`\n======================================================`);
   console.log(`⚡ Harvey Autonomous Gmail Dispatcher listening on:`);
   console.log(`   http://127.0.0.1:${PORT}`);
-  console.log(`   Harvey State: REST MODE (Call /api/start-overnight to begin)`);
-  console.log(`======================================================\n`);
+  if (daemonState.overnightActive) {
+    console.log(`   Harvey State: ACTIVE (Resuming overnight session at index ${daemonState.currentIndex})`);
+    console.log(`======================================================\n`);
+    startOvernightAutopilot();
+  } else {
+    console.log(`   Harvey State: REST MODE (Call /api/start-overnight or /api/resume to begin)`);
+    console.log(`======================================================\n`);
+  }
 });

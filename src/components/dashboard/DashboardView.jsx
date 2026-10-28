@@ -163,42 +163,42 @@ export const DashboardView = ({
   }, [tests, bugs, reports, project, currentUser]);
 
   const StatCard = ({ title, value, color, subtitle, icon: Icon, bg = 'bg-white' }) => (
-    <div className={`p-5 rounded-2xl ${bg} border border-slate-200/80 shadow-xs flex flex-col justify-between`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">{title}</span>
-        {Icon && <Icon size={16} className={color} />}
+    <div className={`p-4 sm:p-5 rounded-[18px] ${bg} border border-black/[0.06] shadow-[0_2px_6px_rgba(0,0,0,0.03)] flex flex-col justify-between apple-press`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[#8E8E93] text-[10px] font-semibold uppercase tracking-wider">{title}</span>
+        {Icon && <Icon size={15} className={color} strokeWidth={2.2} />}
       </div>
       <div>
-        <span className={`text-3xl lg:text-4xl font-extrabold ${color} tracking-tight`}>{value}</span>
-        {subtitle && <p className="text-xs text-slate-400 mt-1 font-medium">{subtitle}</p>}
+        <span className={`text-2xl sm:text-3xl font-semibold ${color} tracking-tight`}>{value}</span>
+        {subtitle && <p className="text-[11px] text-[#86868B] mt-0.5 font-normal">{subtitle}</p>}
       </div>
     </div>
   );
 
   return (
-    <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-6xl mx-auto space-y-6 sm:space-y-8 animate-fadeIn">
+    <div className="p-4 sm:p-8 pb-28 sm:pb-8 max-w-6xl mx-auto space-y-5 sm:space-y-6 animate-fadeIn font-sans">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-black/[0.06]">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">QA Dashboard</h1>
-          <p className="text-slate-500 mt-1">
-            Execution analytics for <span className="font-semibold text-slate-800">{project?.name || 'Workspace'}</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#1D1D1F] tracking-tight">QA Dashboard</h1>
+          <p className="text-[#86868B] mt-0.5 text-xs sm:text-sm">
+            Execution telemetry for <span className="font-medium text-[#1D1D1F]">{project?.name || 'Workspace'}</span>
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Invite Team Member Button */}
           {onOpenInviteModal && (
             <button
               onClick={onOpenInviteModal}
-              className="flex items-center gap-2 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-              title="Invite friend or collaborator to this workspace"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#007AFF]/10 hover:bg-[#007AFF]/15 text-[#007AFF] border border-[#007AFF]/20 rounded-full text-xs font-semibold transition-all shadow-2xs apple-press cursor-pointer"
+              title="Invite collaborator to workspace"
             >
-              <UserPlus size={15} />
-              <span>Invite Team</span>
+              <UserPlus size={14} />
+              <span>Invite</span>
               {project?.members && project.members.length > 1 && (
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-bold">
+                <span className="w-4 h-4 rounded-full bg-[#007AFF] text-white text-[9px] flex items-center justify-center font-bold">
                   {project.members.length}
                 </span>
               )}
@@ -206,14 +206,14 @@ export const DashboardView = ({
           )}
 
           {/* Filter by File / Date */}
-          <div className="flex items-center gap-2 bg-white border border-slate-200 p-2 rounded-xl shadow-xs">
-            <Calendar size={15} className="text-slate-400 ml-1" />
+          <div className="flex items-center gap-1.5 bg-white border border-black/[0.08] px-2.5 py-1.5 rounded-xl shadow-2xs">
+            <Calendar size={13} className="text-[#8E8E93]" />
             <select
               value={selectedFileId}
               onChange={(e) => setSelectedFileId(e.target.value)}
-              className="bg-transparent border-none text-xs font-semibold text-slate-700 focus:ring-0 outline-none pr-3 cursor-pointer"
+              className="bg-transparent border-none text-xs font-medium text-[#1D1D1F] focus:ring-0 outline-none pr-2 cursor-pointer"
             >
-              <option value="all">All Test Suites ({tests.length} tests)</option>
+              <option value="all">All Suites ({tests.length} tests)</option>
               {files.map((f) => {
                 const count = tests.filter((t) => t.fileId === f.id).length;
                 return (
@@ -228,83 +228,83 @@ export const DashboardView = ({
       </div>
 
       {/* Main KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard title="Total Tests" value={stats.total} color="text-slate-800" icon={FileText} />
-        <StatCard title="Pass Rate" value={`${passRate}%`} color="text-indigo-600" subtitle={`${executionRate}% executed`} icon={TrendingUp} />
-        <StatCard title="Passed" value={stats.passed} color="text-emerald-600" icon={CheckCircle} />
-        <StatCard title="Failed" value={stats.failed} color="text-rose-600" icon={XCircle} />
-        <StatCard title="Blocked" value={stats.blocked} color="text-amber-600" icon={AlertTriangle} />
-        <StatCard title="Not Run" value={stats.notRun} color="text-slate-400" icon={Circle} />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <StatCard title="Total Tests" value={stats.total} color="text-[#1D1D1F]" icon={FileText} />
+        <StatCard title="Pass Rate" value={`${passRate}%`} color="text-[#007AFF]" subtitle={`${executionRate}% executed`} icon={TrendingUp} />
+        <StatCard title="Passed" value={stats.passed} color="text-[#34C759]" icon={CheckCircle} />
+        <StatCard title="Failed" value={stats.failed} color="text-[#FF3B30]" icon={XCircle} />
+        <StatCard title="Blocked" value={stats.blocked} color="text-[#FF9500]" icon={AlertTriangle} />
+        <StatCard title="Not Run" value={stats.notRun} color="text-[#8E8E93]" icon={Circle} />
       </div>
 
       {/* Execution Progress Bar */}
-      <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs space-y-3">
-        <div className="flex justify-between items-center text-xs font-semibold text-slate-600">
-          <span className="font-bold text-slate-800 uppercase tracking-wider">Execution Coverage</span>
-          <span>{executedCount} of {stats.total} tests executed ({executionRate}%)</span>
+      <div className="p-5 bg-white border border-black/[0.06] rounded-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
+        <div className="flex justify-between items-center text-xs text-[#636366]">
+          <span className="font-semibold text-[#1D1D1F] uppercase tracking-wider text-[11px]">Execution Coverage</span>
+          <span className="font-medium">{executedCount} of {stats.total} executed ({executionRate}%)</span>
         </div>
         
-        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">
+        <div className="h-2.5 w-full bg-black/[0.05] rounded-full overflow-hidden flex">
           {stats.total > 0 ? (
             <>
               <div 
                 style={{ width: `${(stats.passed / stats.total) * 100}%` }} 
-                className="bg-emerald-500 h-full transition-all duration-500" 
+                className="bg-[#34C759] h-full transition-all duration-300" 
                 title={`Pass: ${stats.passed}`} 
               />
               <div 
                 style={{ width: `${(stats.failed / stats.total) * 100}%` }} 
-                className="bg-rose-500 h-full transition-all duration-500" 
+                className="bg-[#FF3B30] h-full transition-all duration-300" 
                 title={`Fail: ${stats.failed}`} 
               />
               <div 
                 style={{ width: `${(stats.blocked / stats.total) * 100}%` }} 
-                className="bg-amber-500 h-full transition-all duration-500" 
+                className="bg-[#FF9500] h-full transition-all duration-300" 
                 title={`Blocked: ${stats.blocked}`} 
               />
               <div 
                 style={{ width: `${(stats.notRun / stats.total) * 100}%` }} 
-                className="bg-slate-200 h-full transition-all duration-500" 
+                className="bg-black/[0.08] h-full transition-all duration-300" 
                 title={`Not Run: ${stats.notRun}`} 
               />
             </>
           ) : (
-            <div className="w-full bg-slate-100 h-full" />
+            <div className="w-full bg-black/[0.05] h-full" />
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 pt-2 text-xs font-medium text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+        <div className="flex flex-wrap items-center gap-5 pt-1 text-xs text-[#86868B]">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#34C759]"></span>
             <span>Passed ({stats.passed})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#FF3B30]"></span>
             <span>Failed ({stats.failed})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#FF9500]"></span>
             <span>Blocked ({stats.blocked})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-black/[0.15]"></span>
             <span>Not Run ({stats.notRun})</span>
           </div>
         </div>
       </div>
 
       {/* Team Contributions & Work Attribution Breakdown */}
-      <div className="p-6 border border-slate-200/80 rounded-2xl bg-white shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div className="p-5 border border-black/[0.06] rounded-[20px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/[0.06]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-              <Users size={18} />
+            <div className="w-8 h-8 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center">
+              <Users size={16} />
             </div>
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#1D1D1F]">
                 Team Contributions & Work Split
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] text-[#86868B]">
                 Individual test executions and defect attribution for {project?.name || 'Workspace'}
               </p>
             </div>
@@ -312,17 +312,17 @@ export const DashboardView = ({
           {onOpenInviteModal && (
             <button
               onClick={onOpenInviteModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-colors cursor-pointer self-start sm:self-auto"
+              className="flex items-center gap-1.5 px-3 py-1 bg-[#007AFF]/10 hover:bg-[#007AFF]/15 text-[#007AFF] rounded-full text-xs font-medium transition-colors cursor-pointer self-start sm:self-auto apple-press"
             >
-              <UserPlus size={14} />
-              <span>Invite Collaborator</span>
+              <UserPlus size={13} />
+              <span>Invite</span>
             </button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {memberContributions.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-slate-400 text-xs">
+            <div className="col-span-full py-8 text-center text-[#8E8E93] text-xs">
               No team activity recorded yet. Run a test case or invite a member to begin.
             </div>
           ) : (
@@ -331,57 +331,57 @@ export const DashboardView = ({
               return (
                 <div
                   key={member.email}
-                  className={`p-4 rounded-2xl border transition-all ${
+                  className={`p-4 rounded-[18px] border transition-all apple-press ${
                     member.isCurrent 
-                      ? 'bg-indigo-50/40 border-indigo-200 shadow-xs ring-1 ring-indigo-500/10' 
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      ? 'bg-[#007AFF]/[0.02] border-[#007AFF]/40 shadow-2xs ring-1 ring-[#007AFF]/20' 
+                      : 'bg-white border-black/[0.06] hover:border-black/[0.12]'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-9 h-9 rounded-xl ${palette.badge} font-bold text-xs flex items-center justify-center shrink-0 shadow-xs`}>
+                  <div className="flex items-start justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-[#007AFF] text-white font-medium text-xs flex items-center justify-center shrink-0 shadow-2xs">
                         {getUserInitial(member.email)}
                       </div>
                       <div className="overflow-hidden">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-bold text-slate-900 truncate" title={member.email}>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs font-medium text-[#1D1D1F] truncate" title={member.email}>
                             {member.email}
                           </p>
                           {member.isCurrent && (
-                            <span className="text-[9px] font-extrabold text-indigo-700 bg-indigo-100 px-1.5 py-0.2 rounded-md shrink-0">
+                            <span className="text-[9px] font-semibold text-[#007AFF] bg-[#007AFF]/10 px-1.5 py-0.2 rounded-full shrink-0">
                               YOU
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                        <p className="text-[10px] text-[#8E8E93] font-normal uppercase tracking-wider">
                           {member.role}
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg shrink-0">
-                      {member.projectShare}% share
+                    <span className="text-[10px] font-mono font-medium text-[#636366] bg-black/[0.04] px-2 py-0.5 rounded-full shrink-0">
+                      {member.projectShare}%
                     </span>
                   </div>
 
                   {/* Metrics grid */}
-                  <div className="grid grid-cols-4 gap-2 py-2 border-t border-slate-100/80 text-center">
-                    <div className="bg-indigo-50/60 p-2 rounded-xl">
-                      <p className="text-[9px] text-indigo-700 font-bold uppercase">Authored</p>
-                      <p className="text-sm font-extrabold text-indigo-800" title={`${member.createdTests} Tests, ${member.createdReports} Reports`}>
+                  <div className="grid grid-cols-4 gap-1.5 py-2 border-t border-black/[0.05] text-center">
+                    <div className="bg-[#F2F2F7] p-1.5 rounded-xl">
+                      <p className="text-[9px] text-[#8E8E93] font-medium uppercase">Authored</p>
+                      <p className="text-xs font-semibold text-[#1D1D1F]" title={`${member.createdTests} Tests, ${member.createdReports} Reports`}>
                         {member.createdTests + member.createdReports}
                       </p>
                     </div>
-                    <div className="bg-slate-50 p-2 rounded-xl">
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">Executed</p>
-                      <p className="text-sm font-extrabold text-slate-800">{member.totalExec}</p>
+                    <div className="bg-[#F2F2F7] p-1.5 rounded-xl">
+                      <p className="text-[9px] text-[#8E8E93] font-medium uppercase">Executed</p>
+                      <p className="text-xs font-semibold text-[#1D1D1F]">{member.totalExec}</p>
                     </div>
-                    <div className="bg-emerald-50/60 p-2 rounded-xl">
-                      <p className="text-[9px] text-emerald-700 font-bold uppercase">Pass Rate</p>
-                      <p className="text-sm font-extrabold text-emerald-700">{member.passRate}%</p>
+                    <div className="bg-[#34C759]/10 p-1.5 rounded-xl">
+                      <p className="text-[9px] text-[#34C759] font-medium uppercase">Pass Rate</p>
+                      <p className="text-xs font-semibold text-[#34C759]">{member.passRate}%</p>
                     </div>
-                    <div className="bg-rose-50/60 p-2 rounded-xl">
-                      <p className="text-[9px] text-rose-700 font-bold uppercase">Defects</p>
-                      <p className="text-sm font-extrabold text-rose-700">{member.reportedBugs}</p>
+                    <div className="bg-[#FF3B30]/10 p-1.5 rounded-xl">
+                      <p className="text-[9px] text-[#FF3B30] font-medium uppercase">Defects</p>
+                      <p className="text-xs font-semibold text-[#FF3B30]">{member.reportedBugs}</p>
                     </div>
                   </div>
 

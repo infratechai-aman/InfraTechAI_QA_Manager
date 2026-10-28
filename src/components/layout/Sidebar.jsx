@@ -1,11 +1,9 @@
 import React, { useRef } from 'react';
 import { 
   Briefcase, LayoutDashboard, Play, 
-  Bug as BugIcon, Upload, List,
-  Download, UploadCloud, LogOut, DoorOpen, BookOpen,
-  FileText, UserPlus, Users, RefreshCw, Bot, Mail,
-  Layers, MessageSquare, Sliders, Sparkles, ShieldCheck,
-  Building2, Cpu, Volume2, Activity, Calendar, CheckSquare, Radio
+  Bug as BugIcon, List, Download, UploadCloud, LogOut, DoorOpen, BookOpen,
+  FileText, UserPlus, RefreshCw, Bot, Mail,
+  Layers, MessageSquare, Sliders, Building2, Radio, CheckSquare
 } from 'lucide-react';
 
 export const Sidebar = ({ 
@@ -57,7 +55,7 @@ export const Sidebar = ({
       badge: pendingOutboxCount > 0 ? pendingOutboxCount : null,
       badgeColor: 'amber'
     },
-    { id: 'leads', icon: Users, label: 'Prospects & Signals' },
+    { id: 'leads', icon: List, label: 'Prospects & Signals' },
     { id: 'campaigns', icon: Layers, label: 'Sequence Playbooks' },
     { id: 'conversations', icon: MessageSquare, label: 'Inbound & Replies' },
   ];
@@ -82,103 +80,94 @@ export const Sidebar = ({
   const userInitial = currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'A';
 
   return (
-    <aside className={`hidden md:flex w-64 border-r flex-col shrink-0 z-20 h-full transition-colors duration-200 ${
+    <aside className={`hidden md:flex w-60 flex-col shrink-0 z-20 h-full mac-sidebar select-none transition-colors ${
       isDark 
-        ? 'bg-[#03090e] border-white/10 text-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.6)]' 
-        : 'bg-white border-slate-200 shadow-[2px_0_15px_rgba(0,0,0,0.02)]'
+        ? 'bg-[#1C1C1E]/95 border-r border-white/10 text-white' 
+        : 'text-[#1D1D1F]'
     }`}>
       
-      {/* Brand Header with Logo */}
-      <div className={`px-4 py-3 border-b flex items-center justify-between ${
-        isDark ? 'border-white/10 bg-[#03090e]' : 'border-slate-100'
+      {/* macOS Sidebar Header */}
+      <div className={`px-3 py-3 border-b flex items-center justify-between ${
+        isDark ? 'border-white/10' : 'border-black/[0.06]'
       }`}>
-        <div className="flex items-center gap-3">
-          <img 
-            src="/qa-logo.png" 
-            alt="App Logo" 
-            className="w-10 h-10 object-contain shrink-0"
-          />
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-b from-white to-[#F2F2F7] flex items-center justify-center shadow-xs border border-black/5 p-1">
+            <img 
+              src="/qa-logo.png" 
+              alt="App Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
           <div>
-            <span className={`font-extrabold text-base tracking-tight block leading-tight ${
-              isDark ? 'text-white' : 'text-slate-900'
+            <span className={`font-semibold text-xs tracking-tight block ${
+              isDark ? 'text-white' : 'text-[#1D1D1F]'
             }`}>
               InfratechAI
             </span>
-            <span className={`text-[11px] font-semibold tracking-wider uppercase ${
+            <span className={`text-[10px] font-medium tracking-wide ${
               isDark
-                ? 'text-cyan-400'
+                ? 'text-[#5AC8FA]'
                 : activeApp === 'sales' 
-                  ? 'text-amber-600' 
+                  ? 'text-[#FF9500]' 
                   : activeApp === 'business' 
-                    ? 'text-emerald-600' 
-                    : 'text-indigo-600'
+                    ? 'text-[#34C759]' 
+                    : 'text-[#007AFF]'
             }`}>
               {activeApp === 'sales' 
-                ? 'Sales SDR (Harvey)' 
+                ? 'Sales SDR' 
                 : activeApp === 'business' 
-                  ? 'Business Command' 
+                  ? 'Business Hub' 
                   : activeApp === 'aidev' 
-                    ? 'AI Dev Copilot' 
+                    ? 'AI Copilot' 
                     : 'QA Manager'}
             </span>
           </div>
         </div>
-      </div>
 
-      {/* Return to App Library Capsule */}
-      {onReturnToHub && (
-        <div className={`px-3 py-2 border-b ${
-          isDark ? 'border-white/10 bg-black/40' : 'border-slate-100 bg-slate-50/60'
-        }`}>
+        {onReturnToHub && (
           <button
             onClick={onReturnToHub}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs group ${
-              isDark 
-                ? 'bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white border border-white/10 hover:border-cyan-500/40' 
-                : 'text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300'
+            className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors apple-press cursor-pointer border ${
+              isDark
+                ? 'bg-white/10 text-white border-white/10 hover:bg-white/15'
+                : 'bg-white/80 text-[#636366] hover:text-[#1D1D1F] border-black/[0.08] shadow-2xs hover:bg-white'
             }`}
-            title="Return to Apps"
+            title="Return to Launchpad"
           >
-            <div className="flex items-center gap-2">
-              <Layers size={14} className={`${isDark ? 'text-cyan-400' : 'text-indigo-600'} group-hover:scale-110 transition-transform`} />
-              <span>⊞ Apps</span>
-            </div>
-            <span className={`text-[10px] font-semibold ${
-              isDark ? 'text-slate-400 group-hover:text-cyan-300' : 'text-slate-400 group-hover:text-indigo-600'
-            }`}>Switch App →</span>
+            Hub
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Nav List */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4">
         
         {/* === MODE C: BUSINESS COMMAND CENTER NAVIGATION === */}
         {activeApp === 'business' && (
-          <div className="space-y-4">
-            <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200/80 space-y-1">
+          <div className="space-y-3">
+            <div className="p-2.5 bg-white/70 rounded-lg border border-black/[0.06] shadow-2xs space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Portfolio Engine</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Sync
+                <span className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider">Portfolio</span>
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-[#34C759] bg-[#34C759]/10 px-1.5 py-0.2 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
+                  Active
                 </span>
               </div>
-              <p className="text-xs font-black text-slate-800">Business Command Center</p>
-              <p className="text-[10px] text-slate-500">Enterprise accounts, retainers & SLAs</p>
+              <p className="text-xs font-semibold text-[#1D1D1F]">Business Command</p>
+              <p className="text-[11px] text-[#86868B]">Client contracts, retainers & SLAs</p>
             </div>
 
-            <div className="space-y-1.5">
-              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                Operations Desk
+            <div className="space-y-1">
+              <div className="px-2 text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider mb-1">
+                Desk
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-slate-900">
-                  <Building2 size={16} className="text-emerald-600" />
+              <div className="p-2.5 rounded-lg bg-white/60 border border-black/[0.05] text-xs text-[#3C3C43] space-y-1.5">
+                <div className="flex items-center gap-2 font-medium text-[#1D1D1F]">
+                  <Building2 size={15} className="text-[#34C759]" />
                   <span>Enterprise Portfolio</span>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Active contracts, renewal expiration countdowns, SLA matrix, and detailed technical project scopes.
+                <p className="text-[11px] text-[#86868B] leading-relaxed">
+                  Active contracts, renewal expiration countdowns & SLA matrix.
                 </p>
               </div>
             </div>
@@ -187,84 +176,65 @@ export const Sidebar = ({
 
         {/* === MODE D: AI DEV COPILOT NAVIGATION === */}
         {activeApp === 'aidev' && (
-          <div className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-gradient-to-b from-cyan-950/40 to-black/60 border border-cyan-500/30 space-y-2 backdrop-blur-md shadow-lg shadow-cyan-950/20">
+          <div className="space-y-3">
+            <div className="p-2.5 rounded-lg bg-white/[0.05] border border-white/10 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest font-mono">Autonomous Core</span>
-                <span className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-semibold text-[#5AC8FA] uppercase tracking-wider font-mono">Telemetry</span>
+                <span className="flex items-center gap-1 text-[10px] font-medium text-[#34C759] bg-[#34C759]/20 px-1.5 py-0.2 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse" />
                   Online
                 </span>
               </div>
-              <div>
-                <p className="text-xs font-bold text-white tracking-wide">Executive Copilot</p>
-                <p className="text-[11px] text-slate-400 leading-snug mt-0.5">Dual-voice engine with live multi-system context</p>
-              </div>
+              <p className="text-xs font-semibold text-white">AI Dev Copilot</p>
+              <p className="text-[11px] text-slate-400">Autonomous voice-enabled technical copilot</p>
             </div>
 
-            <div className="space-y-2">
-              <div className="px-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
-                Connected Telemetry
+            <div className="space-y-1">
+              <div className="px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                Feeds
               </div>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors">
-                  <span className="text-slate-300 flex items-center gap-2 font-medium">
-                    <CheckSquare size={14} className="text-cyan-400" /> QA Test Suites
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center justify-between p-2 rounded-md bg-white/[0.03] border border-white/5">
+                  <span className="text-slate-300 flex items-center gap-2 font-normal">
+                    <CheckSquare size={13} className="text-[#5AC8FA]" /> QA Test Suites
                   </span>
-                  <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
-                  </span>
+                  <span className="text-[10px] font-medium text-[#34C759]">Live</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors">
-                  <span className="text-slate-300 flex items-center gap-2 font-medium">
-                    <Building2 size={14} className="text-emerald-400" /> Client Contracts
+                <div className="flex items-center justify-between p-2 rounded-md bg-white/[0.03] border border-white/5">
+                  <span className="text-slate-300 flex items-center gap-2 font-normal">
+                    <Building2 size={13} className="text-[#34C759]" /> Contracts
                   </span>
-                  <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
-                  </span>
+                  <span className="text-[10px] font-medium text-[#34C759]">Live</span>
                 </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors">
-                  <span className="text-slate-300 flex items-center gap-2 font-medium">
-                    <Bot size={14} className="text-amber-400" /> Harvey SDR Pipeline
+                <div className="flex items-center justify-between p-2 rounded-md bg-white/[0.03] border border-white/5">
+                  <span className="text-slate-300 flex items-center gap-2 font-normal">
+                    <Bot size={13} className="text-[#FF9500]" /> Harvey Pipeline
                   </span>
-                  <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
-                  </span>
+                  <span className="text-[10px] font-medium text-[#34C759]">Live</span>
                 </div>
               </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-                <Radio size={14} className="text-cyan-400" />
-                <span>Duplex Voice Link</span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Low-latency streaming in Hindi and English with instant voice interruption.
-              </p>
             </div>
           </div>
         )}
 
         {/* === MODE A: SALES MANAGER (HARVEY) NAVIGATION === */}
         {activeApp === 'sales' && (
-          <div className="space-y-4">
-            {/* Harvey SDR Engine Status Pill */}
-            <div className="p-3 bg-gradient-to-r from-amber-50 to-indigo-50/60 rounded-xl border border-amber-200/80 space-y-1">
+          <div className="space-y-3">
+            <div className="p-2.5 bg-white/70 rounded-lg border border-black/[0.06] shadow-2xs space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agent Engine</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider">Agent Engine</span>
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-[#34C759] bg-[#34C759]/10 px-1.5 py-0.2 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
                   Active
                 </span>
               </div>
-              <p className="text-xs font-black text-slate-800">Harvey Auto Outbound</p>
-              <p className="text-[10px] text-slate-500">Autonomous prospecting & zero API bill</p>
+              <p className="text-xs font-semibold text-[#1D1D1F]">Harvey Autonomous SDR</p>
+              <p className="text-[11px] text-[#86868B]">Autonomous prospecting & verification</p>
             </div>
 
-            <div className="space-y-1">
-              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
-                Sales Suite
+            <div className="space-y-0.5">
+              <div className="px-2 text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider mb-1">
+                Sales Navigation
               </div>
               {salesNavItems.map(item => {
                 const Icon = item.icon;
@@ -273,21 +243,21 @@ export const Sidebar = ({
                   <button
                     key={item.id}
                     onClick={() => setSalesTab && setSalesTab(item.id)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[13px] transition-colors cursor-pointer apple-press ${
                       isActive
-                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'mac-item-active'
+                        : 'text-[#3C3C43] hover:bg-black/[0.045] font-normal'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
+                    <div className="flex items-center gap-2.5">
+                      <Icon size={16} className={isActive ? 'text-white' : 'text-[#636366]'} strokeWidth={isActive ? 2.2 : 1.8} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge !== null && item.badge !== undefined && (
-                      <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
+                      <span className={`px-1.5 py-0.2 text-[10px] font-semibold rounded-full ${
                         isActive 
-                          ? 'bg-amber-400 text-slate-900' 
-                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          ? 'bg-white text-[#007AFF]' 
+                          : 'bg-[#FF9500] text-white'
                       }`}>
                         {item.badge}
                       </span>
@@ -297,14 +267,13 @@ export const Sidebar = ({
               })}
             </div>
 
-            {/* Quick Engine Settings Action */}
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-black/[0.06]">
               <button
                 onClick={onOpenHarveySettings}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-xl transition-all cursor-pointer"
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-[#1D1D1F] hover:bg-black/[0.04] rounded-md transition-colors cursor-pointer"
               >
-                <Sliders size={14} className="text-indigo-600" />
-                <span>Configure Harvey Brain</span>
+                <Sliders size={14} className="text-[#007AFF]" />
+                <span>Configure Engine</span>
               </button>
             </div>
           </div>
@@ -313,97 +282,80 @@ export const Sidebar = ({
         {/* === MODE B: QA MANAGER NAVIGATION === */}
         {activeApp === 'qa' && (
           <>
-            {/* === NOT INSIDE A PROJECT: Show "All Projects" button === */}
             {!activeProjectId && (
               <button
                 onClick={() => setActiveTab('projects')}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors cursor-pointer apple-press ${
                   activeTab === 'projects'
-                    ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'mac-item-active'
+                    : 'text-[#3C3C43] hover:bg-black/[0.045] font-normal'
                 }`}
               >
-                <Briefcase size={18} className={activeTab === 'projects' ? 'text-indigo-600' : 'text-slate-400'} />
+                <Briefcase size={16} className={activeTab === 'projects' ? 'text-white' : 'text-[#636366]'} strokeWidth={1.8} />
                 <span>All Projects</span>
               </button>
             )}
 
-            {/* === INSIDE A PROJECT: Show project context + Exit button === */}
             {activeProjectId && (
               <div className="space-y-2">
-                {/* Active Project Display Card */}
-                <div className="px-3.5 py-3 bg-indigo-50/80 rounded-xl border border-indigo-200/80">
-                  <div className="flex items-start gap-2.5">
-                    <div className="p-1.5 bg-indigo-600 rounded-lg text-white shrink-0 mt-0.5">
-                      <Briefcase size={13} />
+                {/* Active Project Card */}
+                <div className="px-2.5 py-2 bg-white/70 rounded-lg border border-black/[0.06] shadow-2xs">
+                  <div className="flex items-start gap-2">
+                    <div className="p-1 bg-[#007AFF] rounded-md text-white shrink-0 mt-0.5">
+                      <Briefcase size={12} />
                     </div>
                     <div className="overflow-hidden flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Active Project</p>
-                      <p className="text-xs font-extrabold text-indigo-900 truncate">{activeProject?.name || 'Project'}</p>
+                      <p className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider">Project</p>
+                      <p className="text-xs font-semibold text-[#1D1D1F] truncate">{activeProject?.name || 'Project'}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Invite Collaborator Button */}
-                {onOpenInviteModal && (
+                <div className="flex gap-1.5">
+                  {onOpenInviteModal && (
+                    <button
+                      onClick={onOpenInviteModal}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer bg-white/80 hover:bg-white text-[#007AFF] border border-black/[0.08] shadow-2xs apple-press"
+                      title="Invite Member"
+                    >
+                      <UserPlus size={12} />
+                      <span>Invite</span>
+                    </button>
+                  )}
+
                   <button
-                    onClick={onOpenInviteModal}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 shadow-2xs"
-                    title="Invite friend or team member to collaborate"
+                    onClick={onExitProject}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer text-[#FF3B30] hover:bg-[#FF3B30]/10 border border-[#FF3B30]/20 apple-press"
                   >
-                    <div className="flex items-center gap-2">
-                      <UserPlus size={14} className="text-indigo-600" />
-                      <span>Invite Member</span>
-                    </div>
-                    {activeProject?.members && activeProject.members.length > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-indigo-200/80 text-indigo-800 font-extrabold">
-                        {activeProject.members.length}
-                      </span>
-                    )}
+                    <DoorOpen size={12} />
+                    <span>Exit</span>
                   </button>
-                )}
+                </div>
 
-                {/* Exit Workspace Button */}
-                <button
-                  onClick={onExitProject}
-                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-rose-100 hover:border-rose-200"
-                >
-                  <DoorOpen size={17} className="text-rose-500" />
-                  <span>Exit Workspace</span>
-                </button>
-
-                {/* Active Test Case / File Display Card + Exit TestCase Button */}
                 {activeFile && (
-                  <div className="pt-2 space-y-2 animate-fadeIn border-t border-slate-100">
-                    <div className="px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                      <div className="flex items-start gap-2.5">
-                        <div className="p-1.5 bg-slate-800 rounded-lg text-white shrink-0 mt-0.5">
-                          <FileText size={13} />
-                        </div>
-                        <div className="overflow-hidden flex-1 min-w-0">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active TestCase File</p>
-                          <p className="text-xs font-bold text-slate-900 truncate" title={activeFile.name}>{activeFile.name}</p>
-                        </div>
+                  <div className="pt-1.5 space-y-1.5 border-t border-black/[0.06]">
+                    <div className="px-2 py-1.5 bg-white/60 rounded-md border border-black/[0.05]">
+                      <div className="flex items-center gap-2">
+                        <FileText size={12} className="text-[#8E8E93]" />
+                        <p className="text-xs font-medium text-[#1D1D1F] truncate" title={activeFile.name}>{activeFile.name}</p>
                       </div>
                     </div>
-
                     <button
                       onClick={onExitTestFile}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all cursor-pointer shadow-xs"
-                      title="Deselect active test case file"
+                      className="w-full flex items-center justify-center gap-1.5 py-1 px-2 text-[11px] font-medium text-[#FF9500] hover:bg-[#FF9500]/10 border border-[#FF9500]/20 rounded-md transition-colors cursor-pointer apple-press"
                     >
-                      <DoorOpen size={14} className="text-amber-600" />
-                      <span>Exit TestCase</span>
+                      <DoorOpen size={11} />
+                      <span>Deselect File</span>
                     </button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Core Module Nav Items */}
-            <div className="space-y-1">
+            {/* Core QA Navigation Items */}
+            <div className="space-y-0.5">
               {activeProjectId && (
-                <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
+                <div className="px-2 text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider mb-1">
                   Workspace
                 </div>
               )}
@@ -415,21 +367,21 @@ export const Sidebar = ({
                     key={item.id}
                     onClick={() => !item.disabled && setActiveTab(item.id)}
                     disabled={item.disabled}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-1 cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-[13px] transition-colors cursor-pointer apple-press ${
                       item.disabled
-                        ? 'opacity-40 cursor-not-allowed text-slate-400'
+                        ? 'opacity-35 cursor-not-allowed text-[#AEAEB2]'
                         : isActive
-                          ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'mac-item-active'
+                          : 'text-[#3C3C43] hover:bg-black/[0.045] font-normal'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} strokeWidth={isActive ? 2.5 : 2} />
+                    <div className="flex items-center gap-2.5">
+                      <Icon size={16} className={isActive ? 'text-white' : 'text-[#636366]'} strokeWidth={isActive ? 2.2 : 1.8} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge !== null && item.badge !== undefined && (
-                      <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
-                        isActive ? 'bg-white text-indigo-700' : 'bg-rose-100 text-rose-700'
+                      <span className={`px-1.5 py-0.2 text-[10px] font-semibold rounded-full ${
+                        isActive ? 'bg-white text-[#007AFF]' : 'apple-badge'
                       }`}>
                         {item.badge}
                       </span>
@@ -444,69 +396,45 @@ export const Sidebar = ({
 
       {/* User Account Info Bar */}
       {currentUser && (
-        <div className={`px-4 py-2.5 border-t flex items-center justify-between ${
-          isDark ? 'border-white/10 bg-black/50 text-slate-300' : 'border-slate-100 bg-slate-50/60'
+        <div className={`px-3 py-2 border-t flex items-center justify-between ${
+          isDark ? 'border-white/10 bg-white/[0.02]' : 'border-black/[0.06] bg-white/40'
         }`}>
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className={`w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 ${
-              isDark ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-indigo-600 text-white'
+          <div className="flex items-center gap-2 overflow-hidden">
+            <div className={`w-6 h-6 rounded-full font-medium text-[11px] flex items-center justify-center shrink-0 ${
+              isDark ? 'bg-white/20 text-white' : 'bg-[#007AFF] text-white shadow-2xs'
             }`}>
               {userInitial}
             </div>
             <div className="overflow-hidden">
-              <p className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-800'}`} title={currentUser.email}>
+              <p className={`text-xs font-medium truncate ${isDark ? 'text-white' : 'text-[#1D1D1F]'}`} title={currentUser.email}>
                 {currentUser.email}
               </p>
               <button
                 type="button"
                 onClick={onPullSync}
-                className="flex items-center gap-1.5 text-[10px] font-semibold hover:opacity-80 transition-opacity cursor-pointer text-left group"
-                title="Click to refresh & pull latest updates from cloud"
+                className="flex items-center gap-1 text-[10px] text-[#86868B] hover:text-[#007AFF] transition-colors cursor-pointer"
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${
-                  syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' :
-                  syncStatus === 'error' ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'
+                  syncStatus === 'syncing' ? 'bg-[#FF9500] animate-pulse' :
+                  syncStatus === 'error' ? 'bg-[#FF3B30]' : 'bg-[#34C759]'
                 }`}></span>
-                <span className={syncStatus === 'error' ? (isDark ? 'text-rose-400' : 'text-rose-600') : (isDark ? 'text-emerald-400' : 'text-emerald-600')}>
-                  {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Paused' : 'Live Synced'}
-                </span>
-                <RefreshCw size={9} className={`${isDark ? 'text-slate-500 group-hover:text-cyan-400' : 'text-slate-400 group-hover:text-indigo-600'} transition-colors ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                <span>{syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Paused' : 'Synced'}</span>
+                <RefreshCw size={8} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              isDark ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-950/40' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-            }`}
+            className="p-1 rounded-md text-[#8E8E93] hover:text-[#FF3B30] hover:bg-[#FF3B30]/10 transition-colors cursor-pointer"
             title="Sign Out"
           >
-            <LogOut size={15} />
+            <LogOut size={13} />
           </button>
         </div>
       )}
 
-      {/* Bottom Footer — Real-Time Sync & Export/Import */}
-      <div className={`p-3 border-t space-y-2 ${isDark ? 'border-white/10 bg-[#03090e]' : 'border-slate-100 bg-white'}`}>
-        {/* Real-time Collaboration Status (Zero manual pull needed) */}
-        {activeProjectId && (
-          <div className="py-2 px-2.5 bg-emerald-50/80 border border-emerald-200/90 rounded-lg flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${syncStatus === 'syncing' ? 'bg-amber-400' : syncStatus === 'error' ? 'bg-rose-400' : 'bg-emerald-400'} opacity-75`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${syncStatus === 'syncing' ? 'bg-amber-500' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
-              </span>
-              <div>
-                <p className="text-[11px] font-bold text-emerald-950 leading-tight">Live Real-Time Sync</p>
-                <p className="text-[9px] text-emerald-700 font-medium">Automatic cloud updates</p>
-              </div>
-            </div>
-            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${syncStatus === 'syncing' ? 'text-amber-700 bg-amber-100' : syncStatus === 'error' ? 'text-rose-700 bg-rose-100' : 'text-emerald-700 bg-emerald-100'}`}>
-              {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Error' : 'Active'}
-            </span>
-          </div>
-        )}
-
+      {/* Bottom Footer Backup Controls */}
+      <div className={`p-2 border-t flex gap-1 ${isDark ? 'border-white/10' : 'border-black/[0.06]'}`}>
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -514,30 +442,20 @@ export const Sidebar = ({
           accept=".json" 
           className="hidden" 
         />
-        <div className="flex gap-1">
-          <button
-            onClick={onExportBackup}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
-              isDark 
-                ? 'text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10' 
-                : 'text-slate-600 rounded-lg hover:bg-slate-100'
-            }`}
-            title="Download JSON Backup"
-          >
-            <Download size={13} /> Export Backup
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
-              isDark 
-                ? 'text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10' 
-                : 'text-slate-600 rounded-lg hover:bg-slate-100'
-            }`}
-            title="Import JSON Backup"
-          >
-            <UploadCloud size={13} /> Import Backup
-          </button>
-        </div>
+        <button
+          onClick={onExportBackup}
+          className="flex-1 flex items-center justify-center gap-1 py-1 text-[11px] font-medium rounded-md text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04] transition-colors cursor-pointer border border-transparent hover:border-black/[0.06]"
+          title="Export JSON Backup"
+        >
+          <Download size={11} /> Export
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex-1 flex items-center justify-center gap-1 py-1 text-[11px] font-medium rounded-md text-[#636366] hover:text-[#1D1D1F] hover:bg-black/[0.04] transition-colors cursor-pointer border border-transparent hover:border-black/[0.06]"
+          title="Import JSON Backup"
+        >
+          <UploadCloud size={11} /> Import
+        </button>
       </div>
 
     </aside>

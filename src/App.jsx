@@ -1082,61 +1082,107 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
   };
 
   return (
-    <div className={`flex h-screen h-[100dvh] w-full ${
+    <div className={`flex flex-col h-screen h-[100dvh] w-full ${
       activeApp === 'aidev'
         ? 'bg-[#020609] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200'
-        : 'bg-slate-50 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900'
+        : 'bg-[#F5F5F7] text-[#1D1D1F] selection:bg-[#007AFF]/20 selection:text-[#007AFF]'
     } font-sans overflow-hidden relative`}>
       
-      {/* Desktop App Rail Dock (Linear/Slack Style Multi-App Switcher) */}
-      {activeApp !== 'hub' && (
-        <AppRail
-          activeApp={activeApp}
-          setActiveApp={setActiveApp}
-          openBugsCount={openBugsCount}
-          pendingOutboxCount={pendingOutboxCount}
-          contractsExpiringSoon={contractMetrics.expiringSoonCount}
-          currentUser={currentUser}
-          onLogout={logout}
-        />
-      )}
-
-      {/* Desktop Sidebar Navigation (shown only when inside QA or Sales, hidden on Apps Library Hub) */}
-      {activeApp !== 'hub' && (
-        <Sidebar
-          activeApp={activeApp}
-          onReturnToHub={() => setActiveApp('hub')}
-          salesTab={salesTab}
-          setSalesTab={setSalesTab}
-          pendingOutboxCount={pendingOutboxCount}
-          onOpenHarveySettings={() => setIsHarveySettingsOpen(true)}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          activeProject={activeProject}
-          activeProjectId={activeProjectId}
-          activeFile={activeFile}
-          onExitTestFile={handleExitTestFile}
-          openBugsCount={openBugsCount}
-          currentUser={currentUser}
-          onLogout={logout}
-          onExportBackup={handleExportBackup}
-          onImportBackup={handleImportBackup}
-          onExitProject={handleExitProject}
-          onOpenInviteModal={() => setIsInviteModalOpen(true)}
-          syncStatus={syncStatus}
-          onPullSync={handlePullSync}
-          onForcePushSync={handleForcePushSync}
-        />
-      )}
-
-      {/* Main Content Area */}
-      <main className={`flex-1 relative flex flex-col min-w-0 ${
-        activeApp === 'aidev'
-          ? 'bg-[#020609] h-full overflow-hidden p-0 m-0'
-          : activeApp === 'hub'
-            ? 'bg-slate-50 overflow-y-auto'
-            : 'bg-white overflow-y-auto pb-dock-safe md:pb-0'
+      {/* macOS Window Titlebar (Desktop Only) */}
+      <header className={`hidden md:flex items-center justify-between px-4 h-9 select-none shrink-0 z-40 ${
+        activeApp === 'aidev' ? 'bg-[#03090e] border-b border-white/10' : 'mac-titlebar'
       }`}>
+        {/* Left: Window Traffic Light Dots */}
+        <div className="flex items-center gap-2 w-44">
+          <span className="mac-dot mac-dot-close group" title="Close Window">
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#4D0000] font-black leading-none">✕</span>
+          </span>
+          <span className="mac-dot mac-dot-minimize group" title="Minimize Window">
+            <span className="opacity-0 group-hover:opacity-100 text-[8px] text-[#593900] font-black leading-none">−</span>
+          </span>
+          <span className="mac-dot mac-dot-maximize group" title="Zoom Window">
+            <span className="opacity-0 group-hover:opacity-100 text-[7px] text-[#004D0D] font-black leading-none">+</span>
+          </span>
+        </div>
+
+        {/* Center: macOS Document / Window Title */}
+        <div className="flex items-center gap-1.5 text-xs font-medium text-[#1D1D1F]">
+          <span className={activeApp === 'aidev' ? 'text-slate-400' : 'text-[#8E8E93]'}>InfratechAI</span>
+          <span className={activeApp === 'aidev' ? 'text-slate-600' : 'text-[#AEAEB2]'}>•</span>
+          <span className={`font-semibold ${activeApp === 'aidev' ? 'text-white' : 'text-[#1D1D1F]'}`}>
+            {activeApp === 'hub' ? 'Launchpad' :
+             activeApp === 'qa' ? (activeProject?.name ? `${activeProject.name} — Workspace` : 'QA Manager') :
+             activeApp === 'sales' ? 'Harvey AI SDR' :
+             activeApp === 'business' ? 'Business Operations' :
+             'AI Dev Voice Copilot'}
+          </span>
+        </div>
+
+        {/* Right: macOS Status & Controls */}
+        <div className="flex items-center justify-end gap-3 w-44 text-xs">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium">
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              syncStatus === 'syncing' ? 'bg-[#FF9500] animate-pulse' :
+              syncStatus === 'error' ? 'bg-[#FF3B30]' : 'bg-[#34C759]'
+            }`} />
+            <span className={activeApp === 'aidev' ? 'text-slate-400' : 'text-[#8E8E93]'}>
+              {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Offline' : 'iCloud Synced'}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Workspace Frame */}
+      <div className="flex-1 flex overflow-hidden min-h-0 relative">
+        {/* Desktop App Rail Dock (Linear/Slack Style Multi-App Switcher) */}
+        {activeApp !== 'hub' && (
+          <AppRail
+            activeApp={activeApp}
+            setActiveApp={setActiveApp}
+            openBugsCount={openBugsCount}
+            pendingOutboxCount={pendingOutboxCount}
+            contractsExpiringSoon={contractMetrics.expiringSoonCount}
+            currentUser={currentUser}
+            onLogout={logout}
+          />
+        )}
+
+        {/* Desktop Sidebar Navigation (shown only when inside QA or Sales, hidden on Apps Library Hub) */}
+        {activeApp !== 'hub' && (
+          <Sidebar
+            activeApp={activeApp}
+            onReturnToHub={() => setActiveApp('hub')}
+            salesTab={salesTab}
+            setSalesTab={setSalesTab}
+            pendingOutboxCount={pendingOutboxCount}
+            onOpenHarveySettings={() => setIsHarveySettingsOpen(true)}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            activeProject={activeProject}
+            activeProjectId={activeProjectId}
+            activeFile={activeFile}
+            onExitTestFile={handleExitTestFile}
+            openBugsCount={openBugsCount}
+            currentUser={currentUser}
+            onLogout={logout}
+            onExportBackup={handleExportBackup}
+            onImportBackup={handleImportBackup}
+            onExitProject={handleExitProject}
+            onOpenInviteModal={() => setIsInviteModalOpen(true)}
+            syncStatus={syncStatus}
+            onPullSync={handlePullSync}
+            onForcePushSync={handleForcePushSync}
+          />
+        )}
+
+        {/* Main Content Area */}
+        <main className={`flex-1 relative flex flex-col min-w-0 ${
+          activeApp === 'aidev'
+            ? 'bg-[#020609] h-full overflow-hidden p-0 m-0'
+            : activeApp === 'hub'
+              ? 'bg-[#F5F5F7] overflow-y-auto'
+              : 'bg-[#FFFFFF] overflow-y-auto pb-dock-safe md:pb-0'
+        }`}>
         
         {/* Mobile Header Bar (hidden on desktop and hub) */}
         {activeApp !== 'hub' && (
@@ -1369,6 +1415,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           />
         )}
       </main>
+      </div>
 
       {/* Mobile Floating Glass Dock & Options Sheet (shown across ecosystem apps) */}
       {activeApp !== 'hub' && (

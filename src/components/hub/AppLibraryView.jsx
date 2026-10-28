@@ -1,13 +1,140 @@
-import React, { useState } from 'react';
-import { 
-  Play, Bot, CheckSquare, Sparkles, Shield, ArrowRight, 
-  Layers, CheckCircle2, Cpu, Globe, Sliders, LogOut,
-  ChevronRight, RefreshCw, Briefcase, Zap, Flame, ExternalLink,
-  Building2, Users
+import React, { useState, useEffect } from 'react';
+import {
+  Play, Bot, CheckSquare, Sparkles, Shield, ArrowRight,
+  LayoutGrid, Cpu, Globe, LogOut, Building2, Users,
+  CheckCircle2, Zap, Lock, Activity, MessageSquare
 } from 'lucide-react';
-import { getUserInitial, getUserColor } from '../../utils/formatters';
+import { getUserInitial } from '../../utils/formatters';
 import { businessService } from '../../services/businessService';
 
+/* ──────────────────────────────────────────────────────────
+   APP CATALOG
+   ────────────────────────────────────────────────────────── */
+const makeApps = (projects, openBugsCount, pendingOutboxCount, contracts) => {
+  const biz = businessService.getPortfolioMetrics(contracts);
+  return [
+    {
+      id: 'company',
+      name: 'Virtual Company',
+      category: 'Autonomous Enterprise',
+      description: '14 autonomous GSTACK departments, full agentic mission dispatch, daily executive briefing in ₹ INR.',
+      icon: Building2,
+      color: '#3ECF8E',
+      status: 'Live',
+      statusVariant: 'green',
+      metrics: [{ l: 'Departments', v: '14 Active' }, { l: 'Agents', v: '14 AI Leads' }, { l: 'Currency', v: '₹ INR' }],
+      features: ['14 GSTACK Autonomous Dept. Leads', 'Agentic Mission Dispatcher', 'Daily Operations Report'],
+    },
+    {
+      id: 'customers',
+      name: 'Virtual Customer Swarm',
+      category: 'Market Intelligence',
+      description: '64 named agentic agents across 8 market sectors. Simulate pricing elasticity, feature debates, and NPS in ₹.',
+      icon: Users,
+      color: '#4A9EFF',
+      status: 'Live',
+      statusVariant: 'blue',
+      metrics: [{ l: 'Agents', v: '64 Named' }, { l: 'Sectors', v: '8 Industries' }, { l: 'Rounds', v: '3-Round Sim' }],
+      features: ['64 Distinct Customer Archetypes', '₹ WTP & Pricing Elasticity Curves', '1-on-1 Founder Chat'],
+    },
+    {
+      id: 'qa',
+      name: 'QA Manager',
+      category: 'Quality Engineering',
+      description: 'Test execution with Linear-style hotkeys, full defect lifecycle, real-time Firebase collaboration.',
+      icon: CheckSquare,
+      color: '#6E7BFF',
+      status: openBugsCount > 0 ? `${openBugsCount} Open Bugs` : 'All Clear',
+      statusVariant: openBugsCount > 0 ? 'amber' : 'green',
+      metrics: [{ l: 'Projects', v: `${projects.length} Active` }, { l: 'Defects', v: `${openBugsCount} Open`, highlight: openBugsCount > 0 }, { l: 'Sync', v: 'Live' }],
+      features: ['Hotkeys: P Pass · F Fail · B Block', 'Defect Tracking & Severity', 'Multi-User Collaboration'],
+    },
+    {
+      id: 'business',
+      name: 'Business Command',
+      category: 'Revenue & SLA',
+      description: 'Client portfolios, contract renewals, MRR tracking, and technical project scopes.',
+      icon: MessageSquare,
+      color: '#F6A943',
+      status: biz.expiringSoonCount > 0 ? `${biz.expiringSoonCount} Expiring` : 'Portfolio Active',
+      statusVariant: biz.expiringSoonCount > 0 ? 'amber' : 'green',
+      metrics: [{ l: 'Accounts', v: `${contracts.length} Active` }, { l: 'MRR', v: `₹${biz.totalMRR?.toLocaleString('en-IN') || '0'}` }, { l: 'Expiring', v: `${biz.expiringSoonCount}`, highlight: biz.expiringSoonCount > 0 }],
+      features: ['Contract Expiration Timeline', 'SLA Tiers & Retainer Tracking', 'Project Scopes Checklist'],
+    },
+    {
+      id: 'aidev',
+      name: 'AI Dev Copilot',
+      category: 'Voice Intelligence',
+      description: 'Autonomous technical lead with real-time awareness across QA, sales, and contracts. Voice synthesis via Web Speech.',
+      icon: Cpu,
+      color: '#A78BFA',
+      status: 'Voice Active',
+      statusVariant: 'purple',
+      metrics: [{ l: 'Engine', v: 'Web Speech' }, { l: 'Telemetry', v: '100% Live' }, { l: 'Cost', v: '₹0' }],
+      features: ['Live Web Speech Audio', 'Full Multi-App Telemetry', 'Hinglish / English NLP'],
+    },
+    {
+      id: 'sales',
+      name: 'Harvey (Sales AI)',
+      category: 'Autonomous SDR',
+      description: 'B2B outbound prospecting engine. Discovers buying signals, crafts personalised sequences, queues drafts for approval.',
+      icon: Bot,
+      color: '#F6A943',
+      status: pendingOutboxCount > 0 ? `${pendingOutboxCount} Pending` : 'SDR Active',
+      statusVariant: pendingOutboxCount > 0 ? 'amber' : 'green',
+      metrics: [{ l: 'Outbox', v: `${pendingOutboxCount} Pending`, highlight: pendingOutboxCount > 0 }, { l: 'Engine', v: 'Neural SDR' }, { l: 'Cost', v: '₹0' }],
+      features: ['Decisions Desk (A/R Approval)', 'Anti-AI Fluff Policy', 'Inbound Objection Handling'],
+    },
+    {
+      id: 'sentinel',
+      name: 'DevOps Sentinel',
+      category: 'CI/CD & Deployment',
+      description: 'Staging regression analysis, automated canary rollouts, and deployment readiness scoring.',
+      icon: Shield,
+      color: '#9AA0AC',
+      status: 'Preview',
+      statusVariant: 'muted',
+      metrics: [{ l: 'CI/CD', v: 'GitHub Actions' }, { l: 'Readiness', v: '99.8%' }, { l: 'Status', v: 'Preview' }],
+      features: ['Automated Canary Health Assessment', 'Staging Deployment Blockers', 'Zero-Config Webhooks'],
+      disabled: true,
+    },
+  ];
+};
+
+const VARIANT_MAP = {
+  green:  'cs-badge-green',
+  blue:   'cs-badge-blue',
+  amber:  'cs-badge-amber',
+  purple: 'cs-badge-purple',
+  muted:  'cs-badge-muted',
+  red:    'cs-badge-red',
+};
+
+/* ──────────────────────────────────────────────────────────
+   SKELETON LOADER
+   ────────────────────────────────────────────────────────── */
+const CardSkeleton = () => (
+  <div className="cs-card p-5 flex flex-col gap-4 min-h-[280px]">
+    <div className="flex items-start gap-3">
+      <div className="skeleton w-10 h-10 rounded-[12px]" />
+      <div className="flex-1 space-y-2">
+        <div className="skeleton h-3.5 w-28 rounded" />
+        <div className="skeleton h-2.5 w-16 rounded" />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <div className="skeleton h-2.5 w-full rounded" />
+      <div className="skeleton h-2.5 w-4/5 rounded" />
+    </div>
+    <div className="grid grid-cols-3 gap-2 mt-auto">
+      {[0,1,2].map(i => <div key={i} className="skeleton h-10 rounded-[8px]" />)}
+    </div>
+  </div>
+);
+
+/* ──────────────────────────────────────────────────────────
+   MAIN COMPONENT
+   ────────────────────────────────────────────────────────── */
 export const AppLibraryView = ({
   onLaunchApp,
   projects = [],
@@ -18,226 +145,82 @@ export const AppLibraryView = ({
   onLogout,
   onOpenSettings
 }) => {
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'business' | 'aidev' | 'qa' | 'sales'
+  const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('all');
   const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
-  const userColor = getUserColor(currentUser?.email || 'user');
 
-  const businessMetrics = businessService.getPortfolioMetrics(contracts);
+  // Simulate brief load for smooth entry
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(t);
+  }, []);
 
-  const apps = [
-    {
-      id: 'company',
-      name: 'Virtual Company',
-      category: 'Autonomous Enterprise Operations',
-      description: 'Autonomous enterprise control: Outbound Sales Division (Harvey), Operations Support & Ticket Bot (Sentinel-9), QA telemetry, real-time activity matrix, and daily executive briefing in INR (₹).',
-      icon: Building2,
-      iconBg: 'bg-[#163B32] text-[#DAF1DE]',
-      badge: 'Autonomous HQ',
-      badgeClass: 'bg-[#163B32]/10 text-[#163B32] border-[#163B32]/30',
-      metrics: [
-        { label: 'Departments', value: '4 Active' },
-        { label: 'Currency', value: 'INR (₹)' },
-        { label: 'Outbox', value: 'Real Live Sync' }
-      ],
-      features: [
-        'Outbound Sales Division (Harvey AI SDR)',
-        'Operations & Support Ticket Resolver',
-        'QA Engineering Telemetry Integration',
-        'Daily Operations Work Logs & Executive Brief'
-      ],
-      ctaText: 'Enter Desk',
-      isReady: true
-    },
-    {
-      id: 'customers',
-      name: 'Virtual Customer Swarm',
-      category: 'Multi-Agent Market Intelligence',
-      description: 'Multi-agent customer archetype simulation in Indian Rupees (₹). Simulates purchasing intent, commercial objections, feature dealbreakers, and pricing elasticity curves.',
-      icon: Users,
-      iconBg: 'bg-[#225347] text-[#DAF1DE]',
-      badge: 'Market Swarm',
-      badgeClass: 'bg-[#225347]/10 text-[#225347] border-[#225347]/30',
-      metrics: [
-        { label: 'Archetypes', value: '5 Personas' },
-        { label: 'Currency', value: 'INR (₹)' },
-        { label: 'Simulation', value: 'Multi-Round' }
-      ],
-      features: [
-        'Multi-Agent Customer Archetypes (Enterprise, Startup, Agency, SMB)',
-        'Candid Decision Logic & Unfiltered Internal Monologues',
-        'Commercial Price Elasticity & Willingness-To-Pay (WTP) in ₹',
-        'Tactical Objection Diagnosis & Consensus Forecasting'
-      ],
-      ctaText: 'Launch Simulator',
-      isReady: true
-    },
-    {
-      id: 'business',
-      name: 'Business Command Center',
-      category: 'Enterprise Revenue & SLA',
-      description: 'Active client portfolios, contract renewal countdowns, enterprise SLA guarantees, retainers/MRR, and detailed technical project scopes.',
-      icon: Building2,
-      iconBg: 'bg-gradient-to-b from-[#34C759] to-[#28A745] text-white',
-      badge: contracts.length > 0 ? 'Active Portfolio' : 'Ready',
-      badgeClass: 'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20',
-      metrics: [
-        { label: 'Accounts', value: `${contracts.length} Active` },
-        { label: 'Portfolio MRR', value: `$${businessMetrics.totalMRR.toLocaleString()}` },
-        { label: 'Expiring Soon', value: `${businessMetrics.expiringSoonCount}`, highlight: businessMetrics.expiringSoonCount > 0 }
-      ],
-      features: [
-        'Contract Expiration & Renewal Timeline',
-        'Project Scopes & Deliverables Checklist',
-        'Enterprise SLA Tiers & Retainer Tracking'
-      ],
-      ctaText: 'Open',
-      isReady: true
-    },
-    {
-      id: 'aidev',
-      name: 'AI DEV Copilot',
-      category: 'Voice Intelligence Engine',
-      description: 'Autonomous technical lead with 100% real-time awareness across QA test suites, open defects, sales outbox, and contracts. Voice synthesis via Web Speech.',
-      icon: Cpu,
-      iconBg: 'bg-gradient-to-b from-[#5856D6] to-[#007AFF] text-white',
-      badge: 'Live Voice Active',
-      badgeClass: 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/20',
-      metrics: [
-        { label: 'Voice Link', value: 'Web Speech' },
-        { label: 'Telemetry', value: '100% Live' },
-        { label: 'Model Cost', value: '$0.00' }
-      ],
-      features: [
-        'Live Web Speech Audio Engine',
-        'Full Multi-App Telemetry Across QA, Sales & Biz',
-        'Natural Language Comprehension (Hinglish/English)'
-      ],
-      ctaText: 'Open',
-      isReady: true
-    },
-    {
-      id: 'qa',
-      name: 'InfratechAI QA Manager',
-      category: 'Quality Engineering',
-      description: 'High-velocity test execution with Linear-style hotkeys (P/F/B), full defect lifecycle tracking, test suites management, and real-time Firebase collaboration.',
-      icon: CheckSquare,
-      iconBg: 'bg-gradient-to-b from-[#007AFF] to-[#0051A8] text-white',
-      badge: 'Core Installed',
-      badgeClass: 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/20',
-      metrics: [
-        { label: 'Workspaces', value: `${projects.length} Active` },
-        { label: 'Defects', value: `${openBugsCount} Open`, highlight: openBugsCount > 0 },
-        { label: 'iCloud Sync', value: 'Live' }
-      ],
-      features: [
-        'Linear-style Hotkeys (P: Pass, F: Fail, B: Block)',
-        'Defect Tracking with Severity & Lifecycle',
-        'Real-time Multi-User Cloud Collaboration'
-      ],
-      ctaText: 'Open',
-      isReady: true
-    },
-    {
-      id: 'sales',
-      name: 'Sales Manager (Harvey)',
-      category: 'Autonomous Sales AI',
-      description: 'Autonomous B2B outbound prospecting engine. Discovers website buying signals, crafts hyper-personalized sequences, and queues human-vetted drafts in Decisions Desk.',
-      icon: Bot,
-      iconBg: 'bg-gradient-to-b from-[#FF9500] to-[#E07A00] text-white',
-      badge: 'SDR Engine Active',
-      badgeClass: 'bg-[#FF9500]/10 text-[#FF9500] border-[#FF9500]/20',
-      metrics: [
-        { label: 'Decisions Desk', value: `${pendingOutboxCount} Pending`, highlight: pendingOutboxCount > 0 },
-        { label: 'Engine', value: 'Neural SDR' },
-        { label: 'Model Cost', value: '$0.00' }
-      ],
-      features: [
-        'Decisions Desk (Keyboard A / R Approval)',
-        'Anti-AI Fluff Policy (Strict Quality Standards)',
-        'Inbound Replies & Objection Handling'
-      ],
-      ctaText: 'Open',
-      isReady: true
-    },
-    {
-      id: 'sentinel',
-      name: 'DevOps Release Sentinel',
-      category: 'CI/CD & Deployment',
-      description: 'Continuous staging regression analysis, automated canary rollouts verification, and deployment readiness scoring before promoting builds.',
-      icon: Shield,
-      iconBg: 'bg-gradient-to-b from-[#8E8E93] to-[#636366] text-white',
-      badge: 'Preview',
-      badgeClass: 'bg-black/[0.05] text-[#8E8E93] border-black/[0.08]',
-      metrics: [
-        { label: 'CI/CD', value: 'GitHub Actions' },
-        { label: 'Readiness', value: '99.8%' },
-        { label: 'Status', value: 'Preview' }
-      ],
-      features: [
-        'Automated Canary Health Assessment',
-        'Staging Deployment Blockers Auto-Flagging',
-        'Zero-Config Webhook Integrations'
-      ],
-      ctaText: 'Preview',
-      isReady: false
-    }
+  const apps = makeApps(projects, openBugsCount, pendingOutboxCount, contracts);
+
+  const FILTERS = [
+    { id: 'all',      label: 'All Apps' },
+    { id: 'qa',       label: 'QA' },
+    { id: 'sales',    label: 'Sales' },
+    { id: 'company',  label: 'Company' },
+    { id: 'aidev',    label: 'AI Dev' },
   ];
 
-  const filteredApps = apps.filter(app => {
-    if (activeFilter === 'business') return app.id === 'business';
-    if (activeFilter === 'aidev') return app.id === 'aidev';
-    if (activeFilter === 'qa') return app.id === 'qa';
-    if (activeFilter === 'sales') return app.id === 'sales';
-    return true;
+  const filtered = apps.filter(a => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'company') return a.id === 'company' || a.id === 'customers';
+    return a.id === activeFilter;
   });
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
+
   return (
-    <div className="w-full min-h-full bg-[#F5F5F7] flex flex-col font-sans text-[#1D1D1F]">
-      
-      {/* Top Apple Navigation Header */}
-      <header className="mac-titlebar px-5 sm:px-10 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-[10px] bg-white shadow-2xs border border-black/5 p-1 flex items-center justify-center">
-            <img 
-              src="/qa-logo.png" 
-              alt="InfratechAI" 
-              className="w-full h-full object-contain" 
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#1D1D1F] text-sm tracking-tight">
-                InfratechAI Launchpad
-              </span>
-              <span className="text-[10px] font-medium text-[#007AFF] bg-[#007AFF]/10 border border-[#007AFF]/20 px-2 py-0.5 rounded-full">
-                App Store
-              </span>
-            </div>
-            <p className="text-[11px] text-[#86868B]">Enterprise Operations & Engineering</p>
-          </div>
+    <div
+      className="w-full min-h-full flex flex-col"
+      style={{ background: 'var(--c-canvas)', color: 'var(--c-primary)' }}
+    >
+
+      {/* ── Top Header ── */}
+      <header
+        className="px-6 py-4 flex items-center justify-between sticky top-0 z-30"
+        style={{ background: 'rgba(20,21,24,0.92)', borderBottom: '1px solid var(--c-border)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+      >
+        <div>
+          <h1 className="text-[15px] font-semibold tracking-tight" style={{ color: 'var(--c-white)' }}>
+            {greeting}, {currentUser?.displayName?.split(' ')[0] || currentUser?.email?.split('@')[0] || 'Founder'} 👋
+          </h1>
+          <p className="text-[11px] mt-0.5" style={{ color: 'var(--c-muted)' }}>
+            InfratechAI Workspace · {apps.filter(a => !a.disabled).length} apps ready
+          </p>
         </div>
 
-        {/* Right user & system status */}
+        {/* Right */}
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-black/[0.04] border border-black/[0.05] rounded-full text-xs">
-            <span className="w-2 h-2 rounded-full bg-[#34C759]" />
-            <span className="text-[#8E8E93]">System:</span>
-            <span className="font-medium text-[#1D1D1F]">Neural Core Online</span>
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px]"
+            style={{ background: 'rgba(62,207,142,0.1)', border: '1px solid rgba(62,207,142,0.2)', color: 'var(--c-green)' }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3ECF8E]" />
+            Neural Core Online
           </div>
-
-          <div className="flex items-center gap-2 pl-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center font-medium text-xs text-white bg-[#007AFF] shadow-xs">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[13px] text-white"
+              style={{ background: '#6E7BFF' }}
+            >
               {userInitial}
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-xs font-medium text-[#1D1D1F] leading-none truncate max-w-[140px]">
-                {currentUser?.email?.split('@')[0] || 'User'}
-              </p>
             </div>
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="p-1 text-[#8E8E93] hover:text-[#FF3B30] hover:bg-[#FF3B30]/10 rounded-md transition-colors cursor-pointer ml-1"
+                className="p-1.5 rounded-md transition-colors cursor-pointer"
+                style={{ color: 'var(--c-muted)' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#F25B5B'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--c-muted)'}
                 title="Sign Out"
               >
                 <LogOut size={14} />
@@ -247,140 +230,153 @@ export const AppLibraryView = ({
         </div>
       </header>
 
-      {/* Main Launchpad Grid */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-10 py-6 sm:py-8 pb-24 sm:pb-10 space-y-6 animate-fadeIn">
-        
-        {/* Apple Segmented Filter Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-black/[0.06]">
+      {/* ── Main Content ── */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6 pb-24 md:pb-8">
+
+        {/* Section Header + Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-[#1D1D1F] tracking-tight">
-              Ecosystem Applications
-            </h1>
-            <p className="text-[#86868B] mt-0.5 text-xs sm:text-sm">
-              Launch enterprise workspaces, AI copilots and defect suites.
+            <h2 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--c-white)' }}>
+              Applications
+            </h2>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--c-muted)' }}>
+              Launch enterprise workspaces and AI agents
             </p>
           </div>
 
-          {/* Apple Segmented Switcher */}
-          <div className="mac-segmented self-start sm:self-auto overflow-x-auto max-w-full">
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'all' ? 'mac-segmented-item-active' : ''}`}
-            >
-              All ({apps.length})
-            </button>
-            <button
-              onClick={() => setActiveFilter('qa')}
-              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'qa' ? 'mac-segmented-item-active' : ''}`}
-            >
-              QA Manager
-            </button>
-            <button
-              onClick={() => setActiveFilter('sales')}
-              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'sales' ? 'mac-segmented-item-active' : ''}`}
-            >
-              Sales AI
-            </button>
-            <button
-              onClick={() => setActiveFilter('business')}
-              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'business' ? 'mac-segmented-item-active' : ''}`}
-            >
-              Business
-            </button>
-            <button
-              onClick={() => setActiveFilter('aidev')}
-              className={`mac-segmented-item cursor-pointer apple-press ${activeFilter === 'aidev' ? 'mac-segmented-item-active' : ''}`}
-            >
-              AI Dev
-            </button>
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            {FILTERS.map(f => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
+                className="px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-all cursor-pointer"
+                style={{
+                  background: activeFilter === f.id ? 'rgba(110,123,255,0.18)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${activeFilter === f.id ? 'rgba(110,123,255,0.35)' : 'var(--c-border)'}`,
+                  color: activeFilter === f.id ? '#A5B4FF' : 'var(--c-muted)',
+                  fontWeight: activeFilter === f.id ? 600 : 500,
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Application Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredApps.map((app) => {
-            const Icon = app.icon;
-            return (
-              <div
-                key={app.id}
-                onClick={() => app.isReady && onLaunchApp(app.id)}
-                className={`group p-5 rounded-[20px] transition-all duration-200 flex flex-col justify-between min-h-[320px] border ${
-                  app.isReady
-                    ? 'bg-white border-black/[0.06] hover:border-black/[0.12] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.07)] cursor-pointer apple-press'
-                    : 'bg-white/60 border-black/[0.04] opacity-70 cursor-default'
-                }`}
-              >
-                {/* Card Header with Squircle Icon */}
-                <div className="space-y-3.5">
-                  <div className="flex items-start justify-between">
-                    <div className={`w-12 h-12 rounded-[14px] shadow-[0_4px_12px_rgba(0,0,0,0.12)] flex items-center justify-center p-2.5 ${app.iconBg} group-hover:scale-105 transition-transform`}>
-                      <Icon size={22} strokeWidth={2.2} />
+        {/* Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((app, idx) => {
+              const Icon = app.icon;
+              return (
+                <div
+                  key={app.id}
+                  onClick={() => !app.disabled && onLaunchApp(app.id)}
+                  className={`cs-card p-5 flex flex-col justify-between min-h-[270px] animate-fadeInUp ${!app.disabled ? 'cursor-pointer apple-press' : 'opacity-50 cursor-default'}`}
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  {/* Top */}
+                  <div className="flex-1">
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div
+                        className="w-10 h-10 rounded-[12px] flex items-center justify-center"
+                        style={{ background: `${app.color}18`, border: `1px solid ${app.color}30` }}
+                      >
+                        <Icon size={18} style={{ color: app.color }} strokeWidth={2} />
+                      </div>
+                      <span className={`cs-badge ${VARIANT_MAP[app.statusVariant] || 'cs-badge-muted'}`}>
+                        <span
+                          className="w-1.5 h-1.5 rounded-full inline-block"
+                          style={{ background: 'currentColor' }}
+                        />
+                        {app.status}
+                      </span>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${app.badgeClass}`}>
-                      {app.badge}
-                    </span>
-                  </div>
 
-                  <div>
-                    <span className="text-[10px] font-semibold text-[#8E8E93] uppercase tracking-wider block mb-0.5">
+                    {/* Title */}
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-muted)' }}>
                       {app.category}
-                    </span>
-                    <h2 className="text-base font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">
+                    </p>
+                    <h3 className="text-[15px] font-semibold mb-2 tracking-tight" style={{ color: 'var(--c-white)' }}>
                       {app.name}
-                    </h2>
-                    <p className="text-xs text-[#86868B] mt-1.5 line-clamp-3 leading-relaxed">
+                    </h3>
+                    <p className="text-[12px] leading-relaxed" style={{ color: 'var(--c-secondary)' }}>
                       {app.description}
                     </p>
+
+                    {/* Metrics Strip */}
+                    <div
+                      className="grid grid-cols-3 gap-0 mt-4 rounded-[10px] overflow-hidden"
+                      style={{ border: '1px solid var(--c-border)' }}
+                    >
+                      {app.metrics.map((m, i) => (
+                        <div
+                          key={i}
+                          className="py-2.5 px-2 text-center"
+                          style={{
+                            background: 'var(--c-raised)',
+                            borderRight: i < 2 ? '1px solid var(--c-border)' : 'none'
+                          }}
+                        >
+                          <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--c-muted)' }}>
+                            {m.l}
+                          </p>
+                          <p
+                            className="text-[12px] font-semibold truncate"
+                            style={{ color: m.highlight ? 'var(--c-amber)' : 'var(--c-primary)' }}
+                          >
+                            {m.v}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Features */}
+                    <div className="mt-3 space-y-1.5">
+                      {app.features.slice(0, 3).map((f, fi) => (
+                        <div key={fi} className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--c-muted)' }}>
+                          <CheckCircle2 size={11} style={{ color: app.color, flexShrink: 0 }} />
+                          <span className="truncate">{f}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Clean Metrics Strip */}
-                  <div className="grid grid-cols-3 gap-2 py-2 border-y border-black/[0.05]">
-                    {app.metrics.map((m, idx) => (
-                      <div key={idx} className="text-center">
-                        <span className="text-[9px] font-medium text-[#8E8E93] uppercase tracking-wider block">
-                          {m.label}
-                        </span>
-                        <span className={`text-xs font-semibold ${m.highlight ? 'text-[#FF9500]' : 'text-[#1D1D1F]'}`}>
-                          {m.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Highlights checklist */}
-                  <div className="space-y-1 pt-0.5">
-                    {app.features.map((f, fIdx) => (
-                      <div key={fIdx} className="flex items-center gap-2 text-[11px] text-[#636366]">
-                        <CheckCircle2 size={13} className="text-[#007AFF] shrink-0" />
-                        <span className="truncate">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Card Bottom CTA — Apple App Store Style Pill Button */}
-                <div className="pt-4 mt-3 border-t border-black/[0.05] flex items-center justify-between">
-                  <span className="text-xs text-[#8E8E93] font-medium">Free • Workspace</span>
-                  <button
-                    disabled={!app.isReady}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all apple-press cursor-pointer flex items-center gap-1.5 ${
-                      app.isReady
-                        ? 'bg-[#007AFF] hover:bg-[#0071E3] text-white shadow-xs'
-                        : 'bg-black/[0.05] text-[#AEAEB2] cursor-not-allowed'
-                    }`}
+                  {/* CTA */}
+                  <div
+                    className="pt-4 mt-4 flex items-center justify-between"
+                    style={{ borderTop: '1px solid var(--c-border)' }}
                   >
-                    <span>{app.ctaText}</span>
-                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-                  </button>
+                    <span className="text-[11px]" style={{ color: 'var(--c-muted)' }}>
+                      {app.disabled ? 'Coming soon' : 'Free · Workspace'}
+                    </span>
+                    {!app.disabled && (
+                      <button
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all apple-press cursor-pointer"
+                        style={{
+                          background: `${app.color}20`,
+                          border: `1px solid ${app.color}35`,
+                          color: app.color,
+                        }}
+                      >
+                        Open
+                        <ArrowRight size={12} strokeWidth={2.5} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
       </main>
-
     </div>
   );
 };

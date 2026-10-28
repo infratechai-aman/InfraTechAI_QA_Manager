@@ -1113,8 +1113,8 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
           <span className={activeApp === 'aidev' ? 'text-slate-600' : 'text-[#AEAEB2]'}>•</span>
           <span className={`font-semibold ${activeApp === 'aidev' ? 'text-white' : 'text-[#1D1D1F]'}`}>
             {activeApp === 'hub' ? 'Launchpad' :
-             activeApp === 'company' ? 'Virtual Company • Stark Cyberpunk HQ' :
-             activeApp === 'customers' ? 'Virtual Customer Swarm • MiroFish' :
+             activeApp === 'company' ? 'Virtual Company' :
+             activeApp === 'customers' ? 'Virtual Customer Swarm' :
              activeApp === 'qa' ? (activeProject?.name ? `${activeProject.name} — Workspace` : 'QA Manager') :
              activeApp === 'sales' ? 'Harvey AI SDR' :
              activeApp === 'business' ? 'Business Operations' :

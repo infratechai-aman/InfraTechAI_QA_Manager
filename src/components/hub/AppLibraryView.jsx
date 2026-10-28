@@ -27,48 +27,48 @@ export const AppLibraryView = ({
   const apps = [
     {
       id: 'company',
-      name: 'Virtual Company (Stark Cyberpunk HQ)',
+      name: 'Virtual Company',
       category: 'Autonomous Enterprise Operations',
-      description: 'Stark Industries cybernetic command center: Tony Stark J.A.R.V.I.S. holographic vocal core, Harvey Autonomous Outbound Sales, Sentinel-9 Query & Ticket Resolution AI Bot, QA telemetry, daily employee work logs, and EOD executive brief generator.',
+      description: 'Autonomous enterprise control: Outbound Sales Division (Harvey), Operations Support & Ticket Bot (Sentinel-9), QA telemetry, real-time activity matrix, and daily executive briefing in INR (₹).',
       icon: Building2,
-      iconBg: 'bg-gradient-to-br from-[#06B6D4] to-[#3B82F6] text-white',
-      badge: 'Flagship Autonomous HQ',
-      badgeClass: 'bg-[#06B6D4]/10 text-[#06B6D4] border-[#06B6D4]/30',
+      iconBg: 'bg-[#163B32] text-[#DAF1DE]',
+      badge: 'Autonomous HQ',
+      badgeClass: 'bg-[#163B32]/10 text-[#163B32] border-[#163B32]/30',
       metrics: [
-        { label: 'Autonomous Depts', value: '4 Active' },
-        { label: 'Support SLA', value: '100% Met' },
-        { label: 'Outbound Batch', value: '10 Sent Today' }
+        { label: 'Departments', value: '4 Active' },
+        { label: 'Currency', value: 'INR (₹)' },
+        { label: 'Outbox', value: 'Real Live Sync' }
       ],
       features: [
-        'Tony Stark J.A.R.V.I.S. Holographic Vocal Core',
-        'Harvey Autonomous Outbound Sales Division',
-        'Sentinel-9 Query & Ticket Auto-Diagnosis Bot',
-        'Daily Operations Work Logs & EOD Brief Generator'
+        'Outbound Sales Division (Harvey AI SDR)',
+        'Operations & Support Ticket Resolver',
+        'QA Engineering Telemetry Integration',
+        'Daily Operations Work Logs & Executive Brief'
       ],
-      ctaText: 'Enter Command Deck',
+      ctaText: 'Enter Desk',
       isReady: true
     },
     {
       id: 'customers',
-      name: 'Virtual Customer Swarm (MiroFish)',
+      name: 'Virtual Customer Swarm',
       category: 'Multi-Agent Market Intelligence',
-      description: 'Next-gen multi-agent sandbox powered by MiroFish technology. Spawns diverse virtual customer minds to debate product offerings, objections, Willingness-to-Pay (WTP) curves, and emergent consensus forecasts.',
+      description: 'Multi-agent customer archetype simulation in Indian Rupees (₹). Simulates purchasing intent, commercial objections, feature dealbreakers, and pricing elasticity curves.',
       icon: Users,
-      iconBg: 'bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-white',
-      badge: 'MiroFish Swarm Live',
-      badgeClass: 'bg-[#A855F7]/10 text-[#A855F7] border-[#A855F7]/30',
+      iconBg: 'bg-[#225347] text-[#DAF1DE]',
+      badge: 'Market Swarm',
+      badgeClass: 'bg-[#225347]/10 text-[#225347] border-[#225347]/30',
       metrics: [
-        { label: 'Neural Personas', value: '5 Swarm Minds' },
-        { label: 'Consensus Fit', value: '84% Intent' },
+        { label: 'Archetypes', value: '5 Personas' },
+        { label: 'Currency', value: 'INR (₹)' },
         { label: 'Simulation', value: 'Multi-Round' }
       ],
       features: [
-        'Multi-Agent Neural Personas (CTO, Solo Dev, Agency, Skeptic, SMB)',
-        'Live Unfiltered Persona Debate & Sentiment Shifting',
-        'Price Elasticity & Willingness-To-Pay (WTP) Curve',
-        'MiroFish Emergent Conversion & Objection Predictions'
+        'Multi-Agent Customer Archetypes (Enterprise, Startup, Agency, SMB)',
+        'Candid Decision Logic & Unfiltered Internal Monologues',
+        'Commercial Price Elasticity & Willingness-To-Pay (WTP) in ₹',
+        'Tactical Objection Diagnosis & Consensus Forecasting'
       ],
-      ctaText: 'Launch Swarm Simulator',
+      ctaText: 'Launch Simulator',
       isReady: true
     },
     {

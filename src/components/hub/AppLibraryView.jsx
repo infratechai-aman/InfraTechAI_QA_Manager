@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2, Users, CheckSquare, MessageSquare, Cpu, Bot, Shield,
   LogOut, LayoutGrid, Search, Grid, List, ChevronDown, ArrowRight,
-  FolderKanban, Activity, Settings, X
+  FolderKanban, Activity, Settings, X, ExternalLink
 } from 'lucide-react';
 import { getUserInitial } from '../../utils/formatters';
 import { businessService } from '../../services/businessService';
@@ -705,21 +705,36 @@ export const AppLibraryView = ({
                     {/* Card Footer */}
                     <div className="pt-5 mt-5 border-t border-[#9AA0AC]/25 flex items-center justify-between">
                       <span className="text-xs text-[#50545E] font-medium">Free • Workspace</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTriggerLaunch(app);
-                        }}
-                        className={`btn-shine-effect inline-flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-2xl apple-motion-quick shadow-sm hover:shadow-apple-sm cursor-pointer ${
-                          app.disabled
-                            ? 'bg-[#2B2D33] text-[#E5E7EE] border border-[#50545E]/40 cursor-not-allowed'
-                            : 'bg-[#141518] hover:bg-[#2B2D33] active:scale-[0.94] text-[#E5E7EE]'
-                        }`}
-                      >
-                        <span>{app.cta}</span>
-                        <ArrowRight size={14} className="group-hover:translate-x-1 apple-motion-quick" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {/* Open Standalone in New Tab / Window */}
+                        <button
+                          type="button"
+                          title="Open standalone in new window"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`?app=${app.id}`, '_blank');
+                          }}
+                          className="p-2.5 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-2xs apple-motion-quick active:scale-90 cursor-pointer"
+                        >
+                          <ExternalLink size={14} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTriggerLaunch(app);
+                          }}
+                          className={`btn-shine-effect inline-flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-2xl apple-motion-quick shadow-sm hover:shadow-apple-sm cursor-pointer ${
+                            app.disabled
+                              ? 'bg-[#2B2D33] text-[#E5E7EE] border border-[#50545E]/40 cursor-not-allowed'
+                              : 'bg-[#141518] hover:bg-[#2B2D33] active:scale-[0.94] text-[#E5E7EE]'
+                          }`}
+                        >
+                          <span>{app.cta}</span>
+                          <ArrowRight size={14} className="group-hover:translate-x-1 apple-motion-quick" />
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))

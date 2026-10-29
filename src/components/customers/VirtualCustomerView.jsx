@@ -1,11 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users, Bot, Sparkles, Play, RefreshCw, Search,
   CheckCircle2, AlertTriangle, TrendingUp, X,
   ThumbsUp, ThumbsDown, MessageSquare, Filter,
   Activity, ChevronRight, Send, ArrowLeft, Zap,
-  DollarSign, Target, Award, ShieldCheck, HelpCircle
+  DollarSign, Target, Award, ShieldCheck, HelpCircle,
+  Maximize2, Minimize2, ExternalLink
 } from 'lucide-react';
+import { getUserInitial } from '../../utils/formatters';
 
 /* ═══════════════════════════════════════════════════════════
    SYNTHETIC CUSTOMER PANEL — VOICE OF CUSTOMER ENGINE
@@ -26,7 +28,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 74,
     decision: 'CONSIDERING',
     avatar: 'RM',
-    avatarColor: '#4F46E5',
+    avatarColor: '#2B2D33',
     opinion: 'Automation ROI is strong, but I need SOC2 Type II and India DPDP compliance before connecting to production repo. Our board mandates quarterly security audits.',
     keyObjection: 'Requires strict data residency in Mumbai / India region.',
     mustHave: 'DPDP compliance, SAML/SSO, and VAPT certification.'
@@ -43,7 +45,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 95,
     decision: 'BUY',
     avatar: 'SA',
-    avatarColor: '#10B981',
+    avatarColor: '#141518',
     opinion: '₹22,000/mo is one inbound close from Harvey. Autonomous linear QA lets me stop context switching between product and testing. Ready to onboard immediately.',
     keyObjection: 'Cannot sign annual lock-in; needs monthly billing.',
     mustHave: 'Month-to-month retainer, zero setup fee.'
@@ -60,7 +62,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 68,
     decision: 'CONSIDERING',
     avatar: 'SP',
-    avatarColor: '#F59E0B',
+    avatarColor: '#2B2D33',
     opinion: 'The financial math works if we eliminate 3 manual QA contractor seats saving ₹36L annually. Send me a formal cost displacement schedule.',
     keyObjection: 'Requires formal ROI documentation for finance committee.',
     mustHave: 'Guaranteed cost displacement breakdown in ₹ INR.'
@@ -77,7 +79,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 88,
     decision: 'BUY',
     avatar: 'TB',
-    avatarColor: '#0EA5E9',
+    avatarColor: '#141518',
     opinion: 'Our Cypress test suites flake 25% of the time. The Linear-style keyboard hotkeys (P/F/B) and instant defect sync will cut our regression cycles from 3 days to 4 hours.',
     keyObjection: 'Wants integration with existing Jira sprint boards.',
     mustHave: 'Jira two-way defect synchronization.'
@@ -94,7 +96,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 86,
     decision: 'BUY',
     avatar: 'MG',
-    avatarColor: '#EC4899',
+    avatarColor: '#2B2D33',
     opinion: 'Harvey SDR outbound is a massive leverage point. If email deliverability stays above 98% and replies automatically triage into meetings, ₹35k/mo is an easy ROI.',
     keyObjection: 'Needs assurance against domain reputation damage.',
     mustHave: 'DKIM/SPF alignment and custom domain warmup.'
@@ -111,7 +113,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 65,
     decision: 'CONSIDERING',
     avatar: 'SR',
-    avatarColor: '#EF4444',
+    avatarColor: '#141518',
     opinion: 'Patient telemetry cannot be processed on foreign shared infrastructure. If InfratechAI offers on-premises test runner or encrypted tenant vault, we will pilot.',
     keyObjection: 'Encrypted tenant vault and HIPAA/DPDP certification.',
     mustHave: 'Zero plaintext data storage guarantee.'
@@ -128,7 +130,7 @@ const CUSTOMER_PERSONAS = [
     sentiment: 82,
     decision: 'CONSIDERING',
     avatar: 'PN',
-    avatarColor: '#8B5CF6',
+    avatarColor: '#2B2D33',
     opinion: 'We deploy 40 times a day. If automated regression gates hook into our GitHub Actions without slowing down CI, ₹50,000/mo is well within our budget.',
     keyObjection: 'Sub-60s webhook trigger latency in CI/CD pipeline.',
     mustHave: 'GitHub Actions integration and Slack alert webhooks.'
@@ -145,15 +147,17 @@ const CUSTOMER_PERSONAS = [
     sentiment: 84,
     decision: 'BUY',
     avatar: 'VS',
-    avatarColor: '#06B6D4',
+    avatarColor: '#141518',
     opinion: 'Cutting QA headcount while boosting test determinism will allow us to double product velocity. The 30-day money-back guarantee makes it a no-brainer.',
     keyObjection: 'Needs self-serve onboarding with minimal onboarding calls.',
     mustHave: '30-day money back guarantee + clear onboarding docs.'
   }
 ];
 
-export const VirtualCustomerView = ({ currentUser }) => {
+export const VirtualCustomerView = ({ currentUser, onNavigateToApp }) => {
   const userId = currentUser?.uid || 'default';
+  const userName = (currentUser?.displayName || currentUser?.email?.split('@')[0] || 'aman').toLowerCase();
+  const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
 
   // Pitch simulation state
   const [pitchText, setPitchText] = useState('InfratechAI: Autonomous linear QA execution with Linear hotkeys (P/F/B) + Harvey AI SDR outbound for ₹24,999/mo with zero setup fee.');
@@ -165,6 +169,28 @@ export const VirtualCustomerView = ({ currentUser }) => {
   const [personaChatMessages, setPersonaChatMessages] = useState({});
   const [currentPersonaInput, setCurrentPersonaInput] = useState('');
   const [isPersonaTyping, setIsPersonaTyping] = useState(false);
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
 
   // Computed metrics from Customer Panel
   const metrics = useMemo(() => {
@@ -264,121 +290,170 @@ export const VirtualCustomerView = ({ currentUser }) => {
   };
 
   return (
-    <div className="min-h-full flex flex-col bg-[#E5E7EE] text-[#141518] font-sans pb-24 md:pb-12">
+    <div className="min-h-screen w-full flex flex-col bg-[#E5E7EE] text-[#141518] font-sans antialiased selection:bg-[#2B2D33] selection:text-white">
 
       {/* ======================================================== */}
-      {/* HEADER: CLEAN STITCH BANNER                              */}
+      {/* TOP GLOBAL HEADER: EXACT APPLE FROSTED GLASS BAR         */}
       {/* ======================================================== */}
-      <header className="px-5 md:px-8 py-4 border-b border-slate-300/80 bg-white/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#141518] text-white flex items-center justify-center shadow-sm">
-            <Users className="w-5 h-5 text-indigo-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base md:text-lg font-bold text-[#141518] tracking-tight">
-                Virtual Customer Panel
-              </h1>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Voice of Customer Engine
+      <header className="h-20 px-6 sm:px-8 flex items-center justify-between border-b border-white/50 bg-[#E5E7EE]/80 backdrop-blur-2xl sticky top-0 z-30 apple-motion shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+        
+        {/* Left: Back to Launchpad + Identity */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => onNavigateToApp && onNavigateToApp('hub')}
+            className="btn-shine-effect flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 hover:bg-white border border-white/80 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.96] apple-motion-quick cursor-pointer"
+            title="Return to Master App / Launchpad"
+          >
+            <ArrowLeft size={14} className="text-[#50545E]" />
+            <span className="hidden sm:inline">Launchpad</span>
+          </button>
+
+          <div className="h-6 w-px bg-[#9AA0AC]/30 hidden sm:block" />
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#2B2D33] text-[#E5E7EE] flex items-center justify-center shadow-lg border border-[#50545E]/40 ring-1 ring-white/10 apple-motion-quick">
+              <Users size={20} className="text-[#E5E7EE]" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px] font-bold tracking-tight text-[#141518]">
+                  Virtual Customer Swarm
+                </span>
+                <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30 uppercase tracking-wider">
+                  8 Buyer Personas
+                </span>
+              </div>
+              <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1.5">
+                <span>MiroFish Intelligence Engine</span>
+                <span>•</span>
+                <span className="text-emerald-700 font-semibold font-mono">Evaluated in ₹ INR</span>
               </span>
             </div>
-            <p className="text-[12px] text-[#5A6072] flex items-center gap-1.5 font-medium">
-              <span>8 Strategic Buyer Personas</span>
-              <span>•</span>
-              <span className="text-indigo-700 font-mono">
-                Evaluated in ₹ INR
-              </span>
-            </p>
           </div>
         </div>
 
-        {/* Quick Pitch Action Button */}
-        <button
-          onClick={handleRunSimulation}
-          disabled={isSimulating}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer shrink-0"
-        >
-          <Play className="w-3.5 h-3.5" />
-          <span>{isSimulating ? 'Simulating Panel...' : 'Test Proposition'}</span>
-        </button>
+        {/* Right Controls */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRunSimulation}
+            disabled={isSimulating}
+            className="btn-shine-effect px-4 py-2 text-xs font-semibold rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-[#E5E7EE] flex items-center gap-1.5 shadow-sm apple-motion-quick active:scale-[0.96] cursor-pointer shrink-0"
+          >
+            <Play className="w-3.5 h-3.5" />
+            <span>{isSimulating ? 'Simulating Panel...' : 'Test Proposition'}</span>
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            className="p-2 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-apple-sm apple-motion-quick active:scale-90 cursor-pointer"
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+
+          {/* Open in New Window */}
+          <button
+            onClick={() => window.open('?app=customers', '_blank')}
+            title="Open in separate tab"
+            className="p-2 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-apple-sm apple-motion-quick active:scale-90 cursor-pointer"
+          >
+            <ExternalLink size={15} />
+          </button>
+
+          {/* System Online Badge */}
+          <div className="hidden sm:flex items-center gap-2 bg-[#2B2D33]/90 hover:bg-[#2B2D33] border border-[#50545E]/50 px-3.5 py-1.5 rounded-full shadow-xs text-white apple-motion-quick cursor-default">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#9AA0AC] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#9AA0AC]" />
+            </span>
+            <span className="text-xs font-semibold text-[#E5E7EE] tracking-tight">System Online</span>
+          </div>
+
+          {/* User Profile */}
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl hover:bg-white/80 backdrop-blur-md border border-transparent hover:border-white/80 cursor-pointer apple-motion-quick active:scale-[0.96]">
+            <div className="w-8 h-8 rounded-full bg-[#141518] text-[#E5E7EE] flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-[#50545E]/40">
+              {userInitial}
+            </div>
+            <span className="text-xs font-semibold text-[#141518] hidden sm:inline">{userName}</span>
+          </div>
+        </div>
       </header>
 
       {/* ======================================================== */}
       {/* MAIN CONTENT CONTAINER                                   */}
       {/* ======================================================== */}
-      <main className="flex-1 px-5 md:px-8 py-6 max-w-7xl w-full mx-auto space-y-6">
+      <main className="flex-1 px-6 sm:px-8 py-8 max-w-7xl w-full mx-auto space-y-7 pb-16">
 
         {/* Top Summary Metrics Banner */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+            <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
               Net Promoter Score (NPS)
             </span>
-            <div className="text-2xl font-bold font-mono text-emerald-700 mt-1">
+            <div className="text-2xl font-bold font-mono text-emerald-700 mt-1.5">
               +{metrics.nps} NPS
             </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">Top-decile B2B benchmark</span>
+            <span className="text-[11px] text-[#50545E] mt-1 block">Top-decile B2B benchmark</span>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+          <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+            <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
               Buying Conversion Intent
             </span>
-            <div className="text-2xl font-bold font-mono text-indigo-700 mt-1">
+            <div className="text-2xl font-bold font-mono text-[#141518] mt-1.5">
               {metrics.buyCount} / 8 Buyers
             </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">
+            <span className="text-[11px] text-[#50545E] mt-1 block">
               {metrics.considerCount} in pilot evaluation
             </span>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+          <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+            <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
               Avg. Willingness to Pay
             </span>
-            <div className="text-2xl font-bold font-mono text-[#141518] mt-1">
+            <div className="text-2xl font-bold font-mono text-emerald-700 mt-1.5">
               {inrFmt(metrics.avgWTP)}
             </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">Monthly recurring retainer</span>
+            <span className="text-[11px] text-[#50545E] mt-1 block">Monthly recurring retainer</span>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+          <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+            <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
               Customer Sentiment
             </span>
-            <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">
+            <div className="text-2xl font-bold font-mono text-emerald-600 mt-1.5">
               {metrics.avgSentiment}% Positive
             </div>
-            <span className="text-[11px] text-slate-500 mt-1 block">Across 8 strategic buyer sectors</span>
+            <span className="text-[11px] text-[#50545E] mt-1 block">Across 8 strategic buyer sectors</span>
           </div>
         </div>
 
         {/* Proposition / Pitch Simulator Input */}
-        <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-[#141518] flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <Sparkles className="w-4 h-4 text-[#141518]" />
               <span>Simulate Product Proposition or Pricing Tier</span>
             </h2>
-            <span className="text-xs text-slate-500 font-mono">
+            <span className="text-xs text-[#50545E] font-mono">
               Round {simulationRound}
             </span>
           </div>
 
-          <form onSubmit={handleRunSimulation} className="space-y-3">
+          <form onSubmit={handleRunSimulation} className="space-y-3.5">
             <textarea
               rows={3}
               value={pitchText}
               onChange={(e) => setPitchText(e.target.value)}
               placeholder="Enter your product feature, pricing model in ₹ INR, or value proposition to test..."
-              className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
+              className="w-full p-4 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40 font-medium"
             />
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
-              {/* Presets */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider">
                   Presets:
                 </span>
                 {[
@@ -390,7 +465,7 @@ export const VirtualCustomerView = ({ currentUser }) => {
                     key={i}
                     type="button"
                     onClick={() => handleQuickPitchPreset(pre)}
-                    className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[10px] font-medium transition-colors cursor-pointer border border-slate-200/60"
+                    className="px-3 py-1 rounded-full bg-white/80 hover:bg-[#141518] hover:text-white text-[#50545E] text-[10px] font-medium transition-colors cursor-pointer border border-[#9AA0AC]/30 shadow-2xs"
                   >
                     {pre}
                   </button>
@@ -400,7 +475,7 @@ export const VirtualCustomerView = ({ currentUser }) => {
               <button
                 type="submit"
                 disabled={isSimulating}
-                className="px-4 py-2 bg-[#141518] hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="btn-shine-effect px-5 py-2.5 bg-[#141518] hover:bg-[#2B2D33] disabled:opacity-50 text-[#E5E7EE] rounded-2xl text-xs font-semibold flex items-center gap-2 cursor-pointer shrink-0 shadow-sm"
               >
                 <Play className="w-3.5 h-3.5" />
                 <span>{isSimulating ? 'Simulating...' : 'Run Simulation'}</span>
@@ -410,74 +485,74 @@ export const VirtualCustomerView = ({ currentUser }) => {
         </div>
 
         {/* 8 Customer Personas Grid */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
             <h3 className="text-sm font-bold text-[#141518]">
               Strategic Buyer Panel Opinions ({CUSTOMER_PERSONAS.length})
             </h3>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-[#50545E]">
               Click &quot;Interview Persona&quot; to test objection handling
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {CUSTOMER_PERSONAS.map(persona => {
               const isBuy = persona.decision === 'BUY';
 
               return (
                 <div
                   key={persona.id}
-                  className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                  className="glass-specular bg-white/70 hover:bg-white/95 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card hover:shadow-apple-hover apple-motion flex flex-col justify-between"
                 >
                   <div>
                     {/* Header: Avatar, Name, Decision Badge */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start justify-between gap-3 mb-3.5">
                       <div className="flex items-center gap-3">
                         <div 
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0"
+                          className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white/60 shrink-0"
                           style={{ backgroundColor: persona.avatarColor }}
                         >
                           {persona.avatar}
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-[#141518]">
+                          <h4 className="text-[15px] font-bold text-[#141518] tracking-tight">
                             {persona.name}
                           </h4>
-                          <p className="text-[11px] text-slate-500 font-medium">
-                            {persona.title} • <span className="text-slate-800 font-semibold">{persona.company}</span>
+                          <p className="text-xs text-[#50545E] font-medium">
+                            {persona.title} • <strong className="text-[#141518]">{persona.company}</strong>
                           </p>
                         </div>
                       </div>
 
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 ${
                         isBuy 
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                          : 'bg-amber-50 text-amber-800 border border-amber-200'
                       }`}>
                         {persona.decision}
                       </span>
                     </div>
 
                     {/* Sector & Financials Strip */}
-                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 mb-3 text-[11px]">
+                    <div className="grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-white/80 border border-[#9AA0AC]/30 mb-3.5 text-xs shadow-2xs">
                       <div>
-                        <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold block">
+                        <span className="text-[9px] text-[#50545E] uppercase tracking-wider font-bold block mb-0.5">
                           Sector
                         </span>
-                        <span className="font-semibold text-slate-700 truncate block">
+                        <span className="font-semibold text-[#141518] truncate block">
                           {persona.sector}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold block">
+                        <span className="text-[9px] text-[#50545E] uppercase tracking-wider font-bold block mb-0.5">
                           Budget
                         </span>
-                        <span className="font-semibold font-mono text-slate-800">
+                        <span className="font-semibold font-mono text-[#141518]">
                           {inrFmt(persona.budgetINR)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold block">
+                        <span className="text-[9px] text-[#50545E] uppercase tracking-wider font-bold block mb-0.5">
                           Willingness to Pay
                         </span>
                         <span className="font-semibold font-mono text-emerald-700">
@@ -487,33 +562,33 @@ export const VirtualCustomerView = ({ currentUser }) => {
                     </div>
 
                     {/* Persona Direct Quote */}
-                    <div className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/70 mb-3">
-                      <p className="text-xs text-slate-700 leading-relaxed italic">
+                    <div className="p-3.5 rounded-2xl bg-white/85 border border-[#9AA0AC]/30 mb-3.5">
+                      <p className="text-xs text-[#141518] leading-relaxed italic">
                         &quot;{persona.opinion}&quot;
                       </p>
                     </div>
 
                     {/* Deal-Breaker Objection */}
-                    <div className="text-xs text-slate-600 mb-3 space-y-1">
-                      <div className="flex items-center gap-1.5 text-amber-700 font-semibold text-[11px]">
-                        <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                    <div className="text-xs text-[#50545E] mb-3.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-amber-800 font-semibold text-xs">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                         <span>Key Deal-Breaker:</span>
                       </div>
-                      <p className="text-[11px] text-slate-600 pl-4">
+                      <p className="text-xs text-[#50545E] pl-5">
                         {persona.keyObjection}
                       </p>
                     </div>
                   </div>
 
                   {/* Bottom Action: 1-on-1 Interview */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-500 font-medium">
-                      Must Have: <span className="font-semibold text-slate-700">{persona.mustHave}</span>
+                  <div className="pt-4 border-t border-[#9AA0AC]/25 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-[#50545E] font-medium">
+                      Must Have: <strong className="text-[#141518]">{persona.mustHave}</strong>
                     </span>
 
                     <button
                       onClick={() => handleOpenPersonaChat(persona)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#141518] hover:bg-indigo-600 text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
+                      className="btn-shine-effect px-4 py-2 rounded-2xl text-xs font-semibold bg-[#141518] hover:bg-[#2B2D33] text-[#E5E7EE] flex items-center gap-1.5 shadow-sm apple-motion-quick active:scale-95 cursor-pointer shrink-0"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Interview</span>
@@ -528,26 +603,26 @@ export const VirtualCustomerView = ({ currentUser }) => {
       </main>
 
       {/* ======================================================== */}
-      {/* 1-ON-1 INTERVIEW MODAL WITH CUSTOMER PERSONA             */}
+      {/* 1-ON-1 INTERVIEW MODAL (APPLE FLUID GLASS SPECULAR)      */}
       {/* ======================================================== */}
       {selectedPersona && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141518]/60 backdrop-blur-2xl animate-fadeIn">
+          <div className="w-full max-w-xl bg-white/95 backdrop-blur-3xl rounded-[32px] border border-white/80 shadow-[0_32px_64px_-16px_rgba(20,21,24,0.35)] flex flex-col overflow-hidden apple-motion max-h-[85vh]">
             
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="px-6 py-5 border-b border-[#9AA0AC]/25 bg-white/80 backdrop-blur-md flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3.5">
                 <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-xs"
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0"
                   style={{ backgroundColor: selectedPersona.avatarColor }}
                 >
                   {selectedPersona.avatar}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[#141518]">
+                  <h3 className="text-[15px] font-bold text-[#141518] tracking-tight">
                     Interviewing {selectedPersona.name}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-xs text-[#50545E] font-medium">
                     {selectedPersona.title} • {selectedPersona.company}
                   </p>
                 </div>
@@ -555,14 +630,14 @@ export const VirtualCustomerView = ({ currentUser }) => {
 
               <button
                 onClick={() => setSelectedPersona(null)}
-                className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#141518]/5 hover:bg-[#141518]/10 text-[#50545E] hover:text-[#141518] flex items-center justify-center apple-motion-quick active:scale-90 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Conversation Thread */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 max-h-[45vh] bg-slate-50/40">
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 max-h-[45vh] bg-slate-50/50">
               {(personaChatMessages[selectedPersona.id] || []).map((msg, idx) => {
                 const isFounder = msg.sender === 'founder';
 
@@ -571,16 +646,16 @@ export const VirtualCustomerView = ({ currentUser }) => {
                     key={idx}
                     className={`flex flex-col ${isFounder ? 'items-end' : 'items-start'}`}
                   >
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 px-1">
+                    <div className="flex items-center gap-1.5 text-[10px] text-[#50545E] mb-1 px-1">
                       <span>{isFounder ? 'Founder (You)' : selectedPersona.name}</span>
                       <span>•</span>
                       <span>{msg.timestamp}</span>
                     </div>
                     <div 
-                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         isFounder
-                          ? 'bg-[#141518] text-white rounded-br-xs'
-                          : 'bg-white text-slate-800 border border-slate-200/90 shadow-xs rounded-bl-xs'
+                          ? 'bg-[#141518] text-[#E5E7EE] shadow-sm rounded-br-xs'
+                          : 'glass-specular bg-white text-[#141518] border border-white shadow-apple-sm rounded-bl-xs'
                       }`}
                     >
                       {msg.text}
@@ -590,18 +665,29 @@ export const VirtualCustomerView = ({ currentUser }) => {
               })}
 
               {isPersonaTyping && (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" />
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-100" />
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-200" />
+                <div className="flex items-center gap-2.5 text-xs text-[#50545E]">
+                  <div className="ios-spinner !w-4 !h-4">
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                  </div>
                   <span>{selectedPersona.name} is evaluating...</span>
                 </div>
               )}
             </div>
 
             {/* Quick Objection Prompts */}
-            <div className="px-6 py-2 border-t border-slate-100 bg-white flex items-center gap-1.5 overflow-x-auto">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+            <div className="px-6 py-2.5 border-t border-[#9AA0AC]/20 bg-white flex items-center gap-2 overflow-x-auto">
+              <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider shrink-0">
                 Test Response:
               </span>
               {[
@@ -612,7 +698,7 @@ export const VirtualCustomerView = ({ currentUser }) => {
                 <button
                   key={i}
                   onClick={() => setCurrentPersonaInput(qr)}
-                  className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[10px] font-medium whitespace-nowrap transition-colors cursor-pointer border border-slate-200/50"
+                  className="px-3 py-1 rounded-full bg-slate-100 hover:bg-[#141518] hover:text-white text-[#50545E] text-[10px] font-medium whitespace-nowrap apple-motion-quick cursor-pointer border border-[#9AA0AC]/30 active:scale-95"
                 >
                   {qr}
                 </button>
@@ -620,19 +706,19 @@ export const VirtualCustomerView = ({ currentUser }) => {
             </div>
 
             {/* Input Form */}
-            <div className="p-4 border-t border-slate-200 bg-white">
-              <form onSubmit={handleSendToPersona} className="flex gap-2">
+            <div className="p-4 border-t border-[#9AA0AC]/25 bg-white">
+              <form onSubmit={handleSendToPersona} className="flex gap-2.5">
                 <input
                   type="text"
                   value={currentPersonaInput}
                   onChange={(e) => setCurrentPersonaInput(e.target.value)}
                   placeholder={`Respond to ${selectedPersona.name}'s objection...`}
-                  className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-[#9AA0AC]/30 rounded-2xl text-xs text-[#141518] placeholder-[#50545E] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40"
                 />
                 <button
                   type="submit"
                   disabled={!currentPersonaInput.trim() || isPersonaTyping}
-                  className="px-4 py-2 bg-[#141518] hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="btn-shine-effect px-5 py-2.5 bg-[#141518] hover:bg-[#2B2D33] disabled:opacity-50 text-[#E5E7EE] rounded-2xl text-xs font-semibold apple-motion-quick flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Reply</span>

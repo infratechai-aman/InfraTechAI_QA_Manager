@@ -1,11 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Building2, Calendar, DollarSign, Clock, AlertTriangle, 
   CheckCircle2, Plus, Search, Filter, ArrowUpRight, 
   FileText, Shield, Sparkles, Trash2, Edit3, RefreshCw, 
-  CheckSquare, X, Download, Activity, Briefcase
+  CheckSquare, X, Download, Activity, Briefcase,
+  ArrowLeft, Maximize2, Minimize2, ExternalLink
 } from 'lucide-react';
 import { businessService } from '../../services/businessService';
+import { getUserInitial } from '../../utils/formatters';
 
 export const BusinessCommandCenterView = ({
   currentUser,
@@ -13,12 +15,36 @@ export const BusinessCommandCenterView = ({
   qaBugs = [],
   qaTests: _qaTests = [],
   onNavigateToQA,
+  onNavigateToApp,
   onContractsChange,
   activeTab: externalActiveTab,
   onTabChange: externalOnTabChange,
   triggerAddModal = false
 }) => {
   const userId = currentUser?.uid || 'default';
+  const userName = (currentUser?.displayName || currentUser?.email?.split('@')[0] || 'aman').toLowerCase();
+  const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
   
   // State
   const [contracts, setContracts] = useState(() => businessService.getContracts(userId));
@@ -228,10 +254,87 @@ export const BusinessCommandCenterView = ({
   };
 
   return (
-    <div className="w-full min-h-full bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 pb-32 md:pb-16">
+    <div className="w-full min-h-screen bg-[#E5E7EE] font-sans text-[#141518] selection:bg-[#2B2D33] selection:text-white pb-32 md:pb-16 flex flex-col antialiased">
+      
+      {/* Top Global Header Bar (Apple Frosted Glass) */}
+      <header className="h-20 px-6 sm:px-8 flex items-center justify-between border-b border-white/50 bg-[#E5E7EE]/80 backdrop-blur-2xl sticky top-0 z-30 apple-motion shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => onNavigateToApp && onNavigateToApp('hub')}
+            className="btn-shine-effect flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 hover:bg-white border border-white/80 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.96] apple-motion-quick cursor-pointer"
+            title="Return to Master App / Launchpad"
+          >
+            <ArrowLeft size={14} className="text-[#50545E]" />
+            <span className="hidden sm:inline">Launchpad</span>
+          </button>
+
+          <div className="h-6 w-px bg-[#9AA0AC]/30 hidden sm:block" />
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#2B2D33] text-[#E5E7EE] flex items-center justify-center shadow-lg border border-[#50545E]/40 ring-1 ring-white/10 apple-motion-quick">
+              <Building2 size={20} className="text-[#E5E7EE]" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px] font-bold tracking-tight text-[#141518]">
+                  Business Command Center
+                </span>
+                <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30 uppercase tracking-wider">
+                  Revenue & SLA
+                </span>
+              </div>
+              <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1.5">
+                <span>Enterprise Operations Desk</span>
+                <span>•</span>
+                <span className="text-emerald-700 font-semibold font-mono">
+                  {metrics.totalContracts} Active Contracts
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Controls */}
+        <div className="flex items-center gap-3">
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            className="p-2 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-apple-sm apple-motion-quick active:scale-90 cursor-pointer"
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+
+          {/* Open in New Window */}
+          <button
+            onClick={() => window.open('?app=business', '_blank')}
+            title="Open in separate tab"
+            className="p-2 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-apple-sm apple-motion-quick active:scale-90 cursor-pointer"
+          >
+            <ExternalLink size={15} />
+          </button>
+
+          {/* System Online Badge */}
+          <div className="hidden sm:flex items-center gap-2 bg-[#2B2D33]/90 hover:bg-[#2B2D33] border border-[#50545E]/50 px-3.5 py-1.5 rounded-full shadow-xs text-white apple-motion-quick cursor-default">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#9AA0AC] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#9AA0AC]" />
+            </span>
+            <span className="text-xs font-semibold text-[#E5E7EE] tracking-tight">System Online</span>
+          </div>
+
+          {/* User Profile */}
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl hover:bg-white/80 backdrop-blur-md border border-transparent hover:border-white/80 cursor-pointer apple-motion-quick active:scale-[0.96]">
+            <div className="w-8 h-8 rounded-full bg-[#141518] text-[#E5E7EE] flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-[#50545E]/40">
+              {userInitial}
+            </div>
+            <span className="text-xs font-semibold text-[#141518] hidden sm:inline">{userName}</span>
+          </div>
+        </div>
+      </header>
       
       {/* Top Header Card Container */}
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 pt-4 sm:pt-6 md:pt-8 space-y-4 sm:space-y-6">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 pt-6 space-y-6 flex-1 w-full">
         
         {/* Executive Header Banner */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-200/80">

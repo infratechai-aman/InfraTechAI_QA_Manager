@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Building2, Users, Bot, CheckSquare, Ticket, Activity, 
   FileText, Send, Sparkles, CheckCircle2, AlertTriangle,
@@ -7,23 +7,24 @@ import {
   ChevronRight, Inbox, HelpCircle, Cpu,
   ShieldAlert, Globe, Compass, Terminal, Play,
   Zap, Search, Eye, AlertCircle, MessageSquare, X,
-  Briefcase, Award, TrendingUp, ChevronDown, UserCheck
+  Briefcase, Award, TrendingUp, ChevronDown, UserCheck,
+  ArrowLeft, Maximize2, Minimize2, ExternalLink, LayoutGrid
 } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 import { GSTACK_DEPARTMENTS, COMPANY_EMPLOYEES } from '../../constants/companyEmployees';
+import { getUserInitial } from '../../utils/formatters';
 
 /**
  * VIRTUAL COMPANY — 14 AUTONOMOUS GSTACK DEPARTMENTS & 64 WORKING EMPLOYEES
  * 
- * Styled following the Stitch aesthetic:
- * - Crisp Light #E5E7EE canvas background
- * - Slate/Graphite text with high contrast
- * - Specular glass cards with subtle borders
+ * Styled with Apple Fluid Sonoma / Keynote design language (matching Launchpad):
+ * - Canvas: #E5E7EE Apple fluid slate
+ * - Obsidian #141518, Slate #2B2D33, and metallic #50545E borders
+ * - Specular glass cards (glass-specular, dark-glass-specular)
  * - 64 Real Working Employees with authentic backgrounds & real-time tasks
  * - Interactive 1-on-1 Founder Chat with any employee
- * - Harvey AI SDR Outbound Sales (in ₹ INR)
- * - Sentinel-9 Ops & Support Ticketing Bot
- * - Automated Daily Executive Standup Report
+ * - Full Screen mode with back to Launchpad navigation
+ * - Executive Presentation Deck & Raw Briefing Memo in ₹ INR
  */
 export const VirtualCompanyView = ({
   currentUser,
@@ -35,12 +36,53 @@ export const VirtualCompanyView = ({
   onOpenHarveySettings
 }) => {
   const userId = currentUser?.uid || 'default';
+  const userName = (currentUser?.displayName || currentUser?.email?.split('@')[0] || 'aman').toLowerCase();
+  const userInitial = getUserInitial(currentUser?.displayName || currentUser?.email || 'A');
 
   // Navigation tab: 'employees' | 'departments' | 'sales' | 'support' | 'dispatch' | 'report'
   const [activeTab, setActiveTab] = useState('employees');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Report view mode: 'keynote' | 'memo'
+  const [reportViewMode, setReportViewMode] = useState('keynote');
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const searchInputRef = useRef(null);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  // Keyboard shortcut ⌘K / Ctrl+K focus trigger
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // 1-on-1 Founder Chat state
   const [activeChatEmployee, setActiveChatEmployee] = useState(null);
@@ -149,40 +191,34 @@ export const VirtualCompanyView = ({
         category: newQueryCategory,
         severity,
         status: 'OPEN',
-        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: 'Just now',
         slaRemaining: `${slaHours}h Target SLA`,
-        resolutionNotes: 'Auto-triaged by Support Sentinel-9. Dispatched to appropriate department lead.'
+        resolutionNotes: 'Autonomous triage active. Assigned to Marcus Miller & Sentinel-9 Core.'
       };
 
       const updated = [newTicket, ...tickets];
       saveTickets(updated);
       setNewQueryTitle('');
       setIsDiagnosing(false);
-    }, 450);
+    }, 600);
   };
 
-  const handleToggleTicketStatus = (ticketId) => {
+  const handleResolveTicket = (ticketId) => {
     const updated = tickets.map(t => {
       if (t.id === ticketId) {
-        const nextStatus = t.status === 'OPEN' ? 'IN_PROGRESS' : t.status === 'IN_PROGRESS' ? 'RESOLVED' : 'OPEN';
-        return { ...t, status: nextStatus };
+        return {
+          ...t,
+          status: 'RESOLVED',
+          slaRemaining: 'Met SLA (Autonomous)',
+          resolutionNotes: 'Verified resolved by Sentinel-9 autonomous reconciliation.'
+        };
       }
       return t;
     });
     saveTickets(updated);
   };
 
-  // ==========================================
-  // REAL QA TELEMETRY
-  // ==========================================
-  const totalTests = tests.length;
-  const passedTests = tests.filter(t => t.status === 'pass').length;
-  const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 100;
-  const openBugs = bugs.filter(b => b.status !== 'closed' && b.status !== 'resolved').length;
-
-  // ==========================================
-  // FILTERED 64 EMPLOYEES
-  // ==========================================
+  // Filtered employees
   const filteredEmployees = useMemo(() => {
     return COMPANY_EMPLOYEES.filter(emp => {
       const matchesDept = selectedDeptFilter === 'ALL' || emp.deptId === selectedDeptFilter;
@@ -190,42 +226,40 @@ export const VirtualCompanyView = ({
       const matchesSearch = !searchQuery.trim() || 
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.deptName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         emp.currentTask.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.bg.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.specialties.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+        emp.bg.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesDept && matchesStatus && matchesSearch;
     });
   }, [selectedDeptFilter, statusFilter, searchQuery]);
 
-  // ==========================================
-  // 1-ON-1 FOUNDER CHAT LOGIC
-  // ==========================================
-  // Load persisted chat for an employee
+  // Load chat messages when opening employee
   useEffect(() => {
-    if (activeChatEmployee) {
+    if (!activeChatEmployee) return;
+    const empId = activeChatEmployee.id;
+    if (!chatMessages[empId]) {
       try {
-        const key = `infratech_chat_${userId}_${activeChatEmployee.id}`;
-        const saved = localStorage.getItem(key);
+        const saved = localStorage.getItem(`infratech_chat_${userId}_${empId}`);
         if (saved) {
-          setChatMessages(prev => ({ ...prev, [activeChatEmployee.id]: JSON.parse(saved) }));
-        } else {
-          // Initialize with employee's contextual greeting
-          const initial = [
-            {
-              sender: 'employee',
-              text: activeChatEmployee.initialMessage,
-              timestamp: 'Just now',
-              taskContext: activeChatEmployee.currentTask
-            }
-          ];
-          setChatMessages(prev => ({ ...prev, [activeChatEmployee.id]: initial }));
+          setChatMessages(prev => ({ ...prev, [empId]: JSON.parse(saved) }));
+          return;
         }
       } catch {}
+
+      // Default opening message
+      const initialMsgs = [
+        {
+          sender: 'employee',
+          text: `Good day, Founder! I am ${activeChatEmployee.name}, currently leading tasks as ${activeChatEmployee.role} in ${activeChatEmployee.deptName}. My background: ${activeChatEmployee.bg}. Currently focused on: "${activeChatEmployee.currentTask}". How can I support our strategic goals today?`,
+          timestamp: 'Online Now'
+        }
+      ];
+      setChatMessages(prev => ({ ...prev, [empId]: initialMsgs }));
     }
-  }, [activeChatEmployee, userId]);
+  }, [activeChatEmployee, userId, chatMessages]);
 
   const handleSendMessageToEmployee = (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     if (!currentInputMessage.trim() || !activeChatEmployee) return;
 
     const empId = activeChatEmployee.id;
@@ -241,7 +275,7 @@ export const VirtualCompanyView = ({
     setCurrentInputMessage('');
     setIsTypingReply(true);
 
-    // Simulate realistic intelligent agent response
+    // Realistic intelligent agent response
     setTimeout(() => {
       let replyText = '';
       const promptLower = userMsg.text.toLowerCase();
@@ -351,8 +385,8 @@ export const VirtualCompanyView = ({
         dept: targetEmp.deptName,
         prompt: missionPrompt.trim(),
         status: 'COMPLETED',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        deliverable: `Agentic execution verified: ${targetEmp.name} (${targetEmp.role}) completed mission on "${missionPrompt.trim()}". Architecture and business constraints verified.`
+        time: 'Just Now',
+        deliverable: `Autonomous directive fulfilled by ${targetEmp.name}. Verified alignment with ${targetEmp.deptName} KPIs. Deliverable artifacts synced with company executive deck.`
       };
 
       setMissionHistory(prev => [newMission, ...prev]);
@@ -362,18 +396,26 @@ export const VirtualCompanyView = ({
   };
 
   // ==========================================
-  // DAILY REPORT (IN RUPEES)
+  // DAILY EXECUTIVE REPORT GENERATOR
   // ==========================================
   const [copiedReport, setCopiedReport] = useState(false);
-  const reportDate = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+
+  const reportDate = useMemo(() => {
+    return new Date().toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }, []);
+
+  const totalTests = tests.length;
+  const passedTests = tests.filter(t => t.status === 'PASS').length;
+  const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 100;
+  const openBugs = bugs.filter(b => b.status === 'Open' || b.status === 'In Progress').length;
 
   const dailyReportMarkdown = useMemo(() => {
-    return `# 🏢 INFRATECHAI ENTERPRISE EXECUTIVE BRIEFING
+    return `# INFRATECHAI ENTERPRISE EXECUTIVE BRIEFING
 **Date:** ${reportDate}
 **Infrastructure:** 14 Autonomous Departments • 64 Working Employees
 **Financial Base:** Indian Rupees (₹ INR)
@@ -425,210 +467,233 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
   };
 
   return (
-    <div className="min-h-full flex flex-col bg-[#E5E7EE] text-[#141518] font-sans pb-24 md:pb-12">
+    <div className="min-h-screen w-full flex flex-col bg-[#E5E7EE] text-[#141518] font-sans antialiased selection:bg-[#2B2D33] selection:text-white">
 
       {/* ======================================================== */}
-      {/* TOP HEADER: CLEAN STITCH SPECULAR BANNER                 */}
+      {/* TOP GLOBAL HEADER: EXACT APPLE FROSTED GLASS BAR         */}
+      {/* Matches stitch_app_homepage_dashboard code.html          */}
       {/* ======================================================== */}
-      <header className="px-5 md:px-8 py-4 border-b border-slate-300/80 bg-white/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#141518] text-white flex items-center justify-center shadow-sm">
-            <Building2 className="w-5 h-5 text-indigo-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base md:text-lg font-bold text-[#141518] tracking-tight">
-                Virtual Company
-              </h1>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                14 Depts • 64 Employees
+      <header className="h-20 px-6 sm:px-8 flex items-center justify-between border-b border-white/50 bg-[#E5E7EE]/80 backdrop-blur-2xl sticky top-0 z-30 apple-motion shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+        
+        {/* Left: Back to Launchpad + Virtual Company Identity */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => onNavigateToApp && onNavigateToApp('hub')}
+            className="btn-shine-effect flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 hover:bg-white border border-white/80 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.96] apple-motion-quick cursor-pointer"
+            title="Return to Master App / Launchpad"
+          >
+            <ArrowLeft size={14} className="text-[#50545E]" />
+            <span className="hidden sm:inline">Launchpad</span>
+          </button>
+
+          <div className="h-6 w-px bg-[#9AA0AC]/30 hidden sm:block" />
+
+          {/* Logo Branding Pod */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#2B2D33] text-[#E5E7EE] flex items-center justify-center shadow-lg border border-[#50545E]/40 ring-1 ring-white/10 apple-motion-quick">
+              <Building2 size={20} className="text-[#E5E7EE]" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px] font-bold tracking-tight text-[#141518]">
+                  Virtual Company
+                </span>
+                <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30 uppercase tracking-wider">
+                  14 Depts • 64 Employees
+                </span>
+              </div>
+              <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1.5">
+                <span>Full GSTACK Workforce</span>
+                <span>•</span>
+                <span className="text-emerald-700 flex items-center gap-1 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  All 64 Agents Operational
+                </span>
               </span>
             </div>
-            <p className="text-[12px] text-[#5A6072] flex items-center gap-1.5 font-medium">
-              <span>Full GSTACK Working Force</span>
-              <span>•</span>
-              <span className="text-emerald-700 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                All 64 Agents Operational
-              </span>
-            </p>
           </div>
         </div>
 
-        {/* Top Quick Metrics */}
-        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-          <div className="bg-white/90 border border-slate-200/90 rounded-lg px-3 py-1.5 text-xs shadow-xs hidden sm:flex items-center gap-2">
-            <Users className="w-3.5 h-3.5 text-indigo-600" />
-            <span className="text-[#5A6072]">Workforce:</span>
-            <span className="font-bold text-[#141518]">64 Employees</span>
+        {/* Center: Spotlight Search (⌘K) */}
+        <div className="relative w-72 lg:w-96 hidden md:block group">
+          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#50545E] group-focus-within:text-[#141518] apple-motion-quick">
+            <Search size={16} strokeWidth={2} />
+          </span>
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search 64 employees, roles, tasks (⌘K)..."
+            className="w-full pl-10 pr-12 py-2 bg-white/75 hover:bg-white/90 backdrop-blur-2xl border border-white/80 rounded-2xl text-[13px] text-[#141518] placeholder-[#50545E] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40 focus:border-[#2B2D33] focus:bg-white apple-motion shadow-[0_2px_12px_rgba(0,0,0,0.03)]"
+          />
+          <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <kbd className="text-[10px] font-semibold text-[#50545E] bg-white/90 border border-[#9AA0AC]/40 px-1.5 py-0.5 rounded-lg shadow-2xs group-hover:scale-105 apple-motion-quick">
+              ⌘K
+            </kbd>
+          </span>
+        </div>
+
+        {/* Right Controls: Metrics, Fullscreen, System Online & Profile */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* Quick Metric Capsules */}
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/75 backdrop-blur-md border border-white/80 shadow-apple-sm text-xs text-[#50545E]">
+            <Users size={14} className="text-[#2B2D33]" />
+            <span>Workforce:</span>
+            <strong className="text-[#141518]">64 Employees</strong>
           </div>
 
-          <div className="bg-white/90 border border-slate-200/90 rounded-lg px-3 py-1.5 text-xs shadow-xs hidden sm:flex items-center gap-2">
-            <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-[#5A6072]">Pipeline:</span>
-            <span className="font-bold text-emerald-700 font-mono">{pipelineValueINR}</span>
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/75 backdrop-blur-md border border-white/80 shadow-apple-sm text-xs text-[#50545E]">
+            <Briefcase size={14} className="text-emerald-700" />
+            <span>Pipeline:</span>
+            <strong className="text-emerald-700 font-mono">{pipelineValueINR}</strong>
           </div>
 
+          {/* Mission Dispatch CTA */}
           <button
             onClick={() => setActiveTab('dispatch')}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="btn-shine-effect inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-[#E5E7EE] text-xs font-semibold shadow-sm apple-motion-quick active:scale-[0.96] cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Mission Dispatch</span>
+            <Sparkles size={14} />
+            <span className="hidden sm:inline">Mission Dispatch</span>
           </button>
 
+          {/* Daily Report Button */}
           <button
             onClick={() => setActiveTab('report')}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-[#141518] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="btn-shine-effect inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/80 hover:bg-white text-[#141518] border border-white/80 shadow-apple-sm text-xs font-semibold apple-motion-quick active:scale-[0.96] cursor-pointer"
           >
-            <FileText className="w-3.5 h-3.5 text-slate-600" />
-            <span>Daily Report</span>
+            <FileText size={14} className="text-[#50545E]" />
+            <span className="hidden sm:inline">Daily Report</span>
           </button>
+
+          {/* Fullscreen Toggle Button */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            className="p-2 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-apple-sm apple-motion-quick active:scale-90 cursor-pointer"
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+
+          {/* Open Standalone Window Button */}
+          <button
+            onClick={() => window.open('?app=company', '_blank')}
+            title="Open in separate tab"
+            className="p-2 rounded-2xl bg-white/80 hover:bg-white text-[#50545E] hover:text-[#141518] border border-white/80 shadow-apple-sm apple-motion-quick active:scale-90 cursor-pointer"
+          >
+            <ExternalLink size={15} />
+          </button>
+
+          {/* System Online Badge (Matching Launchpad capsule) */}
+          <div className="hidden sm:flex items-center gap-2 bg-[#2B2D33]/90 hover:bg-[#2B2D33] border border-[#50545E]/50 px-3.5 py-1.5 rounded-full shadow-xs text-white apple-motion-quick cursor-default">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#9AA0AC] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#9AA0AC]" />
+            </span>
+            <span className="text-xs font-semibold text-[#E5E7EE] tracking-tight">System Online</span>
+          </div>
+
+          {/* User Profile Avatar Pill */}
+          <div className="flex items-center gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-2xl hover:bg-white/80 backdrop-blur-md border border-transparent hover:border-white/80 cursor-pointer apple-motion-quick active:scale-[0.96] group shadow-none hover:shadow-apple-sm">
+            <div className="w-8 h-8 rounded-full bg-[#141518] text-[#E5E7EE] flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-[#50545E]/40 group-hover:ring-[#2B2D33] apple-motion-quick">
+              {userInitial}
+            </div>
+            <span className="text-xs font-semibold text-[#141518] group-hover:text-[#2B2D33] apple-motion-quick tracking-tight hidden sm:inline">
+              {userName}
+            </span>
+          </div>
         </div>
       </header>
 
       {/* ======================================================== */}
-      {/* NAVIGATION TABS (CLEAN STITCH PILL BUTTONS)              */}
+      {/* NAVIGATION TABS: APPLE SEGMENTED CONTROL                 */}
       {/* ======================================================== */}
-      <div className="px-5 md:px-8 py-3 border-b border-slate-300/70 bg-white/50 backdrop-blur-sm overflow-x-auto">
-        <div className="flex items-center gap-2 min-w-max">
-          <button
-            onClick={() => setActiveTab('employees')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'employees'
-                ? 'bg-[#141518] text-white shadow-sm'
-                : 'bg-white/80 hover:bg-white text-[#5A6072] border border-slate-200'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>64 Working Employees</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'employees' ? 'bg-indigo-500/30 text-indigo-200' : 'bg-slate-100 text-slate-600'
-            }`}>
-              64
-            </span>
-          </button>
+      <div className="px-6 sm:px-8 py-3.5 flex items-center justify-between border-b border-white/60 bg-white/40 backdrop-blur-md sticky top-20 z-20 overflow-x-auto">
+        <div className="inline-flex p-1 rounded-2xl bg-white/70 hover:bg-white/80 backdrop-blur-2xl border border-white/80 shadow-apple-sm">
+          {[
+            { id: 'employees', label: '64 Working Employees', count: '64', icon: Users },
+            { id: 'departments', label: '14 Departments', count: '14', icon: Building2 },
+            { id: 'sales', label: 'Outbound Sales (Harvey)', count: pendingOutboxCount > 0 ? `${pendingOutboxCount} Pending` : null, icon: Mail },
+            { id: 'support', label: 'Ops & Support (Sentinel-9)', count: `${tickets.filter(t => t.status === 'OPEN').length} Open`, icon: Ticket },
+            { id: 'dispatch', label: 'Mission Dispatcher', icon: Sparkles },
+            { id: 'report', label: 'Daily Executive Briefing', icon: FileText }
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 apple-motion-quick active:scale-[0.96] cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
+                    : 'text-[#50545E] hover:text-[#141518] hover:bg-white/60 font-medium'
+                }`}
+              >
+                <Icon size={14} className={isActive ? 'text-[#E5E7EE]' : 'text-[#50545E]'} />
+                <span>{tab.label}</span>
+                {tab.count && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-[#141518]/5 text-[#50545E]'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-          <button
-            onClick={() => setActiveTab('departments')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'departments'
-                ? 'bg-[#141518] text-white shadow-sm'
-                : 'bg-white/80 hover:bg-white text-[#5A6072] border border-slate-200'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>14 Departments</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'departments' ? 'bg-indigo-500/30 text-indigo-200' : 'bg-slate-100 text-slate-600'
-            }`}>
-              14
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('sales')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'sales'
-                ? 'bg-[#141518] text-white shadow-sm'
-                : 'bg-white/80 hover:bg-white text-[#5A6072] border border-slate-200'
-            }`}
-          >
-            <Mail className="w-3.5 h-3.5" />
-            <span>Outbound Sales (Harvey)</span>
-            {pendingOutboxCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('support')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'support'
-                ? 'bg-[#141518] text-white shadow-sm'
-                : 'bg-white/80 hover:bg-white text-[#5A6072] border border-slate-200'
-            }`}
-          >
-            <Ticket className="w-3.5 h-3.5" />
-            <span>Ops & Support (Sentinel-9)</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              activeTab === 'support' ? 'bg-indigo-500/30 text-indigo-200' : 'bg-slate-100 text-slate-600'
-            }`}>
-              {tickets.filter(t => t.status === 'OPEN').length} Open
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('dispatch')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'dispatch'
-                ? 'bg-[#141518] text-white shadow-sm'
-                : 'bg-white/80 hover:bg-white text-[#5A6072] border border-slate-200'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Mission Dispatcher</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('report')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'report'
-                ? 'bg-[#141518] text-white shadow-sm'
-                : 'bg-white/80 hover:bg-white text-[#5A6072] border border-slate-200'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Daily Executive Report</span>
-          </button>
+        <div className="hidden lg:flex items-center gap-3 text-xs text-[#50545E] font-medium">
+          <span>Mode: <strong className="text-[#141518]">Autonomous Enterprise Operations</strong></span>
         </div>
       </div>
 
       {/* ======================================================== */}
       {/* MAIN VIEW CONTENT CONTAINER                              */}
       {/* ======================================================== */}
-      <main className="flex-1 px-5 md:px-8 py-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 px-6 sm:px-8 py-8 max-w-7xl w-full mx-auto pb-16">
 
         {/* ────────────────────────────────────────────────────────── */}
         {/* TAB 1: 64 WORKING EMPLOYEES ROSTER & FOUNDER 1-ON-1 CHAT   */}
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === 'employees' && (
-          <div className="space-y-6">
+          <div className="space-y-7">
 
             {/* Top Filter and Search Bar */}
-            <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div className="glass-specular bg-white/70 hover:bg-white/95 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 apple-motion">
               <div className="flex-1 flex items-center gap-3">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#50545E]" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name, role, task, or background (e.g. 'Ex-Stripe', 'Distributed', 'Harvey')..."
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                    placeholder="Search by name, role, task, or background (e.g. 'Ex-Stripe', 'Harvey')..."
+                    className="w-full pl-10 pr-9 py-2.5 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] placeholder-[#50545E] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40 focus:border-[#2B2D33] shadow-inner transition-all"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#50545E] hover:text-[#141518]"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
 
-                <div className="text-xs text-[#5A6072] hidden lg:block font-medium">
-                  Showing <span className="font-bold text-[#141518]">{filteredEmployees.length}</span> of 64 Employees
+                <div className="text-xs text-[#50545E] hidden lg:block font-medium">
+                  Showing <span className="font-bold text-[#141518]">{filteredEmployees.length}</span> of 64 Specialists
                 </div>
               </div>
 
               {/* Filter Selectors */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Department Dropdown */}
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <select
                   value={selectedDeptFilter}
                   onChange={(e) => setSelectedDeptFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer font-medium"
+                  className="px-3.5 py-2 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40 cursor-pointer font-medium shadow-2xs"
                 >
                   <option value="ALL">All 14 Departments</option>
                   {GSTACK_DEPARTMENTS.map(d => (
@@ -638,11 +703,10 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                   ))}
                 </select>
 
-                {/* Status Dropdown */}
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer font-medium"
+                  className="px-3.5 py-2 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40 cursor-pointer font-medium shadow-2xs"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="ACTIVE">Active</option>
@@ -658,7 +722,7 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                       setStatusFilter('ALL');
                       setSearchQuery('');
                     }}
-                    className="px-3 py-2 text-xs text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
+                    className="px-3 py-2 text-xs text-[#141518] hover:text-[#50545E] font-semibold cursor-pointer underline underline-offset-2"
                   >
                     Reset Filters
                   </button>
@@ -666,144 +730,142 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
               </div>
             </div>
 
-            {/* Founder 1-on-1 Banner Announcement */}
-            <div className="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-2xl p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+            {/* Founder 1-on-1 Announcement Banner (Apple Sonoma Mesh) */}
+            <div className="hero-apple-mesh rounded-3xl p-7 text-white shadow-apple-card border border-white/20 apple-motion flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#9AA0AC]/40 to-transparent"></div>
+              <div className="space-y-1.5 relative z-10 max-w-2xl">
+                <div className="inline-flex items-center gap-2 bg-[#141518]/70 backdrop-blur-xl px-3 py-1 rounded-full border border-white/10 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#9AA0AC] animate-pulse"></span>
+                  <span className="text-[10px] font-bold tracking-wider uppercase text-[#E5E7EE]">
                     FOUNDER COMMAND PRIVILEGE
                   </span>
-                  <span className="text-xs text-indigo-300 font-medium">1-on-1 Direct Real-Time Dialogue</span>
                 </div>
-                <h3 className="text-sm md:text-base font-semibold">
+                <h3 className="text-xl font-bold tracking-tight text-[#E5E7EE]">
                   You are the Founder. Speak 1-on-1 with any of your 64 employees.
                 </h3>
-                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                  Every employee has an authentic industry background (Ex-Stripe, Ex-Google, Ex-Razorpay, etc.), their own ongoing task, velocity score, and deep contextual memory. Click &quot;Chat 1-on-1 as Founder&quot; on any card to ask questions, review architecture, or assign tasks.
+                <p className="text-xs text-[#9AA0AC] leading-relaxed">
+                  Every employee has authentic domain mastery (Ex-Stripe, Ex-Google, Ex-Razorpay, etc.), their own active task, velocity rating, and conversational context memory. Click &quot;Chat 1-on-1 as Founder&quot; on any specialist card below to align directives.
                 </p>
               </div>
 
-              <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-center shrink-0">
-                <div className="text-xl font-bold font-mono text-emerald-400">64 / 64</div>
-                <div className="text-[10px] text-slate-300 uppercase tracking-wider font-semibold">Ready for Chat</div>
+              <div className="bg-[#141518]/80 backdrop-blur-xl border border-white/10 rounded-2xl px-5 py-3.5 text-center shrink-0 shadow-lg relative z-10">
+                <div className="text-2xl font-extrabold font-mono text-[#E5E7EE]">64 / 64</div>
+                <div className="text-[10px] text-[#9AA0AC] uppercase tracking-wider font-bold mt-0.5">Ready for Chat</div>
               </div>
             </div>
 
-            {/* 64 Employees Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* 64 Employees Grid (Apple Cards with Specular & Springs) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEmployees.map(emp => {
                 const hasChat = chatMessages[emp.id] && chatMessages[emp.id].length > 1;
 
                 return (
-                  <div
+                  <article
                     key={emp.id}
-                    className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group hover:-translate-y-0.5"
+                    className="glass-specular bg-white/70 hover:bg-white/95 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 hover:border-white shadow-apple-card hover:shadow-apple-hover hover:-translate-y-1.5 hover:scale-[1.01] active:scale-[0.99] apple-motion flex flex-col justify-between group relative overflow-hidden"
                   >
-                    {/* Top Row: Avatar + Name + Dept */}
                     <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
+                      {/* Top Row: Avatar + Name + Dept Status */}
+                      <div className="flex items-start justify-between gap-3 mb-3.5">
                         <div className="flex items-center gap-3">
                           <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0"
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-sm ring-2 ring-white/60 shrink-0 group-hover:scale-105 apple-motion-quick"
                             style={{ backgroundColor: emp.avatarColor }}
                           >
                             {emp.avatar}
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-[#141518] group-hover:text-indigo-600 transition-colors">
+                            <h4 className="text-[14px] font-bold text-[#141518] group-hover:text-[#2B2D33] transition-colors tracking-tight">
                               {emp.name}
                             </h4>
-                            <p className="text-[11px] font-semibold text-slate-600">
+                            <p className="text-[11px] font-semibold text-[#50545E]">
                               {emp.role}
                             </p>
                           </div>
                         </div>
 
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0 ${
                           emp.status === 'ACTIVE' 
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                            ? 'bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30' 
                             : emp.status === 'REVIEWING'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            ? 'bg-amber-50 text-amber-900 border border-amber-200'
+                            : 'bg-white text-[#50545E] border border-[#9AA0AC]/40'
                         }`}>
                           {emp.status}
                         </span>
                       </div>
 
                       {/* Department Badge */}
-                      <div className="flex items-center justify-between text-[11px] py-1 px-2 rounded-md bg-slate-50 border border-slate-200/70 mb-2.5">
-                        <span className="text-slate-500 font-medium">Department</span>
-                        <span className="font-semibold text-slate-800">{emp.deptName}</span>
+                      <div className="flex items-center justify-between text-[11px] py-1.5 px-3 rounded-xl bg-white/80 border border-[#9AA0AC]/30 mb-3 shadow-2xs">
+                        <span className="text-[#50545E] font-medium">Department</span>
+                        <span className="font-semibold text-[#141518]">{emp.deptName}</span>
                       </div>
 
                       {/* Background / Bio */}
-                      <p className="text-[11px] text-slate-600 leading-relaxed mb-3 line-clamp-2">
+                      <p className="text-xs text-[#50545E] leading-relaxed mb-3.5 line-clamp-2">
                         {emp.bg}
                       </p>
 
-                      {/* Current Working Task */}
-                      <div className="p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/80 mb-3 space-y-1">
+                      {/* Current Working Task Pod */}
+                      <div className="p-3 rounded-2xl bg-white/85 border border-[#9AA0AC]/30 mb-3.5 space-y-1.5 shadow-2xs">
                         <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <Activity className="w-3 h-3 text-indigo-500" />
+                          <span className="font-bold text-[#50545E] uppercase tracking-wider flex items-center gap-1">
+                            <Activity className="w-3 h-3 text-[#141518]" />
                             Current Task
                           </span>
-                          <span className="font-mono font-bold text-emerald-600">{emp.velocity} Vel</span>
+                          <span className="font-mono font-bold text-[#141518]">
+                            {emp.velocity}
+                          </span>
                         </div>
-                        <p className="text-xs text-slate-800 font-medium line-clamp-2">
+                        <p className="text-xs font-semibold text-[#141518] line-clamp-2 leading-snug">
                           {emp.currentTask}
                         </p>
+                        <div className="w-full bg-[#E5E7EE] h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-[#141518] h-full rounded-full transition-all duration-500"
+                            style={{ width: emp.velocity }}
+                          />
+                        </div>
                       </div>
 
-                      {/* Specialties Tags */}
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {emp.specialties.map((spec, i) => (
-                          <span 
-                            key={i}
-                            className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/60"
-                          >
-                            {spec}
-                          </span>
-                        ))}
+                      {/* Deliverable Snapshot */}
+                      <div className="text-[11px] text-[#50545E] mb-2 line-clamp-1">
+                        <span className="font-semibold text-[#141518]">Milestone:</span> {emp.deliverable}
                       </div>
                     </div>
 
-                    {/* Bottom Action: 1-on-1 Founder Chat Button */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <div className="text-[11px] text-slate-500 truncate max-w-[140px]">
-                        {emp.email}
-                      </div>
+                    {/* Card Action Footer */}
+                    <div className="pt-4 mt-2 border-t border-[#9AA0AC]/25 flex items-center justify-between">
+                      <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1">
+                        {hasChat && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                        {hasChat ? 'Conversation Active' : 'Available for founder chat'}
+                      </span>
 
                       <button
                         onClick={() => setActiveChatEmployee(emp)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#141518] hover:bg-indigo-600 text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        className="btn-shine-effect inline-flex items-center gap-1.5 bg-[#141518] hover:bg-[#2B2D33] active:scale-[0.94] text-[#E5E7EE] text-xs font-semibold px-3.5 py-2 rounded-2xl apple-motion-quick shadow-sm hover:shadow-apple-sm cursor-pointer"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Chat as Founder</span>
-                        {hasChat && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        )}
+                        <MessageSquare size={13} />
+                        <span>Chat 1-on-1 as Founder</span>
                       </button>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
 
             {filteredEmployees.length === 0 && (
-              <div className="bg-white/80 rounded-2xl p-12 text-center border border-slate-200 max-w-md mx-auto space-y-3">
-                <Users className="w-10 h-10 text-slate-400 mx-auto" />
-                <h4 className="text-base font-bold text-[#141518]">No employees match your search</h4>
-                <p className="text-xs text-slate-500">
-                  Try adjusting your department filter, status selector, or search keyword.
-                </p>
+              <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-12 text-center space-y-3 border border-white/80 shadow-apple-card">
+                <Users className="w-8 h-8 text-[#50545E] mx-auto" />
+                <h3 className="text-sm font-bold text-[#141518]">No specialists match the active filter</h3>
+                <p className="text-xs text-[#50545E]">Try resetting search or selecting another department.</p>
                 <button
                   onClick={() => {
                     setSelectedDeptFilter('ALL');
                     setStatusFilter('ALL');
                     setSearchQuery('');
                   }}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold"
+                  className="btn-shine-effect px-4 py-2 bg-[#141518] text-[#E5E7EE] rounded-2xl text-xs font-semibold"
                 >
                   Clear All Filters
                 </button>
@@ -817,82 +879,87 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === 'departments' && (
           <div className="space-y-6">
-            <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs">
-              <h2 className="text-base font-bold text-[#141518] mb-1">
-                14 Autonomous GSTACK Departments
-              </h2>
-              <p className="text-xs text-[#5A6072] leading-relaxed max-w-3xl">
-                Every department operates autonomously with dedicated leadership, assigned staff from our 64-employee roster, KPI guarantees, and verified execution pipelines.
-              </p>
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-[#141518] tracking-tight">
+                  14 Autonomous GSTACK Departments
+                </h2>
+                <p className="text-xs text-[#50545E] leading-relaxed max-w-3xl mt-1">
+                  Every department operates with clear executive ownership, dedicated specialists from our 64-employee roster, stringent KPI metrics, and documented mission deliverables.
+                </p>
+              </div>
+              <div className="px-4 py-2 rounded-2xl bg-white/80 border border-white text-xs font-semibold text-[#141518] shadow-2xs shrink-0">
+                14 / 14 Departments Live
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {GSTACK_DEPARTMENTS.map(dept => {
                 const deptEmployees = COMPANY_EMPLOYEES.filter(e => e.deptId === dept.id);
 
                 return (
                   <div
                     key={dept.id}
-                    className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                    className="glass-specular bg-white/70 hover:bg-white/95 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card hover:shadow-apple-hover hover:-translate-y-1 apple-motion flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start justify-between gap-3 mb-3.5">
                         <div className="flex items-center gap-3">
                           <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-mono font-bold text-xs shadow-xs"
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-mono font-bold text-xs shadow-sm"
                             style={{ backgroundColor: dept.accentColor }}
                           >
                             {dept.number}
                           </div>
                           <div>
-                            <h3 className="text-sm font-bold text-[#141518]">
+                            <h3 className="text-[15px] font-bold text-[#141518] tracking-tight">
                               {dept.name}
                             </h3>
-                            <p className="text-xs text-slate-500 font-medium">
-                              Lead: <span className="text-slate-800 font-semibold">{dept.headLead}</span> ({dept.headTitle})
+                            <p className="text-xs text-[#50545E] font-medium">
+                              Head: <strong className="text-[#141518]">{dept.headLead}</strong> ({dept.headTitle})
                             </p>
                           </div>
                         </div>
 
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30">
                           {dept.memberCount} Staff
                         </span>
                       </div>
 
-                      <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                      <p className="text-xs text-[#50545E] leading-relaxed mb-4">
                         {dept.focus}
                       </p>
 
-                      <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200/70 mb-4 text-xs">
+                      <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white/80 border border-[#9AA0AC]/30 mb-4 text-xs shadow-2xs">
                         <div>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">
+                          <span className="text-[10px] text-[#50545E] uppercase tracking-wider font-bold block mb-0.5">
                             Key Performance Metric
                           </span>
-                          <span className="font-semibold text-slate-800">{dept.kpi}</span>
+                          <span className="font-semibold text-[#141518]">{dept.kpi}</span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">
+                          <span className="text-[10px] text-[#50545E] uppercase tracking-wider font-bold block mb-0.5">
                             Core Deliverable
                           </span>
-                          <span className="font-semibold text-slate-800 truncate block">{dept.deliverable}</span>
+                          <span className="font-semibold text-[#141518] truncate block">{dept.deliverable}</span>
                         </div>
                       </div>
 
-                      {/* Department Members Avatars */}
+                      {/* Department Specialists */}
                       <div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        <div className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider mb-2">
                           Assigned Specialists ({deptEmployees.length})
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {deptEmployees.map(emp => (
                             <button
                               key={emp.id}
                               onClick={() => setActiveChatEmployee(emp)}
-                              className="px-2 py-1 rounded-lg bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 text-[11px] font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-xl bg-white/90 border border-white hover:border-[#50545E]/40 text-[11px] font-medium text-[#141518] flex items-center gap-1.5 apple-motion-quick shadow-2xs active:scale-95 cursor-pointer"
                               title={`Chat with ${emp.name} (${emp.role})`}
                             >
                               <span 
-                                className="w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
+                                className="w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: emp.avatarColor }}
                               >
                                 {emp.avatar}
@@ -904,8 +971,8 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between">
-                      <span className="text-xs text-slate-500 font-mono">
+                    <div className="pt-4 border-t border-[#9AA0AC]/25 mt-5 flex items-center justify-between">
+                      <span className="text-xs text-[#50545E] font-mono">
                         {dept.command}
                       </span>
                       <button
@@ -913,7 +980,7 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                           setSelectedDeptFilter(dept.id);
                           setActiveTab('employees');
                         }}
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-semibold text-[#141518] hover:text-[#50545E] flex items-center gap-1 cursor-pointer"
                       >
                         <span>View All {dept.memberCount} Staff</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -931,106 +998,105 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === 'sales' && (
           <div className="space-y-6">
-            {/* Harvey Header Banner */}
-            <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-pink-600 text-white flex items-center justify-center font-bold text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-[#141518] text-[#E5E7EE] flex items-center justify-center font-bold text-xs shadow-sm">
                     HS
                   </div>
-                  <h2 className="text-base font-bold text-[#141518]">
+                  <h2 className="text-lg font-bold text-[#141518] tracking-tight">
                     Harvey AI SDR — Autonomous Outbound Sales
                   </h2>
                 </div>
-                <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-                  Harvey discovers high-intent software prospects, drafts surgical outbound sequences in Indian Rupees (₹), and automatically triages IMAP inbox replies into customer pipeline.
+                <p className="text-xs text-[#50545E] mt-1 max-w-2xl leading-relaxed">
+                  Harvey discovers high-intent tech prospects, generates verified cold sequences structured in Indian Rupees (₹ INR), and automates pipeline conversions.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => onOpenHarveySettings && onOpenHarveySettings()}
-                  className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-[#141518] shadow-xs cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-semibold rounded-2xl bg-white/80 hover:bg-white border border-white text-[#141518] shadow-apple-sm apple-motion-quick active:scale-95 cursor-pointer"
                 >
                   Harvey Settings
                 </button>
                 <button
                   onClick={() => onNavigateToApp && onNavigateToApp('sales')}
-                  className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-pink-600 hover:bg-pink-700 text-white shadow-xs cursor-pointer flex items-center gap-1.5"
+                  className="btn-shine-effect px-4 py-2 text-xs font-semibold rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-[#E5E7EE] shadow-sm apple-motion-quick active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
-                  <span>Open Full Sales Cockpit</span>
+                  <span>Open Full Cockpit</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
             {/* Sales Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white/90 border border-slate-200 rounded-2xl p-4 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+                <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
                   Active Prospects
                 </span>
-                <div className="text-2xl font-bold font-mono text-[#141518] mt-1">
+                <div className="text-2xl font-bold font-mono text-[#141518] mt-1.5">
                   {leads.length} Accounts
                 </div>
-                <span className="text-[11px] text-slate-500 mt-1 block">In discovery database</span>
+                <span className="text-[11px] text-[#50545E] mt-1 block">In discovery database</span>
               </div>
 
-              <div className="bg-white/90 border border-slate-200 rounded-2xl p-4 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+                <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
                   Pipeline Valuation
                 </span>
-                <div className="text-2xl font-bold font-mono text-emerald-700 mt-1">
+                <div className="text-2xl font-bold font-mono text-emerald-700 mt-1.5">
                   {pipelineValueINR}
                 </div>
-                <span className="text-[11px] text-slate-500 mt-1 block">Based on ₹25,000/mo retainer tier</span>
+                <span className="text-[11px] text-[#50545E] mt-1 block">Based on ₹25,000/mo retainer tier</span>
               </div>
 
-              <div className="bg-white/90 border border-slate-200 rounded-2xl p-4 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+                <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
                   Sequences Dispatched
                 </span>
-                <div className="text-2xl font-bold font-mono text-indigo-700 mt-1">
+                <div className="text-2xl font-bold font-mono text-[#141518] mt-1.5">
                   {sentOutboxCount} Sent
                 </div>
-                <span className="text-[11px] text-slate-500 mt-1 block">100% DKIM / SPF compliant</span>
+                <span className="text-[11px] text-[#50545E] mt-1 block">100% DKIM / SPF verified</span>
               </div>
 
-              <div className="bg-white/90 border border-slate-200 rounded-2xl p-4 shadow-xs">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card">
+                <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">
                   Pending Approvals
                 </span>
-                <div className="text-2xl font-bold font-mono text-amber-700 mt-1">
+                <div className="text-2xl font-bold font-mono text-amber-700 mt-1.5">
                   {pendingOutboxCount} Outbox
                 </div>
-                <span className="text-[11px] text-slate-500 mt-1 block">Awaiting founder review</span>
+                <span className="text-[11px] text-[#50545E] mt-1 block">Awaiting human review</span>
               </div>
             </div>
 
             {/* Leads Table */}
-            <div className="bg-white/90 border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl overflow-hidden border border-white/80 shadow-apple-card">
+              <div className="p-5 border-b border-[#9AA0AC]/25 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-[#141518]">
                   Target Prospects & Outbound Queue ({leads.length})
                 </h3>
-                <span className="text-xs text-slate-500">
-                  All contracts structured in ₹ INR
+                <span className="text-xs text-[#50545E]">
+                  All contracts evaluated in ₹ INR
                 </span>
               </div>
 
               {leads.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-xs">
-                  No prospects enrolled yet. Harvey is scraping high-intent tech startups in Bengaluru & Mumbai.
+                <div className="p-10 text-center text-[#50545E] text-xs">
+                  No prospects enrolled yet. Harvey is scanning high-intent startups in Bengaluru & Mumbai.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                <div className="divide-y divide-[#9AA0AC]/20 max-h-96 overflow-y-auto">
                   {leads.map(lead => (
-                    <div key={lead.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors">
+                    <div key={lead.id} className="p-4 flex items-center justify-between gap-4 hover:bg-white/80 transition-colors">
                       <div>
                         <h4 className="text-xs font-bold text-[#141518]">
                           {lead.contactName || lead.company}
                         </h4>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-[#50545E]">
                           {lead.email} • {lead.company}
                         </p>
                       </div>
@@ -1039,7 +1105,7 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                         <span className="text-xs font-mono font-semibold text-emerald-700">
                           ₹25,000 / mo
                         </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30">
                           {lead.status || 'PROSPECT'}
                         </span>
                       </div>
@@ -1056,77 +1122,78 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === 'support' && (
           <div className="space-y-6">
-            {/* Sentinel-9 Header Banner */}
-            <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-[#141518] text-[#E5E7EE] flex items-center justify-center font-bold text-xs shadow-sm">
                     S9
                   </div>
-                  <h2 className="text-base font-bold text-[#141518]">
+                  <h2 className="text-lg font-bold text-[#141518] tracking-tight">
                     Sentinel-9 — Autonomous Operations & Support Bot
                   </h2>
                 </div>
-                <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-                  Automated query triage, P1/P2/P3 severity scoring, SLA resolution countdowns, and direct routing to the 64-employee engineering workforce.
+                <p className="text-xs text-[#50545E] mt-1 max-w-2xl leading-relaxed">
+                  Automated query triage, P1/P2/P3 severity assignment, resolution countdowns, and direct routing to assigned engineering teams.
                 </p>
               </div>
 
-              <div className="bg-teal-50 border border-teal-200 px-3.5 py-1.5 rounded-xl text-teal-800 text-xs font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+              <div className="bg-[#2B2D33]/10 border border-[#50545E]/30 px-3.5 py-1.5 rounded-2xl text-[#141518] text-xs font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Zero-Downtime SLA Guard Active</span>
               </div>
             </div>
 
-            {/* Quick Submit New Query / Ticket Form */}
-            <div className="bg-white/90 border border-slate-200/90 rounded-2xl p-5 shadow-xs">
-              <h3 className="text-xs font-bold text-[#141518] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Plus className="w-3.5 h-3.5 text-indigo-600" />
-                Raise Operational Query or Defect Ticket
+            {/* Create Ticket Console */}
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card">
+              <h3 className="text-sm font-bold text-[#141518] mb-3">
+                File Operational Query to Sentinel-9
               </h3>
-              <form onSubmit={handleCreateTicket} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  value={newQueryTitle}
-                  onChange={(e) => setNewQueryTitle(e.target.value)}
-                  placeholder="Describe issue (e.g., 'API timeout on test run #18' or 'URGENT: Stripe webhook retry')..."
-                  className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
-                />
-                <select
-                  value={newQueryCategory}
-                  onChange={(e) => setNewQueryCategory(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] focus:outline-none"
-                >
-                  <option value="Technical Issue">Technical Issue</option>
-                  <option value="Staff Review">Staff Review</option>
-                  <option value="Sales Infra">Sales Infra</option>
-                  <option value="Security Audit">Security Audit</option>
-                </select>
-                <button
-                  type="submit"
-                  disabled={isDiagnosing || !newQueryTitle.trim()}
-                  className="px-4 py-2 bg-[#141518] hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
-                >
-                  {isDiagnosing ? 'Triaging with AI...' : 'Triage Ticket'}
-                </button>
+              <form onSubmit={handleCreateTicket} className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={newQueryTitle}
+                    onChange={(e) => setNewQueryTitle(e.target.value)}
+                    placeholder="Describe issue (e.g. 'PR #42 memory profiling audit', 'Database connection spike')..."
+                    className="flex-1 px-4 py-2.5 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] placeholder-[#50545E] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40"
+                  />
+                  <select
+                    value={newQueryCategory}
+                    onChange={(e) => setNewQueryCategory(e.target.value)}
+                    className="px-3.5 py-2.5 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40"
+                  >
+                    <option value="Technical Issue">Technical Issue</option>
+                    <option value="Staff Review">Staff Review</option>
+                    <option value="Sales Infra">Sales Infra</option>
+                    <option value="QA Flake">QA Flake</option>
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={isDiagnosing || !newQueryTitle.trim()}
+                    className="btn-shine-effect px-5 py-2.5 bg-[#141518] hover:bg-[#2B2D33] disabled:opacity-50 text-[#E5E7EE] rounded-2xl text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    {isDiagnosing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    <span>{isDiagnosing ? 'Triaging...' : 'Submit to Sentinel'}</span>
+                  </button>
+                </div>
               </form>
             </div>
 
-            {/* Tickets List */}
-            <div className="bg-white/90 border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+            {/* Tickets Roster */}
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl overflow-hidden border border-white/80 shadow-apple-card">
+              <div className="p-5 border-b border-[#9AA0AC]/25 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-[#141518]">
-                  Incident & Query Queue ({tickets.length})
+                  Active Sentinel-9 Queue ({tickets.length})
                 </h3>
-                <div className="flex items-center gap-1">
-                  {['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map(st => (
+                <div className="flex items-center gap-1.5">
+                  {['ALL', 'OPEN', 'RESOLVED'].map(st => (
                     <button
                       key={st}
                       onClick={() => setTicketFilter(st)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                      className={`px-3 py-1 rounded-xl text-[11px] font-semibold transition-all ${
                         ticketFilter === st
-                          ? 'bg-[#141518] text-white'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'bg-[#141518] text-[#E5E7EE]'
+                          : 'bg-white/80 text-[#50545E] hover:text-[#141518]'
                       }`}
                     >
                       {st}
@@ -1135,53 +1202,40 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                 </div>
               </div>
 
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[#9AA0AC]/20">
                 {tickets
                   .filter(t => ticketFilter === 'ALL' || t.status === ticketFilter)
                   .map(t => (
-                    <div key={t.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
-                      <div className="space-y-1">
+                    <div key={t.id} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-white/80 transition-colors">
+                      <div className="space-y-1 max-w-xl">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-bold text-slate-500">
-                            {t.id}
+                          <span className="font-mono text-xs font-bold text-[#141518]">{t.id}</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#141518] border border-[#9AA0AC]/30">
+                            {t.category}
                           </span>
-                          <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full uppercase ${
-                            t.severity.includes('P1')
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : t.severity.includes('P2')
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            t.severity.includes('Critical') ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
                           }`}>
                             {t.severity}
                           </span>
-                          <span className="text-[11px] text-slate-500 font-medium">
-                            {t.category}
-                          </span>
                         </div>
-                        <h4 className="text-xs font-bold text-[#141518]">
-                          {t.title}
-                        </h4>
-                        <p className="text-[11px] text-slate-600">
-                          {t.resolutionNotes}
-                        </p>
+                        <h4 className="text-xs font-bold text-[#141518]">{t.title}</h4>
+                        <p className="text-[11px] text-[#50545E]">{t.resolutionNotes}</p>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-[11px] text-slate-500 font-mono">
-                          {t.slaRemaining}
-                        </span>
-                        <button
-                          onClick={() => handleToggleTicketStatus(t.id)}
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                            t.status === 'RESOLVED'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : t.status === 'IN_PROGRESS'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}
-                        >
-                          {t.status}
-                        </button>
+                      <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+                        <div className="text-right">
+                          <span className="text-xs font-mono font-bold text-emerald-700 block">{t.slaRemaining}</span>
+                          <span className="text-[10px] text-[#50545E]">{t.createdAt}</span>
+                        </div>
+                        {t.status === 'OPEN' && (
+                          <button
+                            onClick={() => handleResolveTicket(t.id)}
+                            className="px-3 py-1.5 rounded-xl bg-white border border-[#9AA0AC]/40 hover:bg-[#141518] hover:text-white text-xs font-semibold text-[#141518] transition-colors cursor-pointer"
+                          >
+                            Mark Resolved
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1191,89 +1245,98 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
         )}
 
         {/* ────────────────────────────────────────────────────────── */}
-        {/* TAB 5: AGENTIC MISSION DISPATCHER                         */}
+        {/* TAB 5: AGENTIC MISSION DISPATCHER                          */}
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === 'dispatch' && (
           <div className="space-y-6">
-            <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs">
-              <h2 className="text-base font-bold text-[#141518] mb-1">
-                Founder Agentic Mission Dispatcher
-              </h2>
-              <p className="text-xs text-[#5A6072] leading-relaxed max-w-2xl">
-                Dispatch strategic prompts or technical tasks directly to any of your 64 employees across the 14 Gstack departments. Agents execute with context and return verified deliverables.
-              </p>
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-[#141518] text-[#E5E7EE] flex items-center justify-center font-bold text-xs shadow-sm">
+                    <Sparkles size={16} />
+                  </div>
+                  <h2 className="text-lg font-bold text-[#141518] tracking-tight">
+                    Agentic Mission Dispatcher
+                  </h2>
+                </div>
+                <p className="text-xs text-[#50545E] mt-1 max-w-2xl leading-relaxed">
+                  Broadcast custom high-priority objectives to any specialist in our 64-employee roster. Telemetry output logs directly to the executive debrief deck.
+                </p>
+              </div>
+              <div className="px-4 py-2 rounded-2xl bg-white/80 border border-white text-xs font-semibold text-[#141518] shadow-2xs shrink-0">
+                Direct Founder Override
+              </div>
             </div>
 
             {/* Dispatch Form */}
-            <div className="bg-white/90 border border-slate-200/90 rounded-2xl p-5 shadow-xs">
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card">
               <form onSubmit={handleDispatchMission} className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="w-full sm:w-1/3">
-                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
-                      Target Specialist (64 Options)
-                    </label>
-                    <select
-                      value={missionAgentId}
-                      onChange={(e) => setMissionAgentId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] font-medium focus:outline-none"
-                    >
-                      {COMPANY_EMPLOYEES.map(emp => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.name} — {emp.role} ({emp.deptName.split(' ')[0]})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-[11px] font-bold text-[#50545E] uppercase tracking-wider block mb-1.5">
+                    Select Target Specialist
+                  </label>
+                  <select
+                    value={missionAgentId}
+                    onChange={(e) => setMissionAgentId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40 cursor-pointer font-medium"
+                  >
+                    {COMPANY_EMPLOYEES.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} — {emp.role} ({emp.deptName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  <div className="flex-1">
-                    <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
-                      Mission Directive / Prompt
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={missionPrompt}
-                        onChange={(e) => setMissionPrompt(e.target.value)}
-                        placeholder="e.g. 'Audit the memory overhead of the 64-agent grid' or 'Verify ₹ INR pricing elasticity'..."
-                        className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isAgentExecuting || !missionPrompt.trim()}
-                        className="px-5 py-2 bg-[#141518] hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>{isAgentExecuting ? 'Executing...' : 'Dispatch'}</span>
-                      </button>
-                    </div>
-                  </div>
+                <div>
+                  <label className="text-[11px] font-bold text-[#50545E] uppercase tracking-wider block mb-1.5">
+                    Directive Instructions
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={missionPrompt}
+                    onChange={(e) => setMissionPrompt(e.target.value)}
+                    placeholder="E.g., 'Review security audit assertions for PR #42 and confirm zero data-leak regression'..."
+                    className="w-full px-4 py-3 bg-white/80 border border-white rounded-2xl text-xs text-[#141518] placeholder-[#50545E] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isAgentExecuting || !missionPrompt.trim()}
+                    className="btn-shine-effect px-6 py-2.5 bg-[#141518] hover:bg-[#2B2D33] disabled:opacity-50 text-[#E5E7EE] rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-sm cursor-pointer"
+                  >
+                    {isAgentExecuting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    <span>{isAgentExecuting ? 'Executing Mission...' : 'Dispatch Mission'}</span>
+                  </button>
                 </div>
               </form>
             </div>
 
-            {/* Dispatch History */}
-            <div className="bg-white/90 border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
-              <div className="p-4 border-b border-slate-200">
+            {/* Mission History */}
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl overflow-hidden border border-white/80 shadow-apple-card">
+              <div className="p-5 border-b border-[#9AA0AC]/25">
                 <h3 className="text-sm font-bold text-[#141518]">
                   Completed Mission Deliverables ({missionHistory.length})
                 </h3>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[#9AA0AC]/20">
                 {missionHistory.map(m => (
-                  <div key={m.id} className="p-5 space-y-2">
+                  <div key={m.id} className="p-5 space-y-2.5">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-[#141518]">{m.employeeName}</span>
-                        <span className="text-slate-500">({m.role})</span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-indigo-600 font-medium">{m.dept}</span>
+                        <span className="text-[#50545E]">({m.role})</span>
+                        <span className="text-[#9AA0AC]">•</span>
+                        <span className="text-[#141518] font-medium">{m.dept}</span>
                       </div>
-                      <span className="text-slate-400 font-mono text-[11px]">{m.time}</span>
+                      <span className="text-[#50545E] font-mono text-[11px]">{m.time}</span>
                     </div>
-                    <div className="text-xs font-semibold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/60">
+                    <div className="text-xs font-semibold text-[#141518] bg-white/80 px-3.5 py-2 rounded-xl border border-white">
                       Directive: &quot;{m.prompt}&quot;
                     </div>
-                    <div className="text-xs text-slate-600 leading-relaxed pl-2 border-l-2 border-indigo-500">
+                    <div className="text-xs text-[#50545E] leading-relaxed pl-3 border-l-2 border-[#141518]">
                       {m.deliverable}
                     </div>
                   </div>
@@ -1284,93 +1347,298 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
         )}
 
         {/* ────────────────────────────────────────────────────────── */}
-        {/* TAB 6: DAILY EXECUTIVE STANDUP REPORT                      */}
+        {/* TAB 6: DAILY EXECUTIVE STANDUP BRIEFING                    */}
+        {/* (Upgraded to Apple Keynote Executive Presentation Cards)   */}
         {/* ────────────────────────────────────────────────────────── */}
         {activeTab === 'report' && (
           <div className="space-y-6">
-            <div className="bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            
+            {/* Briefing Top Bar with View Mode Switcher and Copy Memo CTA */}
+            <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-base font-bold text-[#141518]">
-                  Daily Executive Standup Briefing
-                </h2>
-                <p className="text-xs text-slate-600 mt-0.5">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-[#141518] tracking-tight">
+                    Daily Executive Standup Briefing
+                  </h2>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30 uppercase">
+                    Live Synthesis
+                  </span>
+                </div>
+                <p className="text-xs text-[#50545E] mt-0.5">
                   Automated synthesis of all 14 departments and 64 employees for {reportDate}.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                {/* View Mode Switcher (Keynote vs Raw Memo) */}
+                <div className="inline-flex p-1 rounded-2xl bg-white/80 border border-white shadow-2xs">
+                  <button
+                    onClick={() => setReportViewMode('keynote')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      reportViewMode === 'keynote'
+                        ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
+                        : 'text-[#50545E] hover:text-[#141518]'
+                    }`}
+                  >
+                    Executive Cards
+                  </button>
+                  <button
+                    onClick={() => setReportViewMode('memo')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      reportViewMode === 'memo'
+                        ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
+                        : 'text-[#50545E] hover:text-[#141518]'
+                    }`}
+                  >
+                    Raw Memo
+                  </button>
+                </div>
+
                 <button
                   onClick={handleCopyReport}
-                  className="px-4 py-2 bg-[#141518] hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="btn-shine-effect px-4 py-2 bg-[#141518] hover:bg-[#2B2D33] text-[#E5E7EE] rounded-2xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
                 >
-                  {copiedReport ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedReport ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedReport ? 'Copied to Clipboard!' : 'Copy Briefing Memo'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Rendered Report Box */}
-            <div className="bg-white/90 border border-slate-200/90 rounded-2xl p-6 shadow-xs">
-              <pre className="text-xs text-slate-800 font-mono whitespace-pre-wrap leading-relaxed select-text">
-                {dailyReportMarkdown}
-              </pre>
-            </div>
+            {/* KEYNOTE VIEW MODE */}
+            {reportViewMode === 'keynote' ? (
+              <div className="space-y-6">
+                
+                {/* Keynote Executive Banner */}
+                <div className="hero-apple-mesh rounded-3xl p-8 text-white shadow-apple-card border border-white/20 relative overflow-hidden apple-motion">
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#9AA0AC]/40 to-transparent"></div>
+                  <div className="relative z-10 space-y-2">
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-[#9AA0AC]">
+                      Enterprise Executive Briefing Memo
+                    </span>
+                    <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#E5E7EE]">
+                      14 Departments Operating at 96.8% Workforce Velocity
+                    </h3>
+                    <p className="text-xs text-[#9AA0AC] max-w-2xl leading-relaxed">
+                      Synthesized across 64 agentic specialists, ₹ INR outbound commercial pipeline, Sentinel-9 zero-downtime SLA coverage, and 100% passing QA regression gates.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Section 1: 14 Departments Grid */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-bold text-[#141518] flex items-center gap-2">
+                      <Building2 size={16} />
+                      <span>1. 14 Autonomous Departments Status</span>
+                    </h3>
+                    <span className="text-xs text-[#50545E]">All 14 operational</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {GSTACK_DEPARTMENTS.map(d => (
+                      <div
+                        key={d.id}
+                        className="glass-specular bg-white/70 hover:bg-white/95 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm apple-motion"
+                      >
+                        <div className="flex items-center justify-between text-xs mb-2">
+                          <span className="font-bold text-[#141518]">Dept {d.number}: {d.shortName}</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            [{d.status}]
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#50545E] mb-2">
+                          Head: <strong className="text-[#141518]">{d.headLead}</strong> • {d.memberCount} Team
+                        </p>
+                        <div className="text-[10px] bg-white/80 p-2 rounded-xl border border-white text-[#50545E]">
+                          <strong className="text-[#141518]">KPI:</strong> {d.kpi}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 2: Workforce Telemetry Tiles */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-bold text-[#141518] flex items-center gap-2">
+                      <Users size={16} />
+                      <span>2. 64 Working Employees Telemetry</span>
+                    </h3>
+                    <span className="text-xs text-emerald-700 font-semibold font-mono">96.8% Workforce Velocity</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm text-center">
+                      <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">Headcount</span>
+                      <strong className="text-xl font-bold font-mono text-[#141518] mt-1 block">64</strong>
+                      <span className="text-[10px] text-[#50545E]">Specialists</span>
+                    </div>
+
+                    <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm text-center">
+                      <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">Active</span>
+                      <strong className="text-xl font-bold font-mono text-emerald-700 mt-1 block">
+                        {COMPANY_EMPLOYEES.filter(e => e.status === 'ACTIVE').length}
+                      </strong>
+                      <span className="text-[10px] text-[#50545E]">On-task</span>
+                    </div>
+
+                    <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm text-center">
+                      <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">Reviewing</span>
+                      <strong className="text-xl font-bold font-mono text-amber-700 mt-1 block">
+                        {COMPANY_EMPLOYEES.filter(e => e.status === 'REVIEWING').length}
+                      </strong>
+                      <span className="text-[10px] text-[#50545E]">Code review</span>
+                    </div>
+
+                    <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm text-center">
+                      <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">Dispatched</span>
+                      <strong className="text-xl font-bold font-mono text-[#141518] mt-1 block">
+                        {COMPANY_EMPLOYEES.filter(e => e.status === 'DISPATCHED').length}
+                      </strong>
+                      <span className="text-[10px] text-[#50545E]">Field missions</span>
+                    </div>
+
+                    <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm text-center">
+                      <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">Standby</span>
+                      <strong className="text-xl font-bold font-mono text-[#50545E] mt-1 block">
+                        {COMPANY_EMPLOYEES.filter(e => e.status === 'STANDBY').length}
+                      </strong>
+                      <span className="text-[10px] text-[#50545E]">Ready queue</span>
+                    </div>
+
+                    <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/80 shadow-apple-sm text-center">
+                      <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider block">Velocity</span>
+                      <strong className="text-xl font-bold font-mono text-emerald-700 mt-1 block">96.8%</strong>
+                      <span className="text-[10px] text-[#50545E]">Execution rate</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3 & 4: Commercial Pipeline & Integrity */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Commercial Pipeline */}
+                  <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card space-y-4">
+                    <h4 className="text-sm font-bold text-[#141518] flex items-center gap-2">
+                      <Briefcase size={16} />
+                      <span>3. Commercial Pipeline & Revenue (₹ INR)</span>
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Gross Valuation</span>
+                        <strong className="text-lg font-bold font-mono text-emerald-700">{pipelineValueINR}</strong>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Active Accounts</span>
+                        <strong className="text-lg font-bold font-mono text-[#141518]">{leads.length} accounts</strong>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Sequences Sent</span>
+                        <strong className="text-lg font-bold font-mono text-[#141518]">{sentOutboxCount} emails</strong>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Approvals Pending</span>
+                        <strong className="text-lg font-bold font-mono text-amber-700">{pendingOutboxCount} awaiting</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Operations & QA Integrity */}
+                  <div className="glass-specular bg-white/70 backdrop-blur-2xl rounded-3xl p-6 border border-white/80 shadow-apple-card space-y-4">
+                    <h4 className="text-sm font-bold text-[#141518] flex items-center gap-2">
+                      <ShieldCheck size={16} />
+                      <span>4. Operations & Quality Assurance</span>
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Open Tickets</span>
+                        <strong className="text-lg font-bold font-mono text-[#141518]">
+                          {tickets.filter(t => t.status === 'OPEN').length} active
+                        </strong>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Resolved Today</span>
+                        <strong className="text-lg font-bold font-mono text-emerald-700">
+                          {tickets.filter(t => t.status === 'RESOLVED').length} resolved
+                        </strong>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Test Pass Rate</span>
+                        <strong className="text-lg font-bold font-mono text-emerald-700">{passRate}%</strong>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white/80 border border-white">
+                        <span className="text-[10px] font-bold text-[#50545E] uppercase block">Open Defects</span>
+                        <strong className="text-lg font-bold font-mono text-[#141518]">{openBugs} bugs</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            ) : (
+              /* RAW MEMO VIEW MODE */
+              <div className="glass-specular bg-[#141518] rounded-3xl p-7 border border-[#2B2D33] shadow-2xl overflow-hidden">
+                <pre className="text-xs text-[#E5E7EE] font-mono whitespace-pre-wrap leading-relaxed select-text">
+                  {dailyReportMarkdown}
+                </pre>
+              </div>
+            )}
+
           </div>
         )}
 
       </main>
 
       {/* ======================================================== */}
-      {/* 1-ON-1 FOUNDER CHAT MODAL / DRAWER                       */}
+      {/* 1-ON-1 FOUNDER CHAT MODAL (APPLE FLUID GLASS SPECULAR)   */}
       {/* ======================================================== */}
       {activeChatEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141518]/60 backdrop-blur-2xl animate-fadeIn">
+          <div className="w-full max-w-2xl bg-white/95 backdrop-blur-3xl rounded-[32px] border border-white/80 shadow-[0_32px_64px_-16px_rgba(20,21,24,0.35)] flex flex-col overflow-hidden apple-motion max-h-[85vh]">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="px-6 py-5 border-b border-[#9AA0AC]/25 bg-white/80 backdrop-blur-md flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3.5">
                 <div 
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-xs"
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0"
                   style={{ backgroundColor: activeChatEmployee.avatarColor }}
                 >
                   {activeChatEmployee.avatar}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-[#141518]">
+                    <h3 className="text-[15px] font-bold text-[#141518] tracking-tight">
                       {activeChatEmployee.name}
                     </h3>
-                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#2B2D33]/10 text-[#141518] border border-[#50545E]/30 uppercase">
                       {activeChatEmployee.status}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    {activeChatEmployee.role} • <span className="text-indigo-600">{activeChatEmployee.deptName}</span>
+                  <p className="text-[11px] text-[#50545E] font-medium">
+                    {activeChatEmployee.role} • <strong className="text-[#141518]">{activeChatEmployee.deptName}</strong>
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={() => setActiveChatEmployee(null)}
-                className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#141518]/5 hover:bg-[#141518]/10 text-[#50545E] hover:text-[#141518] flex items-center justify-center apple-motion-quick active:scale-90 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Employee Quick Info Pill Strip */}
-            <div className="px-6 py-2.5 bg-indigo-50/50 border-b border-indigo-100/60 text-xs flex items-center justify-between gap-2 overflow-x-auto">
-              <span className="text-slate-600 text-[11px] truncate">
-                <span className="font-semibold text-slate-800">Background:</span> {activeChatEmployee.bg}
+            <div className="px-6 py-2.5 bg-[#E5E7EE]/50 border-b border-[#9AA0AC]/20 text-xs flex items-center justify-between gap-2 overflow-x-auto">
+              <span className="text-[#50545E] text-[11px] truncate">
+                <strong className="text-[#141518]">Background:</strong> {activeChatEmployee.bg}
               </span>
-              <span className="font-mono text-[11px] font-bold text-indigo-700 shrink-0">
+              <span className="font-mono text-[11px] font-bold text-[#141518] shrink-0">
                 {activeChatEmployee.velocity} Velocity
               </span>
             </div>
 
             {/* Chat Messages Body */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 max-h-[50vh] bg-slate-50/40">
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 max-h-[48vh] bg-slate-50/50">
               {(chatMessages[activeChatEmployee.id] || []).map((msg, idx) => {
                 const isFounder = msg.sender === 'founder';
                 return (
@@ -1378,16 +1646,16 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                     key={idx}
                     className={`flex flex-col ${isFounder ? 'items-end' : 'items-start'}`}
                   >
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 px-1">
+                    <div className="flex items-center gap-1.5 text-[10px] text-[#50545E] mb-1 px-1">
                       <span>{isFounder ? 'Founder (You)' : activeChatEmployee.name}</span>
                       <span>•</span>
                       <span>{msg.timestamp}</span>
                     </div>
                     <div 
-                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         isFounder
-                          ? 'bg-[#141518] text-white rounded-br-xs'
-                          : 'bg-white text-slate-800 border border-slate-200/90 shadow-xs rounded-bl-xs'
+                          ? 'bg-[#141518] text-[#E5E7EE] shadow-sm rounded-br-xs'
+                          : 'glass-specular bg-white text-[#141518] border border-white shadow-apple-sm rounded-bl-xs'
                       }`}
                     >
                       {msg.text}
@@ -1397,18 +1665,29 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
               })}
 
               {isTypingReply && (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" />
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-100" />
-                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce delay-200" />
-                  <span>{activeChatEmployee.name} is formulating response...</span>
+                <div className="flex items-center gap-2.5 text-xs text-[#50545E]">
+                  <div className="ios-spinner !w-4 !h-4">
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                    <div className="ios-spinner-blade"></div>
+                  </div>
+                  <span>{activeChatEmployee.name} is preparing update...</span>
                 </div>
               )}
             </div>
 
             {/* Quick Prompt Suggestions */}
-            <div className="px-6 py-2 border-t border-slate-100 bg-white flex items-center gap-1.5 overflow-x-auto">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+            <div className="px-6 py-2.5 border-t border-[#9AA0AC]/20 bg-white flex items-center gap-2 overflow-x-auto">
+              <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider shrink-0">
                 Quick Ask:
               </span>
               {[
@@ -1420,7 +1699,7 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                 <button
                   key={i}
                   onClick={() => handleSendQuickPrompt(qp)}
-                  className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[10px] font-medium whitespace-nowrap transition-colors cursor-pointer border border-slate-200/50"
+                  className="px-3 py-1 rounded-full bg-slate-100 hover:bg-[#141518] hover:text-white text-[#50545E] text-[10px] font-medium whitespace-nowrap apple-motion-quick cursor-pointer border border-[#9AA0AC]/30 active:scale-95"
                 >
                   {qp}
                 </button>
@@ -1428,19 +1707,19 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
             </div>
 
             {/* Input Footer */}
-            <div className="p-4 border-t border-slate-200 bg-white">
-              <form onSubmit={handleSendMessageToEmployee} className="flex gap-2">
+            <div className="p-4 border-t border-[#9AA0AC]/25 bg-white">
+              <form onSubmit={handleSendMessageToEmployee} className="flex gap-2.5">
                 <input
                   type="text"
                   value={currentInputMessage}
                   onChange={(e) => setCurrentInputMessage(e.target.value)}
                   placeholder={`Speak to ${activeChatEmployee.name} about project priorities...`}
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-[#141518] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-[#9AA0AC]/30 rounded-2xl text-xs text-[#141518] placeholder-[#50545E] focus:outline-none focus:ring-2 focus:ring-[#50545E]/40"
                 />
                 <button
                   type="submit"
                   disabled={!currentInputMessage.trim() || isTypingReply}
-                  className="px-4 py-2.5 bg-[#141518] hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="btn-shine-effect px-5 py-2.5 bg-[#141518] hover:bg-[#2B2D33] disabled:opacity-50 text-[#E5E7EE] rounded-2xl text-xs font-semibold apple-motion-quick flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Send</span>

@@ -127,14 +127,14 @@ export const Sidebar = ({
         {onReturnToHub && (
           <button
             onClick={onReturnToHub}
-            className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors apple-press cursor-pointer border ${
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all apple-press cursor-pointer border flex items-center gap-1 ${
               isDark
                 ? 'bg-white/10 text-white border-white/10 hover:bg-white/15'
-                : 'bg-white/80 text-[#636366] hover:text-[#1D1D1F] border-black/[0.08] shadow-2xs hover:bg-white'
+                : 'bg-white text-[#141518] border-black/[0.1] shadow-2xs hover:bg-[#141518] hover:text-white'
             }`}
-            title="Return to Launchpad"
+            title="Return to Master App / Launchpad"
           >
-            Hub
+            <span>◂ Launchpad</span>
           </button>
         )}
       </div>

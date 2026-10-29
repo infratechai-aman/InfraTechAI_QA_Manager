@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { 
   Sparkles, Cpu, Volume2, VolumeX, Square,
-  RotateCcw, ArrowRight, Activity, Building2, 
+  RotateCcw, ArrowRight, ArrowLeft, Activity, Building2, 
   CheckSquare, Bot, Copy, Check, ShieldAlert,
   FileText, Phone, PhoneOff, Mic, MicOff, Radio,
   Globe
@@ -867,8 +867,17 @@ Autonomous platform intelligence synchronized across business operations, qualit
       {/* Desktop Branded Executive Header (md:flex) */}
       <header className="hidden md:flex px-5 py-3 border-b border-white/10 bg-[#030d14]/90 backdrop-blur-xl shrink-0 items-center justify-between gap-4 z-30 shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
         
-        {/* Left: Copilot Branding */}
+        {/* Left: Back to Launchpad & Copilot Branding */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => onSwitchApp && onSwitchApp('hub')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-semibold text-slate-200 transition-colors cursor-pointer mr-1"
+            title="Return to Master App / Launchpad"
+          >
+            <ArrowLeft size={13} />
+            <span>Launchpad</span>
+          </button>
+
           <div className="relative shrink-0">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg transition-colors ${
               isFriday 

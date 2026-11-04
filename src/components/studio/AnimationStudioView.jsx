@@ -1,25 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Play, Pause, RotateCcw, Download, Film, Sparkles, Video,
-  Volume2, VolumeX, Maximize2, Minimize2, ArrowLeft, ExternalLink,
+  Volume2, VolumeX, Maximize2, Minimize2, ArrowLeft, ArrowRight,
   Layers, Sliders, Smartphone, Monitor, Square, Check, Copy,
   Share2, Wand2, Mic, Clock, Cpu, Zap, Radio, ChevronRight,
   TrendingUp, Shield, BarChart3, Users, Bot, Send, MessageSquare,
-  UserCheck, RefreshCw, Eye, Camera, Palette, SlidersHorizontal
+  UserCheck, RefreshCw, Eye, Camera, Palette, Music, Lightbulb,
+  Plus, Trash2, Edit3, CheckCircle2
 } from 'lucide-react';
 
 /**
- * ANIMATIONS STUDIO — POWERED BY LEMO-OPUSCAR & APPLE DESIGN SYSTEM
+ * ANIMATIONS STUDIO — GAMMA.APP STYLE GUIDED CREATION WORKFLOW
  * 
- * Built strictly according to:
- * - Apple Human Interface Guidelines (WWDC Designing Fluid Interfaces)
- * - Emil Kowalski Design Engineering (Tactile feedback, ease-out curves, scale(0.97) press)
- * - Charcoal & Slate specular glass palette (#E5E7EE canvas, #141518 obsidian accents)
- * - 60 FPS real-time code-driven cinema on HTML5 Canvas
- * - Dedicated AI Animator: Siddharth Menon (Dept 04 • Design Engineering Studio)
+ * Powered by:
+ * - Gamma-Style Creation Pipeline:
+ *     1. 📝 Storyboard (Narrative & Outline Cards)
+ *     2. 🎨 Visual Styles (Theme Gallery & Color Palettes)
+ *     3. ⏱️ Duration & Audio (Pacing, Aspect Ratio, Sound Synth)
+ *     4. ⚡ Cinema Stage (60 FPS Device Player & AI Animator Siddharth Menon)
+ * - Apple Human Interface Guidelines & Emil Kowalski Design Engineering
+ * - Charcoal/Slate Specular Glass palette (#E5E7EE canvas, #141518 obsidian)
+ * - In-Browser 60 FPS Video Export via MediaRecorder
  */
 
-// 5 Curated Production Film Templates
+// 4 Curated Production Film Templates
 const PRESET_TEMPLATES = [
   {
     id: 'viral-qa',
@@ -30,6 +34,8 @@ const PRESET_TEMPLATES = [
     duration: 15,
     accentColor: '#10B981',
     description: 'High-energy kinetic typography, defect count dropping from 542 to 0, 64 autonomous agents swarm.',
+    palette: ['#10B981', '#064E3B', '#141518', '#E5E7EE'],
+    fontPair: 'Plus Jakarta Sans Bold + SF Pro Mono',
     scenes: [
       {
         id: 's1',
@@ -82,6 +88,8 @@ const PRESET_TEMPLATES = [
     duration: 16,
     accentColor: '#F59E0B',
     description: 'Sonoma mesh aura, 3D specular frosted glass prism, ultra-smooth Apple typography.',
+    palette: ['#F59E0B', '#78350F', '#181A20', '#FFFFFF'],
+    fontPair: 'SF Pro Display + SF Pro Text',
     scenes: [
       {
         id: 's1',
@@ -134,6 +142,8 @@ const PRESET_TEMPLATES = [
     duration: 14,
     accentColor: '#3B82F6',
     description: 'Radar sweep, ₹2,00,000 monthly pipeline ticker, 48 prospects analyzed in real time.',
+    palette: ['#3B82F6', '#1E3A8A', '#0F172A', '#E2E8F0'],
+    fontPair: 'Inter Tight Bold + JetBrains Mono',
     scenes: [
       {
         id: 's1',
@@ -186,6 +196,8 @@ const PRESET_TEMPLATES = [
     duration: 15,
     accentColor: '#8B5CF6',
     description: 'Neural grid telemetry, department nodes booting up, velocity metrics flying.',
+    palette: ['#8B5CF6', '#4C1D95', '#110E1B', '#F3E8FF'],
+    fontPair: 'Space Grotesk + Fira Code',
     scenes: [
       {
         id: 's1',
@@ -232,11 +244,18 @@ const PRESET_TEMPLATES = [
 ];
 
 export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
-  // Active template state
+  // GAMMA-STYLE STEP WORKFLOW: 1: Storyboard | 2: Styles | 3: Duration & Audio | 4: Cinema Stage
+  const [gammaStep, setGammaStep] = useState(4);
+
+  // Active template & scenes state
   const [activeTemplate, setActiveTemplate] = useState(PRESET_TEMPLATES[0]);
   const [aspectRatio, setAspectRatio] = useState(PRESET_TEMPLATES[0].ratio); // '9:16' | '16:9' | '1:1'
   const [scenes, setScenes] = useState(PRESET_TEMPLATES[0].scenes);
-  const [activeTab, setActiveTab] = useState('animator'); // 'animator' | 'scenes' | 'templates' | 'ai' | 'export'
+  const [selectedPacing, setSelectedPacing] = useState('15s'); // '10s' | '15s' | '30s'
+  const [audioPreset, setAudioPreset] = useState('tech-riser'); // 'tech-riser' | 'apple-ambient' | 'cyber-pulse' | 'muted'
+
+  // Studio Sub-tab (inside Cinema Stage): 'animator' | 'scenes' | 'export'
+  const [studioTab, setStudioTab] = useState('animator');
   const [selectedSceneIndex, setSelectedSceneIndex] = useState(0);
 
   // Dedicated AI Animator State: Siddharth Menon (Dept 04 • Design Studio)
@@ -260,11 +279,10 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
   const [copiedCaption, setCopiedCaption] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // AI prompt state
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  // Gamma Storyboard Prompt Input
+  const [storyboardPrompt, setStoryboardPrompt] = useState('');
+  const [isSynthesizingOutline, setIsSynthesizingOutline] = useState(false);
 
   // Canvas refs
   const canvasRef = useRef(null);
@@ -315,7 +333,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
   // Procedural Web Audio Sound Generator (Apple-grade tactile acoustics)
   const playSoundEffect = useCallback((type) => {
-    if (!audioEnabled) return;
+    if (!audioEnabled || audioPreset === 'muted') return;
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
@@ -381,7 +399,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
         osc.stop(now + 0.08);
       }
     } catch {}
-  }, [audioEnabled]);
+  }, [audioEnabled, audioPreset]);
 
   // Track scene transitions for sound effects
   const prevSceneIndexRef = useRef(0);
@@ -432,15 +450,12 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     const { scene, index, sceneLocalTime } = currentSceneInfo;
     const accent = activeTemplate.accentColor || '#10B981';
 
-    // ──────────────────────────────────────────────
     // 1. BACKGROUND RENDER (Deep Obsidian & Sonoma Mesh)
-    // ──────────────────────────────────────────────
     ctx.clearRect(0, 0, targetW, targetH);
-
     ctx.fillStyle = '#0B0D13';
     ctx.fillRect(0, 0, targetW, targetH);
 
-    // Dynamic Atmospheric Mesh Aura (Moves smoothly with time)
+    // Dynamic Atmospheric Mesh Aura
     const auraX = targetW * (0.5 + Math.sin(currentTime * 0.8) * 0.15);
     const auraY = targetH * (0.35 + Math.cos(currentTime * 0.7) * 0.1);
     const auraRadius = Math.max(targetW, targetH) * 0.65;
@@ -468,9 +483,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       ctx.stroke();
     }
 
-    // ──────────────────────────────────────────────
     // 2. BRANDING POD (Apple Specular Header)
-    // ──────────────────────────────────────────────
     const headerY = targetH * 0.08;
     ctx.save();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -502,9 +515,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.fillText('60 FPS', pillX - 50, headerY - 2);
     ctx.restore();
 
-    // ──────────────────────────────────────────────
     // 3. CENTER HERO CARD (Apple Specular Glass Box)
-    // ──────────────────────────────────────────────
     const cardMarginX = targetW * 0.07;
     const cardW = targetW - cardMarginX * 2;
     const cardH = targetH * (aspectRatio === '9:16' ? 0.62 : 0.58);
@@ -532,10 +543,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.stroke();
     ctx.restore();
 
-    // ──────────────────────────────────────────────
     // 4. ANIMATED CONTENT (Kinetic Typography & Ease-Out)
-    // ──────────────────────────────────────────────
-    // Emil Kowalski: Never start from 0 scale, start from 0.95 with smooth ease-out
     const enterEase = Math.min(1, sceneLocalTime * 2.8);
     const textOffsetY = (1 - enterEase) * 36;
     const opacity = enterEase;
@@ -562,13 +570,13 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.textAlign = 'left';
     ctx.fillText(tagText, cardMarginX + 48 + tagPadding, badgeY);
 
-    // SCENE COUNTER (e.g. 02 / 04)
+    // SCENE COUNTER
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '700 20px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(`0${index + 1} / 0${scenes.length}`, cardMarginX + cardW - 48, badgeY);
 
-    // MAIN TEXT (Huge Kinetic Headline)
+    // MAIN HEADLINE
     const mainY = cardY + 180 + textOffsetY;
     const fontSize = aspectRatio === '9:16' ? 58 : 64;
     ctx.font = `900 ${fontSize}px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif`;
@@ -594,7 +602,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     }
     ctx.fillText(line, cardMarginX + 48, curY);
 
-    // SUB TEXT
+    // SUBTITLE
     curY += 36;
     ctx.font = '500 26px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = 'rgba(229, 231, 238, 0.8)';
@@ -615,7 +623,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     }
     ctx.fillText(subLine, cardMarginX + 48, curY);
 
-    // METRIC POD (Data Viz Capsule)
+    // METRIC POD
     if (scene.metric) {
       const metricPodY = cardY + cardH - 120;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
@@ -642,11 +650,8 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
     ctx.restore();
 
-    // ──────────────────────────────────────────────
     // 5. SOCIAL FOOTER & FREQUENCY BARS
-    // ──────────────────────────────────────────────
     const footerY = targetH * 0.88;
-
     const barCount = 32;
     const barWidth = 8;
     const barSpacing = 10;
@@ -665,7 +670,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.textAlign = 'center';
     ctx.fillText('@infratechai • Code-Driven Enterprise Cinema', targetW / 2, footerY + 54);
 
-    // Instagram Story Style Top Progress Segment Bars
+    // Top Story Progress Bars
     const progY = 32;
     const progH = 6;
     const progTotalW = targetW - 64;
@@ -870,62 +875,60 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
     setTimeout(() => setCopiedCaption(false), 2500);
   };
 
-  // AI Script Generator
-  const handleGenerateAiScript = () => {
-    if (!aiPrompt.trim()) return;
-    setIsAiGenerating(true);
+  // Gamma Storyboard Generation
+  const handleGenerateStoryboardOutline = (promptTopic) => {
+    const topic = (promptTopic || storyboardPrompt).trim();
+    if (!topic) return;
+    setIsSynthesizingOutline(true);
 
     setTimeout(() => {
-      const topic = aiPrompt.trim();
-      const generatedScenes = [
+      const generated = [
         {
-          id: 'ai-s1',
+          id: 'sc_1',
           title: 'HOOK',
           duration: 3.5,
-          tag: 'TRENDING CONTROVERSY',
-          mainText: `WHY ${topic.toUpperCase()} IS SHIFTING.`,
-          subText: 'The playbook that worked in 2024 is breaking down fast.',
-          highlight: 'SHIFTING.',
+          tag: 'VIRAL HOOK',
+          mainText: `WHY ${topic.toUpperCase()} IS OBSOLETE.`,
+          subText: 'The standard approach is costing teams 14+ hours every week.',
+          highlight: 'OBSOLETE.',
           metric: 'RETENTION: 98%'
         },
         {
-          id: 'ai-s2',
-          title: 'THE LEVERAGE',
+          id: 'sc_2',
+          title: 'THE PROBLEM',
           duration: 4.0,
-          tag: 'SYSTEM BOTTLENECK',
-          mainText: 'MANUAL EFFORT DOES NOT SCALE.',
-          subText: 'Autonomous workflows replace repetitive overhead completely.',
-          highlight: 'DOES NOT SCALE',
-          metric: 'LATENCY: -82%'
+          tag: 'HIDDEN TAX',
+          mainText: 'MANUAL OVERHEAD KILLS SPEED.',
+          subText: 'Repetitive regressions and slow turnaround drag velocity to a halt.',
+          highlight: 'KILLS SPEED',
+          metric: 'LATENCY: -80%'
         },
         {
-          id: 'ai-s3',
-          title: 'BREAKTHROUGH',
-          duration: 4.0,
-          tag: 'ENTERPRISE SOLUTION',
-          mainText: 'GSTACK 64 AGENTS TAKE OVER.',
-          subText: 'End-to-end execution from architecture to verified PR deployment.',
+          id: 'sc_3',
+          title: 'SOLUTION',
+          duration: 4.5,
+          tag: 'INFRATECHAI AGENTS',
+          mainText: '64 AGENTS AUTOMATE EVERYTHING.',
+          subText: 'End-to-end execution with zero manual confirmation friction.',
           highlight: '64 AGENTS',
-          metric: '0 ERRORS'
+          metric: '0 DEFECTS'
         },
         {
-          id: 'ai-s4',
+          id: 'sc_4',
           title: 'CALL TO ACTION',
-          duration: 3.5,
-          tag: 'EXPLORE TODAY',
+          duration: 3.0,
+          tag: 'SHIP WITH CONFIDENCE',
           mainText: 'SCALE WITHOUT BLOAT.',
-          subText: 'Watch full demo at infratech.ai • Save this Reel!',
+          subText: 'Experience InfratechAI Enterprise • Link in Bio',
           highlight: 'SCALE NOW',
-          metric: 'INFRATECHAI'
+          metric: '100% PASS'
         }
       ];
 
-      setScenes(generatedScenes);
-      setCurrentTime(0);
-      setIsAiGenerating(false);
-      setActiveTab('scenes');
+      setScenes(generated);
+      setIsSynthesizingOutline(false);
       playSoundEffect('whoosh');
-    }, 900);
+    }, 700);
   };
 
   // Direct AI Animator Directive Handler
@@ -1002,11 +1005,11 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
       {/* ======================================================== */}
       <header className="h-20 px-6 sm:px-8 flex items-center justify-between border-b border-white/50 bg-[#E5E7EE]/80 backdrop-blur-2xl sticky top-0 z-30 apple-motion shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         
-        {/* Left: Back to Launchpad + Animations Identity */}
+        {/* Left: Back to Launchpad + Branding */}
         <div className="flex items-center gap-4">
           <button
             onClick={() => onNavigateToApp && onNavigateToApp('hub')}
-            className="btn-shine-effect flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 hover:bg-white border border-white/80 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.96] apple-motion-quick cursor-pointer"
+            className="btn-shine-effect flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 hover:bg-white border border-white/80 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.97] apple-motion-quick cursor-pointer"
             title="Return to Master App / Launchpad"
           >
             <ArrowLeft size={14} className="text-[#50545E]" />
@@ -1026,11 +1029,11 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   Animations
                 </span>
                 <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 border border-pink-500/30 uppercase tracking-wider">
-                  AI Animator: Siddharth Menon
+                  Gamma.app Fluid Engine
                 </span>
               </div>
               <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1.5">
-                <span>Dept 04 • Design Studio</span>
+                <span>AI Animator: Siddharth Menon</span>
                 <span>•</span>
                 <span className="text-emerald-700 flex items-center gap-1 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1041,26 +1044,30 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
           </div>
         </div>
 
-        {/* Center: Apple Sonoma Segmented Aspect Ratio Control */}
+        {/* Center: GAMMA.APP GUIDED CREATION STEP BREADCRUMBS */}
         <div className="hidden lg:flex items-center p-1 rounded-2xl bg-white/70 backdrop-blur-2xl border border-white/80 shadow-apple-sm">
           {[
-            { id: '9:16', label: '9:16 Reel / Short', icon: Smartphone },
-            { id: '16:9', label: '16:9 Widescreen', icon: Monitor },
-            { id: '1:1',  label: '1:1 Square', icon: Square }
+            { step: 1, label: '1. Storyboard', icon: Layers },
+            { step: 2, label: '2. Visual Styles', icon: Palette },
+            { step: 3, label: '3. Duration & Audio', icon: Clock },
+            { step: 4, label: '4. Cinema Stage', icon: Zap }
           ].map((item) => {
-            const isSel = aspectRatio === item.id;
+            const isCurrent = gammaStep === item.step;
+            const isCompleted = gammaStep > item.step;
             const Icon = item.icon;
             return (
               <button
-                key={item.id}
-                onClick={() => setAspectRatio(item.id)}
+                key={item.step}
+                onClick={() => setGammaStep(item.step)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 apple-motion-quick cursor-pointer active:scale-[0.97] ${
-                  isSel
+                  isCurrent
                     ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
+                    : isCompleted
+                    ? 'text-emerald-700 hover:bg-emerald-50 font-bold'
                     : 'text-[#50545E] hover:text-[#141518] hover:bg-white/60'
                 }`}
               >
-                <Icon size={13} />
+                {isCompleted ? <Check size={13} className="text-emerald-600" /> : <Icon size={13} />}
                 <span>{item.label}</span>
               </button>
             );
@@ -1069,17 +1076,16 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
 
         {/* Right Controls: Audio Synth, Frame Snapshot, Export Video */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Audio Synthesizer Toggle */}
           <button
             onClick={() => setAudioEnabled((prev) => !prev)}
             className={`p-2 rounded-2xl border apple-motion-quick cursor-pointer active:scale-[0.97] ${
-              audioEnabled 
+              audioEnabled && audioPreset !== 'muted'
                 ? 'bg-white/80 text-[#141518] border-white/80 shadow-apple-sm' 
                 : 'bg-white/40 text-[#50545E] border-transparent'
             }`}
             title={audioEnabled ? 'Procedural Web Audio Enabled' : 'Muted'}
           >
-            {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            {audioEnabled && audioPreset !== 'muted' ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
 
           {/* Download Poster Button */}
@@ -1105,157 +1111,375 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
       </header>
 
       {/* ======================================================== */}
-      {/* MAIN VIEWPORT: HARDWARE-GRADE STAGE & DIRECTOR DECK      */}
+      {/* 2. GAMMA-STYLE STEP 1: STORYBOARD & OUTLINE CARDS        */}
       {/* ======================================================== */}
-      <main className="flex-1 p-6 sm:p-8 max-w-[1700px] w-full mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 pb-16">
-
-        {/* ────────────────────────────────────────────────────────── */}
-        {/* LEFT COLUMN: THE HARDWARE VIEWPORT STAGE (COL 1-7)         */}
-        {/* ────────────────────────────────────────────────────────── */}
-        <section className="xl:col-span-7 flex flex-col items-center">
+      {gammaStep === 1 && (
+        <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8 animate-fadeIn">
           
-          {/* Hardware Device Shell Container */}
-          <div className="w-full flex flex-col items-center justify-center p-6 sm:p-8 rounded-[36px] bg-[#141518] shadow-2xl border border-white/10 relative overflow-hidden group">
-            
-            {/* Ambient Backlight Mesh behind device */}
-            <div 
-              className="absolute inset-0 pointer-events-none opacity-40 blur-3xl transition-all duration-700"
-              style={{
-                background: `radial-gradient(circle at 50% 40%, ${activeTemplate.accentColor || '#10B981'}35 0%, transparent 70%)`
-              }}
-            />
-
-            {/* Device Header Pill */}
-            <div className="w-full flex items-center justify-between pb-4 border-b border-white/10 text-xs text-[#9AA0AC] relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#F25B5B]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#F6A943]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#3ECF8E]" />
-                <span className="font-mono text-[11px] text-white/60 ml-2">
-                  OPUSCAR • {aspectRatio} • {activeTemplate.name}
-                </span>
+          {/* Hero Prompt Box (Gamma Style) */}
+          <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 border border-white/80 shadow-apple-card space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center">
+                <Wand2 size={20} />
               </div>
-
-              {isRecording ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-bold text-[10px] animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                  REC 60 FPS ({recordingProgress}%)
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 font-semibold text-[10px]">
-                  <Camera size={11} className="text-emerald-400" />
-                  <span>1080p Engine</span>
-                </div>
-              )}
-            </div>
-
-            {/* Canvas Device Frame with Dynamic Island Mockup */}
-            <div className="py-6 flex items-center justify-center w-full min-h-[520px] relative z-10">
-              <div 
-                className={`relative rounded-[32px] p-2 bg-[#1C1E24] border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] transition-all ${
-                  aspectRatio === '9:16' ? 'max-w-[340px] sm:max-w-[360px]' : aspectRatio === '1:1' ? 'max-w-[460px]' : 'max-w-[640px]'
-                }`}
-                style={{
-                  aspectRatio: aspectRatio === '9:16' ? '9/16' : aspectRatio === '1:1' ? '1/1' : '16/9'
-                }}
-              >
-                {/* iPhone Dynamic Island pill (for 9:16 vertical reels) */}
-                {aspectRatio === '9:16' && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-black/90 border border-white/10 z-20 flex items-center justify-between px-3 pointer-events-none">
-                    <span className="w-2 h-2 rounded-full bg-black border border-white/20" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
-                  </div>
-                )}
-
-                <canvas
-                  ref={canvasRef}
-                  className="w-full h-full rounded-[24px] object-contain block bg-[#0B0D13]"
-                />
+              <div>
+                <h2 className="text-xl font-extrabold text-[#141518] tracking-tight">
+                  Step 1: What is the story of your video?
+                </h2>
+                <p className="text-xs text-[#50545E]">
+                  Type a concept or feature launch. Siddharth Menon will structure the 4 scenes automatically.
+                </p>
               </div>
             </div>
 
-            {/* Tactile Hardware Transport Bar */}
-            <div className="w-full pt-4 border-t border-white/10 flex flex-col gap-3.5 relative z-10">
-              <div className="flex items-center justify-between text-xs text-[#E5E7EE]">
-                <div className="flex items-center gap-3">
-                  {/* Play / Pause with Emil Kowalski spring active:scale-[0.97] */}
-                  <button
-                    onClick={togglePlay}
-                    className="w-10 h-10 rounded-2xl bg-white text-[#141518] hover:bg-emerald-400 hover:text-black flex items-center justify-center font-bold apple-motion-quick cursor-pointer active:scale-[0.97] shadow-md"
-                    title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-                  >
-                    {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-                  </button>
-
-                  {/* Restart */}
-                  <button
-                    onClick={handleRestart}
-                    className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center apple-motion-quick cursor-pointer active:scale-[0.97]"
-                    title="Restart from Beginning (R)"
-                  >
-                    <RotateCcw size={16} />
-                  </button>
-
-                  {/* Voiceover Speech Preview */}
-                  <button
-                    onClick={handleSpeakScene}
-                    className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 apple-motion-quick cursor-pointer active:scale-[0.97]"
-                    title="Listen to Voiceover via Web Speech API"
-                  >
-                    <Mic size={14} className="text-pink-400" />
-                    <span>Voice Preview</span>
-                  </button>
-                </div>
-
-                {/* Millisecond Accurate Time Display */}
-                <div className="font-mono text-sm tracking-wider">
-                  <span className="text-white font-bold">{currentTime.toFixed(1)}s</span>
-                  <span className="text-[#9AA0AC] mx-1">/</span>
-                  <span className="text-[#9AA0AC]">{totalDuration.toFixed(1)}s</span>
-                </div>
-              </div>
-
-              {/* Scrubber slider */}
+            {/* Input & Generator Button */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
-                type="range"
-                min="0"
-                max={totalDuration}
-                step="0.05"
-                value={currentTime}
-                onChange={(e) => {
-                  setCurrentTime(parseFloat(e.target.value));
-                  if (!isPlaying) playSoundEffect('tick');
-                }}
-                className="w-full accent-emerald-400 cursor-pointer h-2 bg-white/20 rounded-lg appearance-none"
+                type="text"
+                value={storyboardPrompt}
+                onChange={(e) => setStoryboardPrompt(e.target.value)}
+                placeholder="e.g. Why manual QA is dead in 2026, or Launching Harvey SDR Outbound..."
+                className="flex-1 px-4 py-3 rounded-2xl bg-white border border-[#9AA0AC]/30 text-sm text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518] shadow-apple-sm"
               />
+              <button
+                onClick={() => handleGenerateStoryboardOutline()}
+                disabled={isSynthesizingOutline || !storyboardPrompt.trim()}
+                className="btn-shine-effect px-6 py-3 rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.97] cursor-pointer disabled:opacity-40"
+              >
+                <Sparkles size={15} className="text-pink-400" />
+                <span>{isSynthesizingOutline ? 'Structuring...' : 'Generate Outline'}</span>
+              </button>
+            </div>
 
-              {/* 4 Interactive Scene Jump Markers */}
-              <div className="grid grid-cols-4 gap-2 pt-1">
-                {scenes.map((sc, i) => {
-                  const isCurrent = currentSceneInfo.index === i;
+            {/* Quick Inspiration Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <span className="text-[11px] font-bold text-[#50545E] uppercase tracking-wider">Inspiration:</span>
+              {[
+                'The Death of Manual QA',
+                'Harvey SDR Outbound Machine',
+                'Apple Glass Keynote Reveal',
+                '64-Agent Workforce Swarm'
+              ].map((pill, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setStoryboardPrompt(pill);
+                    handleGenerateStoryboardOutline(pill);
+                  }}
+                  className="px-3 py-1 rounded-xl bg-white/90 hover:bg-white text-xs font-semibold text-[#141518] border border-black/10 shadow-2xs active:scale-95 apple-motion-quick cursor-pointer"
+                >
+                  {pill}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 4 Interactive Storyboard Outline Cards (Gamma style) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[#50545E]">
+                Narrative Outline (4 Scenes • {totalDuration.toFixed(1)}s Total)
+              </h3>
+              <span className="text-xs text-[#50545E] font-medium">
+                Click any scene card to edit text inline
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {scenes.map((sc, idx) => (
+                <div
+                  key={sc.id}
+                  className="glass-specular bg-white/80 hover:bg-white rounded-3xl p-5 border border-white/80 shadow-apple-sm transition-all space-y-3 group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#141518]/5 text-[#141518] font-bold text-[10px] uppercase tracking-wider">
+                      Scene 0{idx + 1} • {sc.title}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                      {sc.duration}s
+                    </span>
+                  </div>
+
+                  <div>
+                    <input
+                      type="text"
+                      value={sc.tag}
+                      onChange={(e) => updateSceneField(idx, 'tag', e.target.value)}
+                      placeholder="Tag / Pill"
+                      className="text-[11px] font-bold text-pink-600 bg-pink-50 px-2 py-1 rounded-lg border border-pink-200 w-full mb-1.5 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={sc.mainText}
+                      onChange={(e) => updateSceneField(idx, 'mainText', e.target.value)}
+                      placeholder="Main Kinetic Headline"
+                      className="text-sm font-extrabold text-[#141518] bg-transparent border-b border-transparent hover:border-black/20 focus:border-black/50 w-full py-0.5 focus:outline-none"
+                    />
+                  </div>
+
+                  <textarea
+                    rows={2}
+                    value={sc.subText}
+                    onChange={(e) => updateSceneField(idx, 'subText', e.target.value)}
+                    placeholder="Subtext explanation"
+                    className="w-full text-xs text-[#50545E] bg-white/60 p-2 rounded-xl border border-black/5 focus:outline-none focus:ring-1 focus:ring-black/20 leading-relaxed"
+                  />
+
+                  <div className="flex items-center justify-between text-[11px] pt-1">
+                    <span className="text-[#9AA0AC] font-medium">Metric pod:</span>
+                    <input
+                      type="text"
+                      value={sc.metric || ''}
+                      onChange={(e) => updateSceneField(idx, 'metric', e.target.value)}
+                      placeholder="e.g. 542 BUGS"
+                      className="text-[11px] font-mono font-bold text-[#141518] bg-white px-2 py-0.5 rounded-lg border border-black/10 text-right focus:outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Continue Action */}
+          <div className="flex justify-end pt-4">
+            <button
+              onClick={() => {
+                setGammaStep(2);
+                playSoundEffect('whoosh');
+              }}
+              className="btn-shine-effect px-8 py-3.5 rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-white font-bold text-xs shadow-lg flex items-center gap-2 cursor-pointer active:scale-[0.97] apple-motion-quick"
+            >
+              <span>Continue to Visual Styles</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+
+        </main>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3. GAMMA-STYLE STEP 2: VISUAL STYLES & THEME GALLERY     */}
+      {/* ======================================================== */}
+      {gammaStep === 2 && (
+        <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8 animate-fadeIn">
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-extrabold text-[#141518] tracking-tight">
+                Step 2: Choose your Visual Style & Aesthetic
+              </h2>
+              <p className="text-xs text-[#50545E]">
+                Every style features tailored color chemistry, lighting, and typography physics.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setGammaStep(1)}
+              className="px-4 py-2 rounded-2xl bg-white/80 hover:bg-white text-xs font-semibold text-[#141518] border border-black/10 active:scale-95 cursor-pointer"
+            >
+              ◂ Back to Storyboard
+            </button>
+          </div>
+
+          {/* Visual Theme Cards Grid (Gamma Style) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {PRESET_TEMPLATES.map((tmpl) => {
+              const isSel = activeTemplate.id === tmpl.id;
+              return (
+                <div
+                  key={tmpl.id}
+                  onClick={() => handleSelectTemplate(tmpl)}
+                  className={`p-6 rounded-[32px] border transition-all cursor-pointer relative overflow-hidden group active:scale-[0.98] ${
+                    isSel
+                      ? 'bg-white border-[#141518] shadow-2xl ring-2 ring-[#141518]/20'
+                      : 'bg-white/75 hover:bg-white border-white/80 shadow-apple-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#141518]/5 text-[#141518]">
+                      {tmpl.category}
+                    </span>
+                    <span className="text-xs font-semibold text-[#50545E]">
+                      {tmpl.ratio} • {tmpl.platform}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-extrabold text-[#141518] mb-1">
+                    {tmpl.name}
+                  </h3>
+                  <p className="text-xs text-[#50545E] leading-relaxed mb-4">
+                    {tmpl.description}
+                  </p>
+
+                  {/* Live Color Swatches */}
+                  <div className="flex items-center gap-2 mb-4 p-2.5 rounded-2xl bg-[#141518]/5 border border-black/5">
+                    <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider mr-1">Palette:</span>
+                    {tmpl.palette.map((color, cIdx) => (
+                      <div
+                        key={cIdx}
+                        className="w-5 h-5 rounded-full border border-black/10 shadow-2xs"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                    <span className="text-[10px] text-[#50545E] ml-auto font-mono">{tmpl.fontPair}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-black/5 text-xs font-bold">
+                    <span className="text-emerald-700 flex items-center gap-1">
+                      <Sparkles size={13} /> {isSel ? 'Selected Theme' : 'Click to Apply'}
+                    </span>
+                    <span className="text-[#141518]">
+                      {isSel ? '✓ Active' : 'Select Style →'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Continue Action */}
+          <div className="flex justify-between items-center pt-4">
+            <button
+              onClick={() => setGammaStep(1)}
+              className="px-6 py-3 rounded-2xl bg-white hover:bg-white/90 text-xs font-semibold text-[#141518] border border-black/10 active:scale-95 cursor-pointer"
+            >
+              ◂ Back to Storyboard
+            </button>
+
+            <button
+              onClick={() => {
+                setGammaStep(3);
+                playSoundEffect('whoosh');
+              }}
+              className="btn-shine-effect px-8 py-3.5 rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-white font-bold text-xs shadow-lg flex items-center gap-2 cursor-pointer active:scale-[0.97] apple-motion-quick"
+            >
+              <span>Continue to Duration & Audio</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+
+        </main>
+      )}
+
+      {/* ======================================================== */}
+      {/* 4. GAMMA-STYLE STEP 3: DURATION, ASPECT RATIO & AUDIO    */}
+      {/* ======================================================== */}
+      {gammaStep === 3 && (
+        <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8 animate-fadeIn">
+          
+          <div>
+            <h2 className="text-xl font-extrabold text-[#141518] tracking-tight">
+              Step 3: Duration, Aspect Ratio & Sound Synthesis
+            </h2>
+            <p className="text-xs text-[#50545E]">
+              Select platform dimensions, video pacing, and procedural acoustic risers.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Format / Aspect Ratio */}
+            <div className="glass-specular bg-white/80 rounded-3xl p-6 border border-white/80 shadow-apple-sm space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#50545E] flex items-center gap-1.5">
+                <Smartphone size={15} /> Aspect Ratio & Format
+              </span>
+
+              <div className="space-y-2.5">
+                {[
+                  { id: '9:16', title: '9:16 Vertical Reel', desc: 'Instagram Reels, TikTok, YouTube Shorts', icon: Smartphone },
+                  { id: '16:9', title: '16:9 Widescreen', desc: 'YouTube, Presentations, Keynotes', icon: Monitor },
+                  { id: '1:1',  title: '1:1 Square Feed', desc: 'LinkedIn Feed, Instagram Grid', icon: Square }
+                ].map((ar) => {
+                  const isSel = aspectRatio === ar.id;
+                  const Icon = ar.icon;
                   return (
-                    <button
-                      key={sc.id}
-                      onClick={() => {
-                        let acc = 0;
-                        for (let k = 0; k < i; k++) acc += scenes[k].duration;
-                        setCurrentTime(acc);
-                        setSelectedSceneIndex(i);
-                        playSoundEffect('tick');
-                      }}
-                      className={`px-3 py-2 rounded-2xl text-left border apple-motion-quick cursor-pointer active:scale-[0.97] ${
-                        isCurrent
-                          ? 'bg-emerald-500/20 border-emerald-500/50 text-white shadow-sm'
-                          : 'bg-white/5 border-white/5 text-[#9AA0AC] hover:bg-white/10'
+                    <div
+                      key={ar.id}
+                      onClick={() => setAspectRatio(ar.id)}
+                      className={`p-3.5 rounded-2xl border cursor-pointer apple-motion-quick active:scale-[0.98] ${
+                        isSel
+                          ? 'bg-[#141518] text-white border-[#141518] shadow-sm'
+                          : 'bg-white hover:bg-white/80 text-[#141518] border-black/5'
                       }`}
                     >
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                        Scene 0{i + 1}
+                      <div className="flex items-center gap-2 font-bold text-xs mb-0.5">
+                        <Icon size={14} className={isSel ? 'text-pink-400' : 'text-[#50545E]'} />
+                        <span>{ar.title}</span>
                       </div>
-                      <div className="text-xs font-semibold truncate text-white">
-                        {sc.title}
-                      </div>
-                    </button>
+                      <p className={`text-[11px] ${isSel ? 'text-white/70' : 'text-[#50545E]'}`}>
+                        {ar.desc}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Pacing & Duration */}
+            <div className="glass-specular bg-white/80 rounded-3xl p-6 border border-white/80 shadow-apple-sm space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#50545E] flex items-center gap-1.5">
+                <Clock size={15} /> Pacing & Duration
+              </span>
+
+              <div className="space-y-2.5">
+                {[
+                  { id: '10s', title: '⚡ 10s Snappy Teaser', desc: 'High hook retention, 2.5s rapid cuts' },
+                  { id: '15s', title: '🎬 15s Standard Viral Reel', desc: 'Sweet spot for Instagram Reels & Shorts' },
+                  { id: '30s', title: '📹 30s Explainer Reel', desc: 'In-depth narrative with technical data' }
+                ].map((pc) => {
+                  const isSel = selectedPacing === pc.id;
+                  return (
+                    <div
+                      key={pc.id}
+                      onClick={() => setSelectedPacing(pc.id)}
+                      className={`p-3.5 rounded-2xl border cursor-pointer apple-motion-quick active:scale-[0.98] ${
+                        isSel
+                          ? 'bg-[#141518] text-white border-[#141518] shadow-sm'
+                          : 'bg-white hover:bg-white/80 text-[#141518] border-black/5'
+                      }`}
+                    >
+                      <span className="block font-bold text-xs mb-0.5">{pc.title}</span>
+                      <p className={`text-[11px] ${isSel ? 'text-white/70' : 'text-[#50545E]'}`}>
+                        {pc.desc}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Procedural Web Audio Synth */}
+            <div className="glass-specular bg-white/80 rounded-3xl p-6 border border-white/80 shadow-apple-sm space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#50545E] flex items-center gap-1.5">
+                <Music size={15} /> Sound Synthesizer
+              </span>
+
+              <div className="space-y-2.5">
+                {[
+                  { id: 'tech-riser', title: '🎵 Cyber Tech Riser', desc: 'White noise whoosh + filtered sub-bass' },
+                  { id: 'apple-ambient', title: '🔊 Minimal Studio Ambient', desc: 'Subtle high-frequency sine pulses' },
+                  { id: 'muted', title: '🔇 Muted / Silent', desc: 'Export video without audio tracks' }
+                ].map((snd) => {
+                  const isSel = audioPreset === snd.id;
+                  return (
+                    <div
+                      key={snd.id}
+                      onClick={() => {
+                        setAudioPreset(snd.id);
+                        if (snd.id !== 'muted') playSoundEffect('whoosh');
+                      }}
+                      className={`p-3.5 rounded-2xl border cursor-pointer apple-motion-quick active:scale-[0.98] ${
+                        isSel
+                          ? 'bg-[#141518] text-white border-[#141518] shadow-sm'
+                          : 'bg-white hover:bg-white/80 text-[#141518] border-black/5'
+                      }`}
+                    >
+                      <span className="block font-bold text-xs mb-0.5">{snd.title}</span>
+                      <p className={`text-[11px] ${isSel ? 'text-white/70' : 'text-[#50545E]'}`}>
+                        {snd.desc}
+                      </p>
+                    </div>
                   );
                 })}
               </div>
@@ -1263,494 +1487,532 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
 
           </div>
 
-          {/* Social Quick Bar Below Player */}
-          <div className="w-full mt-4 flex items-center justify-between p-4 rounded-3xl bg-white/80 backdrop-blur-xl border border-white/80 shadow-apple-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#141518]">Target Formats:</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-bold text-[11px]">Instagram Reels</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-bold text-[11px]">YouTube Shorts</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold text-[11px]">LinkedIn</span>
-            </div>
+          {/* Continue / Generate Video Button */}
+          <div className="flex justify-between items-center pt-4">
+            <button
+              onClick={() => setGammaStep(2)}
+              className="px-6 py-3 rounded-2xl bg-white hover:bg-white/90 text-xs font-semibold text-[#141518] border border-black/10 active:scale-95 cursor-pointer"
+            >
+              ◂ Back to Visual Styles
+            </button>
 
             <button
-              onClick={handleCopyCaption}
-              className="btn-shine-effect flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white hover:bg-white/90 border border-black/10 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.97] cursor-pointer apple-motion-quick"
+              onClick={() => {
+                setGammaStep(4);
+                setCurrentTime(0);
+                setIsPlaying(true);
+                playSoundEffect('whoosh');
+                playSoundEffect('bass');
+              }}
+              className="btn-shine-effect px-10 py-4 rounded-3xl bg-[#141518] hover:bg-[#2B2D33] text-white font-bold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer active:scale-[0.97] apple-motion-quick"
             >
-              {copiedCaption ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-              <span>{copiedCaption ? 'Copied Post Copy!' : 'Copy Viral Caption'}</span>
+              <Zap size={17} className="text-pink-400" />
+              <span>Generate 60 FPS Video in Cinema Stage →</span>
             </button>
           </div>
 
-        </section>
+        </main>
+      )}
 
-        {/* ────────────────────────────────────────────────────────── */}
-        {/* RIGHT COLUMN: DIRECTOR DECK & ANIMATOR CONTROLS (COL 8-12) */}
-        {/* ────────────────────────────────────────────────────────── */}
-        <section className="xl:col-span-5 flex flex-col gap-6">
+      {/* ======================================================== */}
+      {/* 5. GAMMA-STYLE STEP 4: CINEMA STAGE & AI ANIMATOR        */}
+      {/* ======================================================== */}
+      {gammaStep === 4 && (
+        <main className="flex-1 p-6 sm:p-8 max-w-[1700px] w-full mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 pb-16 animate-fadeIn">
 
-          {/* macOS Sonoma Segmented Tab Switcher */}
-          <div className="p-1 rounded-2xl bg-white/70 backdrop-blur-2xl border border-white/80 shadow-apple-sm flex items-center justify-between">
-            {[
-              { id: 'animator',  label: 'AI Animator', icon: Bot },
-              { id: 'scenes',    label: 'Storyboard',  icon: Layers },
-              { id: 'templates', label: 'Styles',      icon: Film },
-              { id: 'ai',        label: 'AI Script',   icon: Wand2 },
-              { id: 'export',    label: 'Publish',     icon: Share2 }
-            ].map((tab) => {
-              const isSel = activeTab === tab.id;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 apple-motion-quick cursor-pointer active:scale-[0.97] ${
-                    isSel
-                      ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
-                      : 'text-[#50545E] hover:text-[#141518] hover:bg-white/60'
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* TAB 0: DEDICATED AI ANIMATOR (SIDDHARTH MENON)           */}
-          {/* ──────────────────────────────────────────────────────── */}
-          {activeTab === 'animator' && (
-            <div className="space-y-4">
+          {/* ────────────────────────────────────────────────────────── */}
+          {/* LEFT COLUMN: THE HARDWARE VIEWPORT STAGE (COL 1-7)         */}
+          {/* ────────────────────────────────────────────────────────── */}
+          <section className="xl:col-span-7 flex flex-col items-center">
+            
+            {/* Hardware Device Shell Container */}
+            <div className="w-full flex flex-col items-center justify-center p-6 sm:p-8 rounded-[36px] bg-[#141518] shadow-2xl border border-white/10 relative overflow-hidden group">
               
-              {/* Animator Profile & Shift Card */}
-              <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 text-white flex items-center justify-center font-bold text-base shadow-md ring-2 ring-white/60">
-                      SM
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-[#141518]">Siddharth Menon</h3>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/30 uppercase">
-                          AI Animator
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#50545E] font-medium">
-                        Lead Motion Director & 3D Animator • Dept 04 (Design Studio)
-                      </p>
-                    </div>
-                  </div>
+              {/* Ambient Backlight Mesh behind device */}
+              <div 
+                className="absolute inset-0 pointer-events-none opacity-40 blur-3xl transition-all duration-700"
+                style={{
+                  background: `radial-gradient(circle at 50% 40%, ${activeTemplate.accentColor || '#10B981'}35 0%, transparent 70%)`
+                }}
+              />
 
-                  {/* Shift Toggle */}
-                  <div className="flex items-center gap-1 bg-[#141518]/5 p-1 rounded-xl border border-black/5">
-                    {['ACTIVE', 'REVIEW', 'STANDBY'].map((st) => (
-                      <button
-                        key={st}
-                        onClick={() => setAnimatorShiftStatus(st)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer apple-motion-quick active:scale-[0.97] ${
-                          animatorShiftStatus === st
-                            ? 'bg-[#141518] text-white shadow-2xs'
-                            : 'text-[#50545E] hover:text-[#141518]'
-                        }`}
-                      >
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <p className="text-xs text-[#50545E] bg-white/60 p-3 rounded-2xl border border-black/5 leading-relaxed">
-                  "I turn your technical specs, QA releases, and outbound sales signals into 60 FPS code-driven cinema. Tell me what to animate below or tap a quick directive!"
-                </p>
-
-                {/* Telemetry Capsules */}
-                <div className="grid grid-cols-3 gap-2 text-[11px] pt-1">
-                  <div className="p-2.5 rounded-2xl bg-white/80 border border-black/5 text-center">
-                    <span className="block text-[#50545E] text-[10px] font-medium">Engine</span>
-                    <strong className="text-[#141518] font-bold">Lemo-Opuscar</strong>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-white/80 border border-black/5 text-center">
-                    <span className="block text-[#50545E] text-[10px] font-medium">Frame Budget</span>
-                    <strong className="text-emerald-700 font-bold">60 FPS Smooth</strong>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-white/80 border border-black/5 text-center">
-                    <span className="block text-[#50545E] text-[10px] font-medium">Audio Synthesizer</span>
-                    <strong className="text-[#141518] font-bold">Web Audio API</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Directing & Chat Console */}
-              <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card flex flex-col h-[380px]">
-                <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] mb-3">
-                  <span className="text-xs font-bold text-[#141518] flex items-center gap-1.5">
-                    <Bot size={14} className="text-purple-600" />
-                    <span>Directing Console</span>
-                  </span>
-                  <span className="text-[11px] text-[#50545E] font-medium">
-                    Founder Aman ⇄ Siddharth
+              {/* Device Header Pill */}
+              <div className="w-full flex items-center justify-between pb-4 border-b border-white/10 text-xs text-[#9AA0AC] relative z-10">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F25B5B]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F6A943]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#3ECF8E]" />
+                  <span className="font-mono text-[11px] text-white/60 ml-2">
+                    OPUSCAR • {aspectRatio} • {activeTemplate.name}
                   </span>
                 </div>
 
-                {/* Messages Log */}
-                <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
-                  {animatorMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col ${
-                        msg.sender === 'user' ? 'items-end' : 'items-start'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 mb-1 px-1">
-                        <span className="font-bold text-[10px] text-[#50545E]">{msg.name}</span>
-                        <span className="text-[9px] text-[#9AA0AC]">{msg.time}</span>
-                      </div>
-                      <div
-                        className={`p-3 rounded-2xl max-w-[88%] leading-relaxed ${
-                          msg.sender === 'user'
-                            ? 'bg-[#141518] text-[#E5E7EE] rounded-tr-xs shadow-sm font-medium'
-                            : 'bg-white border border-[#9AA0AC]/30 text-[#141518] rounded-tl-xs shadow-apple-sm'
-                        }`}
-                      >
-                        {msg.text}
-                      </div>
-                    </div>
-                  ))}
-
-                  {isAnimatorTyping && (
-                    <div className="flex items-center gap-2 p-2.5 bg-white/60 rounded-2xl w-fit border border-black/5 animate-pulse">
-                      <div className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
-                      <span className="text-[11px] font-bold text-purple-700">Siddharth is updating the timeline...</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Quick Directive Pills */}
-                <div className="pt-3 border-t border-black/[0.06] mt-2">
-                  <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
-                    {[
-                      '⚡ Viral Reel (9:16)',
-                      '🍏 Apple Minimal Glass',
-                      '💰 Harvey ₹2,00,000 ARR',
-                      '🤖 64-Agent Swarm',
-                      '🔥 The Death of Manual QA'
-                    ].map((pill, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleDirectAnimator(pill)}
-                        className="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-white text-[10px] font-bold text-[#141518] border border-black/10 shadow-2xs whitespace-nowrap cursor-pointer active:scale-[0.97] apple-motion-quick"
-                      >
-                        {pill}
-                      </button>
-                    ))}
+                {isRecording ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-bold text-[10px] animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    REC 60 FPS ({recordingProgress}%)
                   </div>
-
-                  {/* Input form */}
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleDirectAnimator();
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <input
-                      type="text"
-                      value={animatorInput}
-                      onChange={(e) => setAnimatorInput(e.target.value)}
-                      placeholder="Instruct Siddharth (e.g. 'Make a 9:16 vertical reel about why manual QA is dead')..."
-                      className="flex-1 px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!animatorInput.trim() || isAnimatorTyping}
-                      className="p-2 rounded-xl bg-[#141518] text-white hover:bg-[#2B2D33] shadow-sm cursor-pointer disabled:opacity-40 active:scale-[0.97] apple-motion-quick"
-                    >
-                      <Send size={14} />
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* TAB 1: STORYBOARD & SCENE EDITOR                         */}
-          {/* ──────────────────────────────────────────────────────── */}
-          {activeTab === 'scenes' && (
-            <div className="space-y-4">
-              <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-4">
-                <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-[#141518]">Live Storyboard Editor</h3>
-                    <p className="text-xs text-[#50545E]">Edit on-screen text, metrics, and hooks in real time.</p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {scenes.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedSceneIndex(idx)}
-                        className={`w-8 h-8 rounded-xl font-bold text-xs apple-motion-quick cursor-pointer active:scale-[0.97] ${
-                          selectedSceneIndex === idx
-                            ? 'bg-[#141518] text-white shadow-sm'
-                            : 'bg-white/80 text-[#50545E] hover:bg-white'
-                        }`}
-                      >
-                        {idx + 1}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {scenes[selectedSceneIndex] && (
-                  <div className="space-y-3.5">
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                        Scene 0{selectedSceneIndex + 1} Title & Category
-                      </label>
-                      <input
-                        type="text"
-                        value={scenes[selectedSceneIndex].title}
-                        onChange={(e) => updateSceneField(selectedSceneIndex, 'title', e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-semibold focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                        Pill Tag (Top Badge)
-                      </label>
-                      <input
-                        type="text"
-                        value={scenes[selectedSceneIndex].tag}
-                        onChange={(e) => updateSceneField(selectedSceneIndex, 'tag', e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-semibold focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                        Main Kinetic Headline (Uppercase)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={scenes[selectedSceneIndex].mainText}
-                        onChange={(e) => updateSceneField(selectedSceneIndex, 'mainText', e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-bold focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                        Subtitle / Explanation
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={scenes[selectedSceneIndex].subText}
-                        onChange={(e) => updateSceneField(selectedSceneIndex, 'subText', e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                          Metric Callout
-                        </label>
-                        <input
-                          type="text"
-                          value={scenes[selectedSceneIndex].metric || ''}
-                          onChange={(e) => updateSceneField(selectedSceneIndex, 'metric', e.target.value)}
-                          placeholder="e.g. 542 BUGS"
-                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs font-mono font-bold text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                          Duration (Sec)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="1"
-                          max="10"
-                          value={scenes[selectedSceneIndex].duration}
-                          onChange={(e) => updateSceneField(selectedSceneIndex, 'duration', parseFloat(e.target.value) || 3)}
-                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs font-mono font-bold text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                        />
-                      </div>
-                    </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 font-semibold text-[10px]">
+                    <Camera size={11} className="text-emerald-400" />
+                    <span>1080p Engine</span>
                   </div>
                 )}
               </div>
-            </div>
-          )}
 
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* TAB 2: FILM STYLES & TEMPLATES (LEMO-OPUSCAR)            */}
-          {/* ──────────────────────────────────────────────────────── */}
-          {activeTab === 'templates' && (
-            <div className="space-y-3.5">
-              {PRESET_TEMPLATES.map((tmpl) => {
-                const isSel = activeTemplate.id === tmpl.id;
-                return (
-                  <div
-                    key={tmpl.id}
-                    onClick={() => handleSelectTemplate(tmpl)}
-                    className={`p-5 rounded-3xl border transition-all cursor-pointer active:scale-[0.98] ${
-                      isSel
-                        ? 'bg-white border-[#141518] shadow-apple-card ring-2 ring-[#141518]/20'
-                        : 'bg-white/70 hover:bg-white border-white/80 shadow-apple-sm'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#141518]/5 text-[#141518]">
-                        {tmpl.category}
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#50545E]">
-                        {tmpl.duration}s • {tmpl.ratio}
-                      </span>
+              {/* Canvas Device Frame with Dynamic Island Mockup */}
+              <div className="py-6 flex items-center justify-center w-full min-h-[520px] relative z-10">
+                <div 
+                  className={`relative rounded-[32px] p-2 bg-[#1C1E24] border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] transition-all ${
+                    aspectRatio === '9:16' ? 'max-w-[340px] sm:max-w-[360px]' : aspectRatio === '1:1' ? 'max-w-[460px]' : 'max-w-[640px]'
+                  }`}
+                  style={{
+                    aspectRatio: aspectRatio === '9:16' ? '9/16' : aspectRatio === '1:1' ? '1/1' : '16/9'
+                  }}
+                >
+                  {/* iPhone Dynamic Island pill (for 9:16 vertical reels) */}
+                  {aspectRatio === '9:16' && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-black/90 border border-white/10 z-20 flex items-center justify-between px-3 pointer-events-none">
+                      <span className="w-2 h-2 rounded-full bg-black border border-white/20" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
                     </div>
+                  )}
 
-                    <h4 className="text-sm font-bold text-[#141518] mb-1">
-                      {tmpl.name}
-                    </h4>
-                    <p className="text-xs text-[#50545E] leading-relaxed">
-                      {tmpl.description}
-                    </p>
-
-                    <div className="mt-3.5 flex items-center justify-between text-[11px] pt-2.5 border-t border-black/[0.05]">
-                      <span className="font-semibold text-emerald-700 flex items-center gap-1">
-                        <Sparkles size={12} /> {tmpl.platform}
-                      </span>
-                      <span className="text-[#141518] font-bold">
-                        {isSel ? '✓ Active Style' : 'Apply Style →'}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* TAB 3: AI SCRIPT TO VIDEO GENERATOR                      */}
-          {/* ──────────────────────────────────────────────────────── */}
-          {activeTab === 'ai' && (
-            <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-[#141518]">AI Viral Reel Script Generator</h3>
-                <p className="text-xs text-[#50545E]">Type any feature, launch, or product topic. We will structure the 4 scenes automatically.</p>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                  Topic / Launch Premise
-                </label>
-                <textarea
-                  rows={3}
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="e.g. Why AI Agents are replacing traditional manual QA teams in 2026..."
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                />
-              </div>
-
-              {/* Sample Topic Pills */}
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider">Quick Suggestions:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    'Playwright vs InfratechAI 64 Agents',
-                    'How Harvey SDR Closes ₹25,000 Retainers',
-                    'Zero-Downtime Autonomous DevOps'
-                  ].map((sug, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setAiPrompt(sug)}
-                      className="px-2.5 py-1 rounded-xl bg-white/80 hover:bg-white text-[11px] text-[#141518] font-semibold border border-[#9AA0AC]/30 apple-motion-quick cursor-pointer active:scale-[0.97]"
-                    >
-                      {sug}
-                    </button>
-                  ))}
+                  <canvas
+                    ref={canvasRef}
+                    className="w-full h-full rounded-[24px] object-contain block bg-[#0B0D13]"
+                  />
                 </div>
+              </div>
+
+              {/* Tactile Hardware Transport Bar */}
+              <div className="w-full pt-4 border-t border-white/10 flex flex-col gap-3.5 relative z-10">
+                <div className="flex items-center justify-between text-xs text-[#E5E7EE]">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={togglePlay}
+                      className="w-10 h-10 rounded-2xl bg-white text-[#141518] hover:bg-emerald-400 hover:text-black flex items-center justify-center font-bold apple-motion-quick cursor-pointer active:scale-[0.97] shadow-md"
+                      title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+                    >
+                      {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+                    </button>
+
+                    <button
+                      onClick={handleRestart}
+                      className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center apple-motion-quick cursor-pointer active:scale-[0.97]"
+                      title="Restart from Beginning (R)"
+                    >
+                      <RotateCcw size={16} />
+                    </button>
+
+                    <button
+                      onClick={handleSpeakScene}
+                      className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 apple-motion-quick cursor-pointer active:scale-[0.97]"
+                      title="Listen to Voiceover via Web Speech API"
+                    >
+                      <Mic size={14} className="text-pink-400" />
+                      <span>Voice Preview</span>
+                    </button>
+                  </div>
+
+                  {/* Millisecond Accurate Time Display */}
+                  <div className="font-mono text-sm tracking-wider">
+                    <span className="text-white font-bold">{currentTime.toFixed(1)}s</span>
+                    <span className="text-[#9AA0AC] mx-1">/</span>
+                    <span className="text-[#9AA0AC]">{totalDuration.toFixed(1)}s</span>
+                  </div>
+                </div>
+
+                {/* Scrubber slider */}
+                <input
+                  type="range"
+                  min="0"
+                  max={totalDuration}
+                  step="0.05"
+                  value={currentTime}
+                  onChange={(e) => {
+                    setCurrentTime(parseFloat(e.target.value));
+                    if (!isPlaying) playSoundEffect('tick');
+                  }}
+                  className="w-full accent-emerald-400 cursor-pointer h-2 bg-white/20 rounded-lg appearance-none"
+                />
+
+                {/* 4 Interactive Scene Jump Markers */}
+                <div className="grid grid-cols-4 gap-2 pt-1">
+                  {scenes.map((sc, i) => {
+                    const isCurrent = currentSceneInfo.index === i;
+                    return (
+                      <button
+                        key={sc.id}
+                        onClick={() => {
+                          let acc = 0;
+                          for (let k = 0; k < i; k++) acc += scenes[k].duration;
+                          setCurrentTime(acc);
+                          setSelectedSceneIndex(i);
+                          playSoundEffect('tick');
+                        }}
+                        className={`px-3 py-2 rounded-2xl text-left border apple-motion-quick cursor-pointer active:scale-[0.97] ${
+                          isCurrent
+                            ? 'bg-emerald-500/20 border-emerald-500/50 text-white shadow-sm'
+                            : 'bg-white/5 border-white/5 text-[#9AA0AC] hover:bg-white/10'
+                        }`}
+                      >
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                          Scene 0{i + 1}
+                        </div>
+                        <div className="text-xs font-semibold truncate text-white">
+                          {sc.title}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Social Quick Bar Below Player */}
+            <div className="w-full mt-4 flex items-center justify-between p-4 rounded-3xl bg-white/80 backdrop-blur-xl border border-white/80 shadow-apple-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#141518]">Gamma Stage:</span>
+                <button
+                  onClick={() => setGammaStep(1)}
+                  className="px-2.5 py-1 rounded-xl bg-black/5 hover:bg-black/10 text-[11px] font-semibold text-[#141518] cursor-pointer"
+                >
+                  📝 Edit Storyboard
+                </button>
+                <button
+                  onClick={() => setGammaStep(2)}
+                  className="px-2.5 py-1 rounded-xl bg-black/5 hover:bg-black/10 text-[11px] font-semibold text-[#141518] cursor-pointer"
+                >
+                  🎨 Change Style
+                </button>
               </div>
 
               <button
-                onClick={handleGenerateAiScript}
-                disabled={isAiGenerating || !aiPrompt.trim()}
-                className="w-full btn-shine-effect py-2.5 rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.97] cursor-pointer disabled:opacity-50"
+                onClick={handleCopyCaption}
+                className="btn-shine-effect flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white hover:bg-white/90 border border-black/10 text-xs font-semibold text-[#141518] shadow-apple-sm active:scale-[0.97] cursor-pointer apple-motion-quick"
               >
-                <Wand2 size={14} className="text-pink-400" />
-                <span>{isAiGenerating ? 'Synthesizing Storyboard...' : 'Generate 4-Scene Reel Script'}</span>
+                {copiedCaption ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                <span>{copiedCaption ? 'Copied Post Copy!' : 'Copy Viral Caption'}</span>
               </button>
             </div>
-          )}
 
-          {/* ──────────────────────────────────────────────────────── */}
-          {/* TAB 4: PUBLISH & SOCIAL EXPORT DECK                      */}
-          {/* ──────────────────────────────────────────────────────── */}
-          {activeTab === 'export' && (
-            <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-[#141518]">Publish & Share</h3>
-                <p className="text-xs text-[#50545E]">Export high-bitrate video, thumbnail, and viral copy ready for posting.</p>
-              </div>
+          </section>
 
-              <div className="p-4 rounded-3xl bg-[#141518] text-white space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
-                  <span>Export Spec:</span>
-                  <span className="text-emerald-400">1080p • 60 FPS • WebM / MP4</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
-                  <span>Total Duration:</span>
-                  <span className="text-white font-mono">{totalDuration.toFixed(1)} seconds</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
-                  <span>Aspect Ratio:</span>
-                  <span className="text-white">{aspectRatio} ({aspectRatio === '9:16' ? 'Reels / Shorts' : aspectRatio === '16:9' ? 'YouTube' : 'Feed'})</span>
-                </div>
-              </div>
+          {/* ────────────────────────────────────────────────────────── */}
+          {/* RIGHT COLUMN: DIRECTOR DECK & ANIMATOR CONTROLS (COL 8-12) */}
+          {/* ────────────────────────────────────────────────────────── */}
+          <section className="xl:col-span-5 flex flex-col gap-6">
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleExportVideo}
-                  disabled={isRecording}
-                  className="btn-shine-effect py-2.5 rounded-2xl bg-[#141518] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 active:scale-[0.97]"
-                >
-                  <Video size={14} className="text-pink-400" />
-                  <span>{isRecording ? 'Exporting...' : 'Export Video'}</span>
-                </button>
-
-                <button
-                  onClick={handleDownloadPoster}
-                  className="btn-shine-effect py-2.5 rounded-2xl bg-white hover:bg-white/90 border border-[#9AA0AC]/40 text-[#141518] text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-[0.97]"
-                >
-                  <Download size={14} className="text-[#50545E]" />
-                  <span>Poster Frame</span>
-                </button>
-              </div>
-
-              <div className="border-t border-black/[0.08] pt-3">
-                <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                  Ready-To-Post Caption
-                </label>
-                <button
-                  onClick={handleCopyCaption}
-                  className="w-full py-2.5 rounded-2xl bg-white/90 hover:bg-white border border-[#9AA0AC]/30 text-xs font-semibold text-[#141518] flex items-center justify-center gap-2 shadow-2xs cursor-pointer active:scale-[0.97]"
-                >
-                  {copiedCaption ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                  <span>{copiedCaption ? 'Copied to Clipboard!' : 'Copy Caption & Hashtags'}</span>
-                </button>
-              </div>
+            {/* macOS Sonoma Segmented Tab Switcher */}
+            <div className="p-1 rounded-2xl bg-white/70 backdrop-blur-2xl border border-white/80 shadow-apple-sm flex items-center justify-between">
+              {[
+                { id: 'animator',  label: 'AI Animator', icon: Bot },
+                { id: 'scenes',    label: 'Scene Editor', icon: Layers },
+                { id: 'export',    label: 'Publish & Export', icon: Share2 }
+              ].map((tab) => {
+                const isSel = studioTab === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setStudioTab(tab.id)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 apple-motion-quick cursor-pointer active:scale-[0.97] ${
+                      isSel
+                        ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
+                        : 'text-[#50545E] hover:text-[#141518] hover:bg-white/60'
+                    }`}
+                  >
+                    <Icon size={14} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
-          )}
 
-        </section>
+            {/* TAB 0: DEDICATED AI ANIMATOR (SIDDHARTH MENON) */}
+            {studioTab === 'animator' && (
+              <div className="space-y-4">
+                
+                {/* Animator Profile & Shift Card */}
+                <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 text-white flex items-center justify-center font-bold text-base shadow-md ring-2 ring-white/60">
+                        SM
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-[#141518]">Siddharth Menon</h3>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/30 uppercase">
+                            AI Animator
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#50545E] font-medium">
+                          Lead Motion Director & 3D Animator • Dept 04 (Design Studio)
+                        </p>
+                      </div>
+                    </div>
 
-      </main>
+                    {/* Shift Toggle */}
+                    <div className="flex items-center gap-1 bg-[#141518]/5 p-1 rounded-xl border border-black/5">
+                      {['ACTIVE', 'REVIEW', 'STANDBY'].map((st) => (
+                        <button
+                          key={st}
+                          onClick={() => setAnimatorShiftStatus(st)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer apple-motion-quick active:scale-[0.97] ${
+                            animatorShiftStatus === st
+                              ? 'bg-[#141518] text-white shadow-2xs'
+                              : 'text-[#50545E] hover:text-[#141518]'
+                          }`}
+                        >
+                          {st}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-[#50545E] bg-white/60 p-3 rounded-2xl border border-black/5 leading-relaxed">
+                    "I turn your technical specs, QA releases, and outbound sales signals into 60 FPS code-driven cinema. Tell me what to animate below or tap a quick directive!"
+                  </p>
+                </div>
+
+                {/* Directing & Chat Console */}
+                <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card flex flex-col h-[380px]">
+                  <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] mb-3">
+                    <span className="text-xs font-bold text-[#141518] flex items-center gap-1.5">
+                      <Bot size={14} className="text-purple-600" />
+                      <span>Directing Console</span>
+                    </span>
+                    <span className="text-[11px] text-[#50545E] font-medium">
+                      Founder Aman ⇄ Siddharth
+                    </span>
+                  </div>
+
+                  {/* Messages Log */}
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                    {animatorMessages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${
+                          msg.sender === 'user' ? 'items-end' : 'items-start'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1 px-1">
+                          <span className="font-bold text-[10px] text-[#50545E]">{msg.name}</span>
+                          <span className="text-[9px] text-[#9AA0AC]">{msg.time}</span>
+                        </div>
+                        <div
+                          className={`p-3 rounded-2xl max-w-[88%] leading-relaxed ${
+                            msg.sender === 'user'
+                              ? 'bg-[#141518] text-[#E5E7EE] rounded-tr-xs shadow-sm font-medium'
+                              : 'bg-white border border-[#9AA0AC]/30 text-[#141518] rounded-tl-xs shadow-apple-sm'
+                          }`}
+                        >
+                          {msg.text}
+                        </div>
+                      </div>
+                    ))}
+
+                    {isAnimatorTyping && (
+                      <div className="flex items-center gap-2 p-2.5 bg-white/60 rounded-2xl w-fit border border-black/5 animate-pulse">
+                        <div className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
+                        <span className="text-[11px] font-bold text-purple-700">Siddharth is updating the timeline...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Directive Pills */}
+                  <div className="pt-3 border-t border-black/[0.06] mt-2">
+                    <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
+                      {[
+                        '⚡ Viral Reel (9:16)',
+                        '🍏 Apple Minimal Glass',
+                        '💰 Harvey ₹2,00,000 ARR',
+                        '🤖 64-Agent Swarm',
+                        '🔥 The Death of Manual QA'
+                      ].map((pill, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleDirectAnimator(pill)}
+                          className="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-white text-[10px] font-bold text-[#141518] border border-black/10 shadow-2xs whitespace-nowrap cursor-pointer active:scale-[0.97] apple-motion-quick"
+                        >
+                          {pill}
+                        </button>
+                      ))}
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleDirectAnimator();
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={animatorInput}
+                        onChange={(e) => setAnimatorInput(e.target.value)}
+                        placeholder="Instruct Siddharth (e.g. 'Make a 9:16 vertical reel about why manual QA is dead')..."
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!animatorInput.trim() || isAnimatorTyping}
+                        className="p-2 rounded-xl bg-[#141518] text-white hover:bg-[#2B2D33] shadow-sm cursor-pointer disabled:opacity-40 active:scale-[0.97] apple-motion-quick"
+                      >
+                        <Send size={14} />
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* TAB 1: SCENE EDITOR */}
+            {studioTab === 'scenes' && (
+              <div className="space-y-4">
+                <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-4">
+                  <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#141518]">Direct Scene Overrides</h3>
+                      <p className="text-xs text-[#50545E]">Edit on-screen text, metrics, and hooks in real time.</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {scenes.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setSelectedSceneIndex(idx)}
+                          className={`w-8 h-8 rounded-xl font-bold text-xs apple-motion-quick cursor-pointer active:scale-[0.97] ${
+                            selectedSceneIndex === idx
+                              ? 'bg-[#141518] text-white shadow-sm'
+                              : 'bg-white/80 text-[#50545E] hover:bg-white'
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {scenes[selectedSceneIndex] && (
+                    <div className="space-y-3.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                          Scene 0{selectedSceneIndex + 1} Title
+                        </label>
+                        <input
+                          type="text"
+                          value={scenes[selectedSceneIndex].title}
+                          onChange={(e) => updateSceneField(selectedSceneIndex, 'title', e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-semibold focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                          Pill Tag
+                        </label>
+                        <input
+                          type="text"
+                          value={scenes[selectedSceneIndex].tag}
+                          onChange={(e) => updateSceneField(selectedSceneIndex, 'tag', e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-semibold focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                          Main Headline
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={scenes[selectedSceneIndex].mainText}
+                          onChange={(e) => updateSceneField(selectedSceneIndex, 'mainText', e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-bold focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                          Subtitle
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={scenes[selectedSceneIndex].subText}
+                          onChange={(e) => updateSceneField(selectedSceneIndex, 'subText', e.target.value)}
+                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: PUBLISH & EXPORT */}
+            {studioTab === 'export' && (
+              <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-[#141518]">Publish & Share</h3>
+                  <p className="text-xs text-[#50545E]">Export high-bitrate video, thumbnail, and viral copy ready for posting.</p>
+                </div>
+
+                <div className="p-4 rounded-3xl bg-[#141518] text-white space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
+                    <span>Export Spec:</span>
+                    <span className="text-emerald-400">1080p • 60 FPS • WebM / MP4</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
+                    <span>Total Duration:</span>
+                    <span className="text-white font-mono">{totalDuration.toFixed(1)} seconds</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
+                    <span>Aspect Ratio:</span>
+                    <span className="text-white">{aspectRatio} ({aspectRatio === '9:16' ? 'Reels / Shorts' : aspectRatio === '16:9' ? 'YouTube' : 'Feed'})</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleExportVideo}
+                    disabled={isRecording}
+                    className="btn-shine-effect py-2.5 rounded-2xl bg-[#141518] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 active:scale-[0.97]"
+                  >
+                    <Video size={14} className="text-pink-400" />
+                    <span>{isRecording ? 'Exporting...' : 'Export Video'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadPoster}
+                    className="btn-shine-effect py-2.5 rounded-2xl bg-white hover:bg-white/90 border border-[#9AA0AC]/40 text-[#141518] text-xs font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-[0.97]"
+                  >
+                    <Download size={14} className="text-[#50545E]" />
+                    <span>Poster Frame</span>
+                  </button>
+                </div>
+
+                <div className="border-t border-black/[0.08] pt-3">
+                  <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                    Ready-To-Post Caption
+                  </label>
+                  <button
+                    onClick={handleCopyCaption}
+                    className="w-full py-2.5 rounded-2xl bg-white/90 hover:bg-white border border-[#9AA0AC]/30 text-xs font-semibold text-[#141518] flex items-center justify-center gap-2 shadow-2xs cursor-pointer active:scale-[0.97]"
+                  >
+                    {copiedCaption ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                    <span>{copiedCaption ? 'Copied to Clipboard!' : 'Copy Caption & Hashtags'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </section>
+
+        </main>
+      )}
 
     </div>
   );

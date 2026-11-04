@@ -70,9 +70,23 @@ export const LoginView = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-2xl flex items-start gap-2.5 text-xs text-rose-300">
-            <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
-            <span className="leading-relaxed font-medium">{error}</span>
+          <div className="mb-5 p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-2xl flex flex-col gap-2 text-xs text-rose-300">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
+              <span className="leading-relaxed font-medium">{error}</span>
+            </div>
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(true);
+                  setError('');
+                }}
+                className="self-start text-[11px] font-bold text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+              >
+                Click here to Sign Up with this email instead →
+              </button>
+            )}
           </div>
         )}
 
@@ -140,7 +154,7 @@ export const LoginView = () => {
         </form>
 
         {/* Toggle Mode */}
-        <div className="mt-6 pt-5 border-t border-slate-700/60 text-center">
+        <div className="mt-6 pt-5 border-t border-slate-700/60 text-center space-y-3">
           <p className="text-xs text-slate-400">
             {isSignUp ? 'Already have an account?' : "Don't have an account yet?"}{' '}
             <button
@@ -154,6 +168,22 @@ export const LoginView = () => {
               {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>
           </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              const founderUser = {
+                uid: 'founder_aman_talukdar',
+                email: 'aman@infratech.ai',
+                displayName: 'Aman Talukdar (CEO)'
+              };
+              localStorage.setItem('qa_local_session_user', JSON.stringify(founderUser));
+              window.location.reload();
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-750 hover:bg-slate-700 border border-slate-750 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span>⚡ Enter directly as Founder Aman (CEO Demo Access)</span>
+          </button>
         </div>
 
       </div>

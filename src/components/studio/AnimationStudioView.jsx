@@ -10,22 +10,22 @@ import {
 } from 'lucide-react';
 
 /**
- * ANIMATIONS STUDIO — FULLY FUNCTIONAL AI ANIMATOR & MOTION ENGINE
+ * ANIMATIONS STUDIO — LEMO-OPUSCAR CODE-DRIVEN CINEMA ENGINE
  * Directed by Siddharth Menon (Dept 04 • Design Engineering Studio)
  * 
- * Capabilities:
- * - 6 Curated Cinema Templates & Dynamic Prompt-to-Script Generator
- * - 60 FPS HTML5 Canvas Kinetic Cinema Engine with Particle Swarms & Specular Glass
+ * Features:
+ * - 6 Story-Driven Visual Cinema Templates (Radar, Swarm, Code Terminal, Pipeline, Hologram)
+ * - Full-Bleed 60 FPS HTML5 Canvas with Dedicated Center Visual Actors
  * - Procedural Web Audio Synth Clock (Tech Riser, Apple Ambient, Cyber Pulse)
  * - Synchronized Audio Recording into MediaRecorder (Exports real sound into WebM/MP4)
  * - Browser Web Speech API Voiceover Narration (SpeechSynthesis)
- * - Dynamic Metric Interpolation (Numbers count up/down in real time)
- * - Full Scene Timeline Management: Add, Delete, Reorder, Duration Tuning
+ * - Dynamic Number Interpolation (Counters count up/down live in real-time)
+ * - Full Timeline Scene Management (Add, Delete, Reorder, Duration Tuning)
  * - Gamma-Style 4-Step Guided Flow: Storyboard -> Styles -> Audio -> Cinema Stage
  * - Direct NLP AI Animator Co-Pilot (Siddharth Menon)
  */
 
-// 6 Curated Production Film Templates
+// 6 Curated Production Film Templates with Rich Visual Types
 const PRESET_TEMPLATES = [
   {
     id: 'viral-qa',
@@ -35,7 +35,7 @@ const PRESET_TEMPLATES = [
     ratio: '9:16',
     duration: 15,
     accentColor: '#10B981',
-    description: 'High-energy kinetic typography, defect count dropping from 542 to 0, 64 autonomous agents swarm.',
+    description: 'Defect radar scanning 542 bugs, broken CI/CD pipeline, 64-agent swarm deployment, and 100% pass seal.',
     palette: ['#10B981', '#064E3B', '#141518', '#E5E7EE'],
     fontPair: 'Plus Jakarta Sans Bold + SF Pro Mono',
     scenes: [
@@ -43,38 +43,41 @@ const PRESET_TEMPLATES = [
         id: 's1',
         title: 'HOOK',
         duration: 3.5,
+        visualType: 'radar',
         tag: 'CRITICAL ALERT',
         mainText: 'MANUAL QA IS DEAD.',
-        subText: 'Engineers waste 14 hrs/week on regressions.',
+        subText: 'Engineers waste 14 hrs/week on repetitive regression bottlenecks.',
         highlight: 'DEAD.',
         metric: '542 BUGS',
         startNum: 542,
         endNum: 0,
-        numSuffix: ' BUGS'
+        numSuffix: ' BUGS DETECTED'
       },
       {
         id: 's2',
         title: 'THE CRISIS',
         duration: 4.0,
+        visualType: 'pipeline',
         tag: 'INDUSTRY DATA',
         mainText: '$40 BILLION WASTED',
-        subText: 'In slow releases, flaky tests & broken pipelines.',
+        subText: 'Flaky releases and manual validation drag sprint velocity down.',
         highlight: '$40B',
         metric: 'FLAKY: 42%',
         startNum: 10,
         endNum: 42,
-        numSuffix: '% FLAKY'
+        numSuffix: '% FLAKY RATE'
       },
       {
         id: 's3',
         title: 'THE SOLUTION',
         duration: 4.5,
+        visualType: 'swarm',
         tag: 'GSTACK DEPLOYED',
         mainText: '64 AGENTS. 0 MANUAL CLICKS.',
         subText: 'InfratechAI auto-generates & executes test suites 24/7.',
         highlight: '64 AGENTS',
         metric: '0 DEFECTS',
-        startNum: 64,
+        startNum: 0,
         endNum: 64,
         numSuffix: ' AGENTS ONLINE'
       },
@@ -82,6 +85,7 @@ const PRESET_TEMPLATES = [
         id: 's4',
         title: 'CALL TO ACTION',
         duration: 3.0,
+        visualType: 'keynote',
         tag: 'LAUNCHPAD LIVE',
         mainText: 'SHIP FLAWLESS CODE.',
         subText: 'Try InfratechAI Enterprise • Link in Bio',
@@ -101,7 +105,7 @@ const PRESET_TEMPLATES = [
     ratio: '16:9',
     duration: 16,
     accentColor: '#F59E0B',
-    description: 'Sonoma mesh aura, 3D specular frosted glass prism, ultra-smooth Apple typography.',
+    description: 'Holographic 3D keynote seal, live specular code terminal, 14 department swarm, and keynote reveal.',
     palette: ['#F59E0B', '#78350F', '#181A20', '#FFFFFF'],
     fontPair: 'SF Pro Display + SF Pro Text',
     scenes: [
@@ -109,6 +113,7 @@ const PRESET_TEMPLATES = [
         id: 's1',
         title: 'INTRO',
         duration: 4.0,
+        visualType: 'keynote',
         tag: 'INFRATECHAI SPECIAL EVENT',
         mainText: 'The Future of Autonomous Engineering.',
         subText: 'Designed for high-velocity teams refusing to compromise.',
@@ -122,6 +127,7 @@ const PRESET_TEMPLATES = [
         id: 's2',
         title: 'CRAFTSMANSHIP',
         duration: 4.0,
+        visualType: 'terminal',
         tag: 'PRECISION GLASS',
         mainText: 'Specular UI. Fluid Motion.',
         subText: 'Zero-latency interaction with 14 autonomous departments.',
@@ -135,6 +141,7 @@ const PRESET_TEMPLATES = [
         id: 's3',
         title: 'INFRASTRUCTURE',
         duration: 4.5,
+        visualType: 'swarm',
         tag: 'FULL STACK AGENTS',
         mainText: 'A Company of 64 Working Specialists.',
         subText: 'From YC Advisory to DevOps Cloud deployments.',
@@ -148,6 +155,7 @@ const PRESET_TEMPLATES = [
         id: 's4',
         title: 'FINALE',
         duration: 3.5,
+        visualType: 'keynote',
         tag: 'AVAILABLE TODAY',
         mainText: 'Welcome to InfratechAI.',
         subText: 'Experience the Master App • Built for visionaries.',
@@ -167,7 +175,7 @@ const PRESET_TEMPLATES = [
     ratio: '9:16',
     duration: 14,
     accentColor: '#3B82F6',
-    description: 'Radar sweep, ₹2,00,000 monthly pipeline ticker, 48 prospects analyzed in real time.',
+    description: 'Cold call radar sweep, prospect intent radar, live ₹2,00,000 monthly ARR ticker, and agency scale CTA.',
     palette: ['#3B82F6', '#1E3A8A', '#0F172A', '#E2E8F0'],
     fontPair: 'Inter Tight Bold + JetBrains Mono',
     scenes: [
@@ -175,9 +183,10 @@ const PRESET_TEMPLATES = [
         id: 's1',
         title: 'HOOK',
         duration: 3.5,
+        visualType: 'radar',
         tag: 'B2B GROWTH',
         mainText: 'STOP COLD CALLING.',
-        subText: 'Traditional SDR outbound is returning 0.8% replies.',
+        subText: 'Traditional SDR outbound is returning less than 1% replies.',
         highlight: 'COLD CALLING.',
         metric: 'REPLY: 0.8%',
         startNum: 5,
@@ -188,6 +197,7 @@ const PRESET_TEMPLATES = [
         id: 's2',
         title: 'AI RADAR',
         duration: 3.5,
+        visualType: 'revenue',
         tag: 'SIGNAL DETECTION',
         mainText: 'HARVEY DETECTS BUYERS',
         subText: 'Real-time corporate website intent & hiring signals.',
@@ -201,6 +211,7 @@ const PRESET_TEMPLATES = [
         id: 's3',
         title: 'COMMERCIALS',
         duration: 4.0,
+        visualType: 'revenue',
         tag: 'INR PIPELINE',
         mainText: '₹2,00,000 RETAINER ARR',
         subText: 'Hyper-personalized sequences drafted autonomously.',
@@ -214,6 +225,7 @@ const PRESET_TEMPLATES = [
         id: 's4',
         title: 'CTA',
         duration: 3.0,
+        visualType: 'keynote',
         tag: 'SCALE YOUR AGENCY',
         mainText: 'AUTOMATE YOUR SALES.',
         subText: 'Book a demo today at infratech.ai/sales',
@@ -233,7 +245,7 @@ const PRESET_TEMPLATES = [
     ratio: '9:16',
     duration: 15,
     accentColor: '#8B5CF6',
-    description: 'Neural grid telemetry, department nodes booting up, velocity metrics flying.',
+    description: 'System boot radar, 64-specialist neural mesh network, zero-latency code runner, and virtual empire launch.',
     palette: ['#8B5CF6', '#4C1D95', '#110E1B', '#F3E8FF'],
     fontPair: 'Space Grotesk + Fira Code',
     scenes: [
@@ -241,6 +253,7 @@ const PRESET_TEMPLATES = [
         id: 's1',
         title: 'AWAKENING',
         duration: 3.5,
+        visualType: 'radar',
         tag: 'SYSTEM BOOT',
         mainText: 'GSTACK CORE ONLINE.',
         subText: 'Initializing 14 autonomous enterprise departments.',
@@ -254,6 +267,7 @@ const PRESET_TEMPLATES = [
         id: 's2',
         title: 'NEURAL MESH',
         duration: 4.0,
+        visualType: 'swarm',
         tag: 'TELEMETRY PULSE',
         mainText: '64 SPECIALISTS SYNCED.',
         subText: 'Strategy, Architecture, QA, Security, Sales & Release.',
@@ -267,8 +281,9 @@ const PRESET_TEMPLATES = [
         id: 's3',
         title: 'ZERO FRICTION',
         duration: 4.0,
+        visualType: 'terminal',
         tag: 'AUTONOMOUS EXECUTION',
-        mainText: 'NO MANUAL APPROVAL CHOKEPOINTS.',
+        mainText: 'NO MANUAL CHOKEPOINTS.',
         subText: 'Direct NLP task dispatch from executive leadership.',
         highlight: 'ZERO FRICTION',
         metric: 'LATENCY: 12ms',
@@ -280,6 +295,7 @@ const PRESET_TEMPLATES = [
         id: 's4',
         title: 'JOIN',
         duration: 3.5,
+        visualType: 'keynote',
         tag: 'INFRATECHAI',
         mainText: 'YOUR VIRTUAL EMPIRE.',
         subText: 'Explore the 3D HQ • Follow @infratechai',
@@ -299,7 +315,7 @@ const PRESET_TEMPLATES = [
     ratio: '9:16',
     duration: 14,
     accentColor: '#EF4444',
-    description: 'Critical production outage stopped by autonomous self-healing test suites.',
+    description: 'Sev-1 production alert, live terminal code auto-patching, 120 green tests pipeline, and zero downtime.',
     palette: ['#EF4444', '#991B1B', '#0F172A', '#FEE2E2'],
     fontPair: 'Plus Jakarta Sans Bold + SF Pro Mono',
     scenes: [
@@ -307,6 +323,7 @@ const PRESET_TEMPLATES = [
         id: 's1',
         title: 'ALERT',
         duration: 3.5,
+        visualType: 'radar',
         tag: 'SEV-1 INCIDENT',
         mainText: 'PRODUCTION BREAKS AT 2 AM.',
         subText: 'Payment gateway crashed after an unvetted release.',
@@ -320,6 +337,7 @@ const PRESET_TEMPLATES = [
         id: 's2',
         title: 'INTERCEPT',
         duration: 3.5,
+        visualType: 'terminal',
         tag: 'AUTONOMOUS INTERCEPT',
         mainText: 'DEFECT CAUGHT IN 4 SECONDS.',
         subText: 'Argus Prime & TestMaster Rex generated 120 regression passes.',
@@ -333,6 +351,7 @@ const PRESET_TEMPLATES = [
         id: 's3',
         title: 'RESTORATION',
         duration: 4.0,
+        visualType: 'pipeline',
         tag: 'SELF-HEALING CODE',
         mainText: 'PATCH MERGED & VERIFIED.',
         subText: 'Helios Shift pushed clean build with zero downtime.',
@@ -346,6 +365,7 @@ const PRESET_TEMPLATES = [
         id: 's4',
         title: 'CONCLUSION',
         duration: 3.0,
+        visualType: 'keynote',
         tag: 'SLEEP SOUNDLY',
         mainText: 'SLEEP THROUGH RELEASES.',
         subText: 'InfratechAI protects your infrastructure 24/7.',
@@ -365,7 +385,7 @@ const PRESET_TEMPLATES = [
     ratio: '16:9',
     duration: 16,
     accentColor: '#06B6D4',
-    description: 'SOC2 Type II and ISO 27001 automated compliance telemetry with zero security CVEs.',
+    description: 'Compliance delay radar, Aegis Ward security swarm, cryptographic audit terminal, and ISO certification.',
     palette: ['#06B6D4', '#155E75', '#082F49', '#ECFEFF'],
     fontPair: 'Space Grotesk + JetBrains Mono',
     scenes: [
@@ -373,6 +393,7 @@ const PRESET_TEMPLATES = [
         id: 's1',
         title: 'AUDIT RISK',
         duration: 4.0,
+        visualType: 'radar',
         tag: 'FINTECH REGULATION',
         mainText: 'COMPLIANCE AUDITS TAKE MONTHS.',
         subText: 'Fintech and banking platforms dread manual spreadsheet audits.',
@@ -386,6 +407,7 @@ const PRESET_TEMPLATES = [
         id: 's2',
         title: 'SECURITY SHIELD',
         duration: 4.0,
+        visualType: 'swarm',
         tag: 'ZERO CVE MANDATE',
         mainText: 'CONTINUOUS SOC2 ENFORCEMENT.',
         subText: 'Aegis Ward and Argus Prime scan every pull request for vulnerabilities.',
@@ -399,6 +421,7 @@ const PRESET_TEMPLATES = [
         id: 's3',
         title: 'AUDIT EVIDENCE',
         duration: 4.5,
+        visualType: 'terminal',
         tag: 'INSTANT PROOF',
         mainText: 'CRYPTOGRAPHIC AUDIT LOGS.',
         subText: 'Export verifiable test attestations with one click for regulators.',
@@ -412,6 +435,7 @@ const PRESET_TEMPLATES = [
         id: 's4',
         title: 'ENTERPRISE',
         duration: 3.5,
+        visualType: 'keynote',
         tag: 'BANK GRADE',
         mainText: 'TRUST IN EVERY COMMIT.',
         subText: 'Deploy with enterprise assurance at infratech.ai/security',
@@ -438,6 +462,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_1',
           title: 'HOOK',
           duration: 3.5,
+          visualType: 'radar',
           tag: 'B2B OUTBOUND',
           mainText: 'STOP WASTING WEEKS COLD CALLING.',
           subText: 'Traditional outbound emails get less than 1% positive responses.',
@@ -451,6 +476,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_2',
           title: 'INTENT RADAR',
           duration: 3.5,
+          visualType: 'revenue',
           tag: 'AUTONOMOUS SDR',
           mainText: 'HARVEY DETECTS IN-MARKET BUYERS.',
           subText: 'Scans hiring spikes, tech stack changes, and website intent 24/7.',
@@ -464,8 +490,9 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_3',
           title: 'REVENUE ENGINE',
           duration: 4.0,
+          visualType: 'revenue',
           tag: 'INR REVENUE',
-          mainText: '₹2,00,000 MONTHLY RETAINER PIPELINE.',
+          mainText: '₹2,00,000 MONTHLY PIPELINE.',
           subText: 'Hyper-tailored multi-channel pitches generated in 8 seconds.',
           highlight: '₹2,00,000',
           metric: '34.2% REPLIES',
@@ -477,6 +504,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_4',
           title: 'CALL TO ACTION',
           duration: 3.5,
+          visualType: 'keynote',
           tag: 'SCALE NOW',
           mainText: 'SCALE YOUR AGENCY PIPELINE.',
           subText: 'Activate Harvey AI SDR today • Link in Bio',
@@ -499,6 +527,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_1',
           title: 'INTRO',
           duration: 4.0,
+          visualType: 'keynote',
           tag: 'DESIGN REVELATION',
           mainText: 'SOFTWARE THAT FEELS PHYSICAL.',
           subText: 'Engineered with Apple Fluid tactile springs and specular frosted glass.',
@@ -512,6 +541,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_2',
           title: 'ENGINEERING',
           duration: 4.0,
+          visualType: 'terminal',
           tag: 'ZERO LATENCY',
           mainText: 'PRECISION AT THE MICRO-LEVEL.',
           subText: 'Instant keystroke feedback, zero mouse travel, pure speed.',
@@ -525,6 +555,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_3',
           title: 'WORKFORCE',
           duration: 4.5,
+          visualType: 'swarm',
           tag: '14 DEPARTMENTS',
           mainText: '64 AGENTS OPERATING AS ONE.',
           subText: 'Architecture, QA, Design & Release coordinated by Antigravity.',
@@ -538,6 +569,7 @@ const generateScriptFromTopic = (promptTopic) => {
           id: 'sc_4',
           title: 'CTA',
           duration: 3.5,
+          visualType: 'keynote',
           tag: 'JOIN THE FUTURE',
           mainText: 'EXPERIENCE INFRATECHAI.',
           subText: 'Crafted for founders who refuse to ship clumsy software.',
@@ -546,67 +578,6 @@ const generateScriptFromTopic = (promptTopic) => {
           startNum: 0,
           endNum: 100,
           numSuffix: '% POLISHED'
-        }
-      ]
-    };
-  }
-
-  if (t.includes('security') || t.includes('audit') || t.includes('fintech') || t.includes('bank') || t.includes('compliance')) {
-    return {
-      template: PRESET_TEMPLATES[5],
-      aspectRatio: '16:9',
-      scenes: [
-        {
-          id: 'sc_1',
-          title: 'SECURITY CRISIS',
-          duration: 3.5,
-          tag: 'SECURITY BREACH RISK',
-          mainText: 'MANUAL AUDITS MISS CRITICAL ZERO-DAYS.',
-          subText: 'Legacy compliance checklists fail against modern automated exploit chains.',
-          highlight: 'MISS ZERO-DAYS.',
-          metric: 'HIGH RISK',
-          startNum: 100,
-          endNum: 0,
-          numSuffix: ' CVE TOLERANCE'
-        },
-        {
-          id: 'sc_2',
-          title: 'AI SHIELD',
-          duration: 4.0,
-          tag: 'CONTINUOUS SCANNING',
-          mainText: 'AEGIS WARD BLOCKS EVERY EXPLOIT.',
-          subText: 'Real-time static code analysis and dependency vulnerability fuzzing.',
-          highlight: 'BLOCKS EXPLOITS.',
-          metric: '0 VULNERABILITIES',
-          startNum: 24,
-          endNum: 0,
-          numSuffix: ' EXPLOITS'
-        },
-        {
-          id: 'sc_3',
-          title: 'AUDIT PROOF',
-          duration: 4.0,
-          tag: 'SOC2 VERIFIED',
-          mainText: 'CRYPTOGRAPHIC ATTESTATIONS.',
-          subText: 'Regulator-ready verification reports generated on every commit.',
-          highlight: 'ATTESTATIONS.',
-          metric: '100% COMPLIANT',
-          startNum: 50,
-          endNum: 100,
-          numSuffix: '% SOC2 PASS'
-        },
-        {
-          id: 'sc_4',
-          title: 'ENTERPRISE',
-          duration: 3.5,
-          tag: 'ENTERPRISE SHIELD',
-          mainText: 'BANK-GRADE SECURITY GUARANTEED.',
-          subText: 'Explore InfratechAI Security Suite • Link in Bio',
-          highlight: 'GUARANTEED.',
-          metric: 'BANK GRADE',
-          startNum: 0,
-          endNum: 100,
-          numSuffix: '% ENCRYPTED'
         }
       ]
     };
@@ -622,6 +593,7 @@ const generateScriptFromTopic = (promptTopic) => {
         id: 'sc_1',
         title: 'VIRAL HOOK',
         duration: 3.5,
+        visualType: 'radar',
         tag: 'VIRAL ALERT',
         mainText: `WHY ${topicCaps} IS OBSOLETE.`,
         subText: 'Engineering teams lose hundreds of hours each quarter to slow loops.',
@@ -635,6 +607,7 @@ const generateScriptFromTopic = (promptTopic) => {
         id: 'sc_2',
         title: 'THE CRISIS',
         duration: 4.0,
+        visualType: 'pipeline',
         tag: 'PRODUCTION OUTAGE',
         mainText: 'SLOW RELEASES KILL USER TRUST.',
         subText: 'Flaky test suites and manual validation drag sprint velocity to zero.',
@@ -648,6 +621,7 @@ const generateScriptFromTopic = (promptTopic) => {
         id: 'sc_3',
         title: 'THE SOLUTION',
         duration: 4.5,
+        visualType: 'swarm',
         tag: '64 AGENTS DEPLOYED',
         mainText: 'INFRATECHAI AUTOMATES EVERY TEST.',
         subText: 'From unit smoke tests to full browser UI flows, running 24/7 autonomously.',
@@ -661,6 +635,7 @@ const generateScriptFromTopic = (promptTopic) => {
         id: 'sc_4',
         title: 'CALL TO ACTION',
         duration: 3.0,
+        visualType: 'keynote',
         tag: 'SHIP TODAY',
         mainText: 'SHIP FLAWLESS CODE TODAY.',
         subText: 'Deploy with InfratechAI Enterprise • Link in Bio',
@@ -672,6 +647,506 @@ const generateScriptFromTopic = (promptTopic) => {
       }
     ]
   };
+};
+
+/* ========================================================================= */
+/* LEMO-OPUSCAR CODE-DRIVEN VISUAL GRAPHICS PROCEDURES                      */
+/* ========================================================================= */
+
+// 1. CYBER INCIDENT & DEFECT RADAR (Visual Type: 'radar')
+const drawRadarVisual = (ctx, cx, cy, radius, time, accent, tag, isPlaying) => {
+  ctx.save();
+
+  // Radar circular background glow
+  const radGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, radius);
+  radGrad.addColorStop(0, `${accent}30`);
+  radGrad.addColorStop(0.6, `${accent}10`);
+  radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = radGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Concentric radar rings
+  ctx.lineWidth = 1.5;
+  const ringCount = 4;
+  for (let r = 1; r <= ringCount; r++) {
+    const curR = (radius / ringCount) * r;
+    ctx.strokeStyle = r === ringCount ? `${accent}80` : 'rgba(255, 255, 255, 0.12)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, curR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Distance labels
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.font = '600 11px monospace';
+    ctx.fillText(`${r * 25}%`, cx + 6, cy - curR + 14);
+  }
+
+  // Crosshairs
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.beginPath();
+  ctx.moveTo(cx - radius, cy);
+  ctx.lineTo(cx + radius, cy);
+  ctx.moveTo(cx, cy - radius);
+  ctx.lineTo(cx, cy + radius);
+  ctx.stroke();
+
+  // 360° Rotating Sweep Beam
+  const sweepAngle = (time * 2.5) % (Math.PI * 2);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(sweepAngle);
+
+  const sweepGrad = ctx.createLinearGradient(0, 0, radius, 0);
+  sweepGrad.addColorStop(0, `${accent}00`);
+  sweepGrad.addColorStop(0.8, `${accent}60`);
+  sweepGrad.addColorStop(1, '#FFFFFF');
+  ctx.strokeStyle = sweepGrad;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(radius, 0);
+  ctx.stroke();
+
+  // Fan sweep shadow
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, radius, -0.4, 0);
+  ctx.closePath();
+  ctx.fillStyle = `${accent}25`;
+  ctx.fill();
+  ctx.restore();
+
+  // Pulsing Target Blips (Defects / Prospects)
+  const blips = [
+    { a: 0.8, d: 0.35, label: 'FLAKY TEST #12' },
+    { a: 2.2, d: 0.65, label: 'MEM_LEAK_SEV1' },
+    { a: 3.7, d: 0.50, label: 'TIMEOUT: 504' },
+    { a: 5.1, d: 0.80, label: 'PAYMENT_DROPPED' }
+  ];
+
+  blips.forEach((b, idx) => {
+    const bx = cx + Math.cos(b.a) * (radius * b.d);
+    const by = cy + Math.sin(b.a) * (radius * b.d);
+    const pulse = Math.sin(time * 4 + idx) * 0.5 + 0.5;
+
+    // Expanding shockwave ring
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(bx, by, 6 + pulse * 14, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Solid core dot
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(bx, by, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Blip label tag
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 10px monospace';
+    ctx.fillText(b.label, bx + 10, by + 4);
+  });
+
+  // Center Radar Beacon
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.restore();
+};
+
+// 2. 64-AGENT SWARM & NEURAL TOPOLOGY (Visual Type: 'swarm')
+const drawAgentSwarmVisual = (ctx, cx, cy, radius, time, accent) => {
+  ctx.save();
+
+  // Nodes in the Swarm
+  const specialistNodes = [
+    { name: 'ARGUS', role: 'Verification', color: '#10B981' },
+    { name: 'REX', role: 'QA Lead', color: '#3B82F6' },
+    { name: 'HARVEY', role: 'Sales SDR', color: '#F59E0B' },
+    { name: 'HELIOS', role: 'Release', color: '#EC4899' },
+    { name: 'AEGIS', role: 'Security', color: '#EF4444' },
+    { name: 'EMIL', role: 'Design Eng', color: '#8B5CF6' }
+  ];
+
+  // Center Core: GSTACK BRAIN
+  const corePulse = Math.sin(time * 3) * 6;
+  const coreRadius = 48 + corePulse;
+
+  // Rotating hexagon around core
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(time * 0.8);
+  ctx.strokeStyle = `${accent}80`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let s = 0; s < 6; s++) {
+    const ang = (s * Math.PI) / 3;
+    const hx = Math.cos(ang) * (coreRadius + 18);
+    const hy = Math.sin(ang) * (coreRadius + 18);
+    if (s === 0) ctx.moveTo(hx, hy);
+    else ctx.lineTo(hx, hy);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+
+  // Core Circle
+  ctx.fillStyle = '#141518';
+  ctx.beginPath();
+  ctx.arc(cx, cy, coreRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Core Text
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 13px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('GSTACK', cx, cy - 4);
+  ctx.fillStyle = accent;
+  ctx.font = '700 10px monospace';
+  ctx.fillText('64 AGENTS', cx, cy + 12);
+
+  // Orbiting Specialist Nodes & Laser Streams
+  const orbitR = radius * 0.72;
+  specialistNodes.forEach((node, i) => {
+    const angle = (i * Math.PI * 2) / specialistNodes.length + time * 0.4;
+    const nx = cx + Math.cos(angle) * orbitR;
+    const ny = cy + Math.sin(angle) * orbitR;
+
+    // Laser connection stream between Core and Node
+    ctx.strokeStyle = `${node.color}50`;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(nx, ny);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Traveling Data Packet Photon
+    const packetProgress = (time * 2 + i * 0.3) % 1;
+    const px = cx + (nx - cx) * packetProgress;
+    const py = cy + (ny - cy) * packetProgress;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = node.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Specialist Node Circle
+    ctx.fillStyle = '#1E2028';
+    ctx.beginPath();
+    ctx.arc(nx, ny, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = node.color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Specialist Icon/Label
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '800 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(node.name, nx, ny + 3);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '600 8px sans-serif';
+    ctx.fillText(node.role, nx, ny + 15);
+  });
+
+  ctx.restore();
+};
+
+// 3. CODE TERMINAL & SELF-HEALING AUTO-PATCH (Visual Type: 'terminal')
+const drawCodeTerminalVisual = (ctx, cx, cy, w, h, time, accent, scene) => {
+  ctx.save();
+
+  const termX = cx - w / 2;
+  const termY = cy - h / 2;
+
+  // Window Shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.7)';
+  ctx.shadowBlur = 30;
+  ctx.shadowOffsetY = 15;
+
+  // Terminal Window Base
+  ctx.fillStyle = '#10121A';
+  ctx.beginPath();
+  ctx.roundRect(termX, termY, w, h, 20);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+
+  // Specular Border
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Top Window Header Bar
+  const headH = 38;
+  ctx.fillStyle = '#181A24';
+  ctx.beginPath();
+  ctx.roundRect(termX, termY, w, headH, [20, 20, 0, 0]);
+  ctx.fill();
+
+  // Traffic Light Window Controls
+  const dots = ['#FF5F56', '#FFBD2E', '#27C93F'];
+  dots.forEach((col, idx) => {
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(termX + 24 + idx * 18, termY + headH / 2, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Terminal Title
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '600 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('helios_shift@infratech-core: ~/qa-runtime/patch.ts', cx, termY + 23);
+
+  // Terminal Code Lines
+  const startY = termY + headH + 34;
+  const lineGap = 28;
+  ctx.textAlign = 'left';
+
+  const codeLines = [
+    { text: '// [INFRATECHAI AGENT RUNTIME] SEV-1 INTERCEPTED', color: 'rgba(255,255,255,0.4)', prefix: '01' },
+    { text: 'const regression = await ArgusPrime.scan(PR_942);', color: '#93C5FD', prefix: '02' },
+    { text: '- if (!token) throw new PaymentGatewayTimeout();', color: '#F87171', prefix: '03' },
+    { text: '+ const session = await TokenGuard.heal(ctx);', color: '#4ADE80', prefix: '04' },
+    { text: '+ await TestMasterRex.runFullSuite(120);', color: '#4ADE80', prefix: '05' },
+    { text: '✔ 120 / 120 VERIFIED PASS (0 REGRESSIONS)', color: accent, prefix: '06', bold: true }
+  ];
+
+  codeLines.forEach((cl, idx) => {
+    const curY = startY + idx * lineGap;
+
+    // Line number
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.font = '500 11px monospace';
+    ctx.fillText(cl.prefix, termX + 20, curY);
+
+    // Code text
+    ctx.fillStyle = cl.color;
+    ctx.font = cl.bold ? '800 13px monospace' : '600 12px monospace';
+    ctx.fillText(cl.text, termX + 48, curY);
+  });
+
+  // Blinking green prompt cursor
+  if (Math.floor(time * 2) % 2 === 0) {
+    ctx.fillStyle = accent;
+    ctx.fillRect(termX + 48 + 360, startY + 5 * lineGap - 12, 8, 15);
+  }
+
+  // Scanning laser horizontal line sweeping across terminal
+  const scanY = termY + headH + ((time * 70) % (h - headH));
+  ctx.strokeStyle = `${accent}40`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(termX, scanY);
+  ctx.lineTo(termX + w, scanY);
+  ctx.stroke();
+
+  ctx.restore();
+};
+
+// 4. CI/CD PIPELINE & VELOCITY BREAKDOWN (Visual Type: 'pipeline')
+const drawPipelineVisual = (ctx, cx, cy, w, h, time, accent, scene) => {
+  ctx.save();
+
+  const pipeX = cx - w / 2;
+  const pipeY = cy - h / 2;
+
+  // Background Glass Card
+  ctx.fillStyle = '#12141D';
+  ctx.beginPath();
+  ctx.roundRect(pipeX, pipeY, w, h, 24);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Title Pod
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '700 11px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('AUTONOMOUS DEPLOYMENT PIPELINE TELEMETRY', pipeX + 24, pipeY + 32);
+
+  // 4 Pipeline Stages
+  const stages = [
+    { name: '1. Commit', status: 'PASS', color: '#10B981' },
+    { name: '2. Smoke QA', status: 'AUTO-GEN', color: '#3B82F6' },
+    { name: '3. Regress Gate', status: 'RUNNING', color: accent },
+    { name: '4. Cloud Prod', status: 'READY', color: '#10B981' }
+  ];
+
+  const stageW = (w - 48 - (stages.length - 1) * 14) / stages.length;
+  const stageH = 74;
+  const stageY = pipeY + 54;
+
+  stages.forEach((st, idx) => {
+    const sx = pipeX + 24 + idx * (stageW + 14);
+
+    ctx.fillStyle = '#1A1D27';
+    ctx.beginPath();
+    ctx.roundRect(sx, stageY, stageW, stageH, 14);
+    ctx.fill();
+    ctx.strokeStyle = idx === 2 ? accent : 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = idx === 2 ? 2 : 1;
+    ctx.stroke();
+
+    // Stage Label
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(st.name, sx + stageW / 2, stageY + 28);
+
+    // Status Pill
+    ctx.fillStyle = `${st.color}25`;
+    ctx.beginPath();
+    ctx.roundRect(sx + stageW / 2 - 36, stageY + 40, 72, 20, 10);
+    ctx.fill();
+    ctx.fillStyle = st.color;
+    ctx.font = '800 9px monospace';
+    ctx.fillText(st.status, sx + stageW / 2, stageY + 53);
+  });
+
+  // Animated Velocity Bar Chart at Bottom of Card
+  const chartY = pipeY + 160;
+  const barCount = 14;
+  const barW = (w - 48 - (barCount - 1) * 8) / barCount;
+
+  for (let b = 0; b < barCount; b++) {
+    const bx = pipeX + 24 + b * (barW + 8);
+    const progressFactor = (b + 1) / barCount;
+    const barH = 20 + Math.sin(time * 4 + b * 0.4) * 10 + progressFactor * 60;
+    
+    ctx.fillStyle = b === barCount - 1 ? accent : b > 9 ? `${accent}80` : 'rgba(255, 255, 255, 0.2)';
+    ctx.beginPath();
+    ctx.roundRect(bx, chartY + 80 - barH, barW, barH, 4);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 12px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('VELOCITY: 96.8% (ZERO DEFECTS)', pipeX + w - 24, chartY + 105);
+
+  ctx.restore();
+};
+
+// 5. HOLOGRAPHIC KEYNOTE 3D BADGE (Visual Type: 'keynote')
+const drawKeynoteBadgeVisual = (ctx, cx, cy, radius, time, accent, metric) => {
+  ctx.save();
+
+  // Multi-layered Golden/Accent Sunburst Rays
+  const rayCount = 24;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(time * 0.3);
+  for (let i = 0; i < rayCount; i++) {
+    const ang = (i * Math.PI * 2) / rayCount;
+    ctx.strokeStyle = i % 2 === 0 ? `${accent}25` : 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(ang) * (radius * 1.3), Math.sin(ang) * (radius * 1.3));
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Rotating Dashed Orbital Rings
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-time * 0.5);
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 12]);
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * 0.88, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Center Holographic Glass Medallion
+  const medGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, radius * 0.7);
+  medGrad.addColorStop(0, '#252936');
+  medGrad.addColorStop(0.7, '#14161F');
+  medGrad.addColorStop(1, '#0C0E14');
+  ctx.fillStyle = medGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.7, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Gold/Accent Glowing Rim
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3.5;
+  ctx.shadowColor = accent;
+  ctx.shadowBlur = 20;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Medallion Emblem
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 36px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('100%', cx, cy - 8);
+
+  ctx.fillStyle = accent;
+  ctx.font = '800 13px monospace';
+  ctx.fillText('PASS VERIFIED', cx, cy + 18);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '600 10px sans-serif';
+  ctx.fillText('INFRATECHAI MASTER SUITE', cx, cy + 34);
+
+  ctx.restore();
+};
+
+// 6. HARVEY B2B REVENUE RADAR (Visual Type: 'revenue')
+const drawRevenueRadarVisual = (ctx, cx, cy, radius, time, accent, metric) => {
+  ctx.save();
+
+  // Rotating circular radar grid
+  drawRadarVisual(ctx, cx, cy, radius * 0.7, time, '#3B82F6', 'SDR INTENT', true);
+
+  // Floating Commercial Deal Pill
+  const pillW = 280;
+  const pillH = 70;
+  const pillX = cx - pillW / 2;
+  const pillY = cy + radius * 0.45;
+
+  ctx.fillStyle = '#101524';
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, 20);
+  ctx.fill();
+  ctx.strokeStyle = '#3B82F6';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#3B82F6';
+  ctx.shadowBlur = 15;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.font = '700 10px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('MONTHLY OUTBOUND PIPELINE', cx, pillY + 24);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 24px -apple-system, monospace';
+  ctx.fillText('₹2,00,000 ARR', cx, pillY + 52);
+
+  ctx.restore();
 };
 
 export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
@@ -698,7 +1173,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       sender: 'animator',
       name: 'Siddharth Menon',
       time: 'Just now',
-      text: "Hey Founder Aman! I'm your dedicated AI Animator (Dept 04 • Design Engineering). I write, compose, and render 60 FPS code-driven cinema for social media (Reels, Shorts, Keynote). What video should we direct right now? Try typing a topic or tapping a prompt pill!"
+      text: "Hey Founder Aman! I'm your dedicated AI Animator (Dept 04 • Design Engineering). I compose 60 FPS code-driven cinema with animated radars, multi-agent swarms, terminal code diffs, and holographic keynotes. What story are we directing today?"
     }
   ]);
   const [animatorInput, setAnimatorInput] = useState('');
@@ -879,7 +1354,6 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     const ctx = ensureAudioContext();
     if (!ctx || !masterGainRef.current) return;
 
-    // 120 BPM interval = 250ms per 8th note
     let stepCount = 0;
     const intervalMs = 250;
 
@@ -889,7 +1363,6 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
         stepCount++;
 
         if (audioPreset === 'tech-riser') {
-          // Kick on 1 and 3 (step 0 and 4)
           if (stepCount % 4 === 0) {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
@@ -902,7 +1375,6 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
             osc.start(now);
             osc.stop(now + 0.15);
           }
-          // Hi-hat on every 8th note
           if (stepCount % 2 === 1) {
             const hiHatGain = ctx.createGain();
             hiHatGain.gain.setValueAtTime(0.03, now);
@@ -916,12 +1388,11 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
             osc.stop(now + 0.05);
           }
         } else if (audioPreset === 'apple-ambient') {
-          // Warm resonant pad pulse every 8 steps
           if (stepCount % 8 === 0) {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'sine';
-            const notes = [220, 261.63, 329.63, 392]; // Am7
+            const notes = [220, 261.63, 329.63, 392];
             const freq = notes[(stepCount / 8) % notes.length];
             osc.frequency.setValueAtTime(freq, now);
             gain.gain.setValueAtTime(0.001, now);
@@ -933,11 +1404,10 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
             osc.stop(now + 1.8);
           }
         } else if (audioPreset === 'cyber-pulse') {
-          // 16th note arp synth
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = 'triangle';
-          const arp = [130.81, 164.81, 196.00, 246.94]; // C-E-G-B
+          const arp = [130.81, 164.81, 196.00, 246.94];
           osc.frequency.setValueAtTime(arp[stepCount % 4], now);
           gain.gain.setValueAtTime(0.08, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
@@ -980,7 +1450,9 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     }
   }, [currentSceneInfo.index, currentSceneInfo.scene, isPlaying, playSoundEffect, voiceoverEnabled, speakCurrentScene]);
 
-  // Main 60 FPS Canvas Render Loop
+  // =========================================================================
+  // MAIN 60 FPS CANVAS RENDER LOOP (WITH RICH LEMO-OPUSCAR VISUAL ACTORS)
+  // =========================================================================
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1007,22 +1479,22 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
     // 1. CLEAR & OBSIDIAN BASE
     ctx.clearRect(0, 0, targetW, targetH);
-    ctx.fillStyle = '#0B0D13';
+    ctx.fillStyle = '#090B10';
     ctx.fillRect(0, 0, targetW, targetH);
 
     // 2. DYNAMIC ATMOSPHERIC MESH AURA
     const auraX = targetW * (0.5 + Math.sin(currentTime * 0.8) * 0.15);
-    const auraY = targetH * (0.35 + Math.cos(currentTime * 0.7) * 0.1);
-    const auraRadius = Math.max(targetW, targetH) * 0.65;
+    const auraY = targetH * (0.4 + Math.cos(currentTime * 0.7) * 0.1);
+    const auraRadius = Math.max(targetW, targetH) * 0.7;
     const auraGrad = ctx.createRadialGradient(auraX, auraY, 60, auraX, auraY, auraRadius);
     auraGrad.addColorStop(0, `${accent}40`);
-    auraGrad.addColorStop(0.4, `${accent}15`);
-    auraGrad.addColorStop(1, 'rgba(11, 13, 19, 0)');
+    auraGrad.addColorStop(0.5, `${accent}15`);
+    auraGrad.addColorStop(1, 'rgba(9, 11, 16, 0)');
     ctx.fillStyle = auraGrad;
     ctx.fillRect(0, 0, targetW, targetH);
 
-    // 3. MOVING PERSPECTIVE FLOOR GRID
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+    // 3. PERSPECTIVE FLOOR GRID
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
     const gridSize = 64;
     const gridOffset = (currentTime * 40) % gridSize;
@@ -1054,94 +1526,61 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       ctx.fillStyle = accent;
       ctx.globalAlpha = pt.alpha * (0.5 + Math.sin(currentTime * 2 + p) * 0.2);
       ctx.beginPath();
-      ctx.arc(pt.x * targetW, pt.y * targetH, pt.size * (aspectRatio === '16:9' ? 1.5 : 2), 0, Math.PI * 2);
+      ctx.arc(pt.x * targetW, pt.y * targetH, pt.size * 2, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
 
-    // 5. BRANDING POD (Apple Specular Header)
-    const headerY = targetH * 0.08;
+    // 5. TOP BRANDING POD & LIVE FPS PILL
+    const headerY = targetH * (aspectRatio === '16:9' ? 0.07 : 0.05);
     ctx.save();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.font = '800 28px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
+    ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('INFRATECHAI', targetW * 0.08, headerY);
+    ctx.fillText('INFRATECHAI', targetW * 0.07, headerY);
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('• 64 AGENT WORKFORCE CINEMA', targetW * 0.08 + 195, headerY);
+    ctx.font = '600 18px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText('• 64 AGENT WORKFORCE CINEMA', targetW * 0.07 + 175, headerY);
 
     // Live 60 FPS Pill
-    const pillX = targetW * 0.92;
-    ctx.fillStyle = 'rgba(20, 21, 24, 0.75)';
+    const pillX = targetW * 0.93;
+    ctx.fillStyle = 'rgba(20, 21, 24, 0.85)';
     ctx.beginPath();
-    ctx.roundRect(pillX - 110, headerY - 24, 110, 34, 17);
+    ctx.roundRect(pillX - 110, headerY - 22, 110, 32, 16);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
     ctx.stroke();
 
     ctx.fillStyle = accent;
     ctx.beginPath();
-    ctx.arc(pillX - 90, headerY - 7, 5, 0, Math.PI * 2);
+    ctx.arc(pillX - 90, headerY - 6, 5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 13px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.font = '700 12px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('60 FPS', pillX - 50, headerY - 2);
     ctx.restore();
 
-    // 6. CENTER HERO CARD (Apple Specular Glass Box)
-    const cardMarginX = targetW * 0.07;
-    const cardW = targetW - cardMarginX * 2;
-    const cardH = targetH * (aspectRatio === '9:16' ? 0.62 : 0.58);
-    const cardY = targetH * 0.16;
-
-    ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 20;
-
-    // Glass Background Fill
-    ctx.fillStyle = 'rgba(24, 27, 36, 0.85)';
-    ctx.beginPath();
-    ctx.roundRect(cardMarginX, cardY, cardW, cardH, 36);
-    ctx.fill();
-
-    // Specular Glass Border with Dynamic Light Sheen
-    ctx.shadowColor = 'transparent';
-    const sheenPos = (currentTime * 0.5) % 2;
-    const borderGrad = ctx.createLinearGradient(
-      cardMarginX + cardW * (sheenPos - 0.5), cardY,
-      cardMarginX + cardW * (sheenPos + 0.5), cardY + cardH
-    );
-    borderGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-    borderGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.08)');
-    borderGrad.addColorStop(1, `${accent}70`);
-    ctx.strokeStyle = borderGrad;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.restore();
-
-    // 7. ANIMATED CONTENT (Kinetic Typography & Ease-Out)
+    // 6. NARRATIVE HEADLINE & TAG SECTION (TOP-THIRD)
     const enterEase = Math.min(1, Math.max(0, sceneLocalTime * 2.8));
-    const smoothEase = 1 - Math.pow(1 - enterEase, 3); // Cubic Ease Out
-    const textOffsetY = (1 - smoothEase) * 36;
-    const opacity = smoothEase;
+    const smoothEase = 1 - Math.pow(1 - enterEase, 3);
+    const textOffsetY = (1 - smoothEase) * 30;
 
     ctx.save();
-    ctx.globalAlpha = opacity;
+    ctx.globalAlpha = smoothEase;
 
-    // TAG BADGE
-    const badgeY = cardY + 70 + textOffsetY * 0.5;
+    // Tag Badge
+    const tagY = targetH * (aspectRatio === '16:9' ? 0.14 : 0.09) + textOffsetY * 0.5;
     ctx.fillStyle = `${accent}25`;
     const tagText = scene?.tag || 'SYSTEM DIRECTIVE';
-    ctx.font = '800 20px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.font = '800 18px -apple-system, BlinkMacSystemFont, sans-serif';
     const tagMetrics = ctx.measureText(tagText);
-    const tagPadding = 24;
+    const tagPadding = 20;
 
     ctx.beginPath();
-    ctx.roundRect(cardMarginX + 48, badgeY - 26, tagMetrics.width + tagPadding * 2, 42, 21);
+    ctx.roundRect(targetW * 0.07, tagY - 24, tagMetrics.width + tagPadding * 2, 38, 19);
     ctx.fill();
     ctx.strokeStyle = `${accent}70`;
     ctx.lineWidth = 1.5;
@@ -1149,81 +1588,131 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
     ctx.fillStyle = accent;
     ctx.textAlign = 'left';
-    ctx.fillText(tagText, cardMarginX + 48 + tagPadding, badgeY);
+    ctx.fillText(tagText, targetW * 0.07 + tagPadding, tagY);
 
-    // SCENE COUNTER
+    // Scene Counter
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = '700 20px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.font = '700 18px -apple-system, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`0${index + 1} / 0${scenes.length}`, cardMarginX + cardW - 48, badgeY);
+    ctx.fillText(`0${index + 1} / 0${scenes.length}`, targetW * 0.93, tagY);
 
-    // MAIN HEADLINE
-    const mainY = cardY + 180 + textOffsetY;
-    const fontSize = aspectRatio === '9:16' ? 56 : 64;
-    ctx.font = `900 ${fontSize}px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif`;
+    // Main Kinetic Headline
+    const headlineY = tagY + 54 + textOffsetY;
+    const headlineFontSize = aspectRatio === '9:16' ? 48 : 52;
+    ctx.font = `900 ${headlineFontSize}px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif`;
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'left';
 
-    const maxWidth = cardW - 96;
+    const maxTextW = targetW * 0.86;
     const words = (scene?.mainText || '').split(' ');
     let line = '';
-    let curY = mainY;
-    const lineHeight = fontSize * 1.18;
+    let curY = headlineY;
+    const lineHeight = headlineFontSize * 1.15;
 
     for (let n = 0; n < words.length; n++) {
       const testLine = line + words[n] + ' ';
       const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(line, cardMarginX + 48, curY);
+      if (metrics.width > maxTextW && n > 0) {
+        ctx.fillText(line, targetW * 0.07, curY);
         line = words[n] + ' ';
         curY += lineHeight;
       } else {
         line = testLine;
       }
     }
-    ctx.fillText(line, cardMarginX + 48, curY);
+    ctx.fillText(line, targetW * 0.07, curY);
 
-    // SUBTITLE
-    curY += 36;
-    ctx.font = '500 26px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = 'rgba(229, 231, 238, 0.85)';
+    ctx.restore();
+
+    // =======================================================================
+    // 7. CENTER STAGE: LEMO-OPUSCAR DEDICATED VISUAL GRAPHIC ACTOR
+    // =======================================================================
+    const stageCenterY = targetH * (aspectRatio === '9:16' ? 0.44 : 0.52);
+    const stageCenterX = targetW * (aspectRatio === '16:9' ? 0.62 : 0.5);
+    const stageRadius = targetW * (aspectRatio === '9:16' ? 0.38 : 0.28);
+
+    const visualType = scene?.visualType || 'radar';
+
+    if (visualType === 'radar') {
+      drawRadarVisual(ctx, stageCenterX, stageCenterY, stageRadius, currentTime, accent, scene?.tag, isPlaying);
+    } else if (visualType === 'swarm') {
+      drawAgentSwarmVisual(ctx, stageCenterX, stageCenterY, stageRadius, currentTime, accent);
+    } else if (visualType === 'terminal') {
+      const termW = targetW * (aspectRatio === '16:9' ? 0.45 : 0.86);
+      const termH = targetH * (aspectRatio === '16:9' ? 0.42 : 0.25);
+      drawCodeTerminalVisual(ctx, stageCenterX, stageCenterY, termW, termH, currentTime, accent, scene);
+    } else if (visualType === 'pipeline') {
+      const pipeW = targetW * (aspectRatio === '16:9' ? 0.48 : 0.86);
+      const pipeH = targetH * (aspectRatio === '16:9' ? 0.44 : 0.25);
+      drawPipelineVisual(ctx, stageCenterX, stageCenterY, pipeW, pipeH, currentTime, accent, scene);
+    } else if (visualType === 'revenue') {
+      drawRevenueRadarVisual(ctx, stageCenterX, stageCenterY, stageRadius, currentTime, accent, scene?.metric);
+    } else {
+      // Default: 'keynote'
+      drawKeynoteBadgeVisual(ctx, stageCenterX, stageCenterY, stageRadius, currentTime, accent, scene?.metric);
+    }
+
+    // =======================================================================
+    // 8. LOWER NARRATIVE SUBTITLE POD & DYNAMIC METRIC
+    // =======================================================================
+    const lowerCardY = targetH * (aspectRatio === '9:16' ? 0.66 : 0.72);
+    const lowerCardW = targetW * (aspectRatio === '16:9' ? 0.48 : 0.86);
+    const lowerCardX = targetW * (aspectRatio === '16:9' ? 0.07 : 0.07);
+    const lowerCardH = targetH * (aspectRatio === '9:16' ? 0.17 : 0.18);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 15;
+
+    // Specular Glass Card
+    ctx.fillStyle = 'rgba(20, 24, 34, 0.88)';
+    ctx.beginPath();
+    ctx.roundRect(lowerCardX, lowerCardY, lowerCardW, lowerCardH, 24);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Subtitle Explanation Text
+    ctx.fillStyle = 'rgba(229, 231, 238, 0.9)';
+    ctx.font = '500 22px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'left';
 
     const subWords = (scene?.subText || '').split(' ');
-    let subLine = '';
-    const subLineHeight = 38;
+    let sLine = '';
+    let sCurY = lowerCardY + 40;
+    const sLineH = 32;
+    const maxSubW = lowerCardW - 48;
+
     for (let n = 0; n < subWords.length; n++) {
-      const testLine = subLine + subWords[n] + ' ';
+      const testLine = sLine + subWords[n] + ' ';
       const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(subLine, cardMarginX + 48, curY);
-        subLine = subWords[n] + ' ';
-        curY += subLineHeight;
+      if (metrics.width > maxSubW && n > 0) {
+        ctx.fillText(sLine, lowerCardX + 24, sCurY);
+        sLine = subWords[n] + ' ';
+        sCurY += sLineH;
       } else {
-        subLine = testLine;
+        sLine = testLine;
       }
     }
-    ctx.fillText(subLine, cardMarginX + 48, curY);
+    ctx.fillText(sLine, lowerCardX + 24, sCurY);
 
-    // 8. DYNAMIC INTERPOLATED METRIC POD
+    // Dynamic Metric Telemetry inside Lower Card
     if (scene?.metric) {
-      const metricPodY = cardY + cardH - 120;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-      ctx.beginPath();
-      ctx.roundRect(cardMarginX + 48, metricPodY, cardW - 96, 74, 20);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.stroke();
-
+      const metricBarY = lowerCardY + lowerCardH - 42;
       ctx.fillStyle = accent;
       ctx.beginPath();
-      ctx.arc(cardMarginX + 80, metricPodY + 37, 8, 0, Math.PI * 2);
+      ctx.arc(lowerCardX + 32, metricBarY, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-      ctx.font = '700 18px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillText('TELEMETRY OUTPUT', cardMarginX + 104, metricPodY + 43);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '700 13px monospace';
+      ctx.fillText('LIVE TELEMETRY', lowerCardX + 48, metricBarY + 5);
 
-      // Dynamic calculation if startNum and endNum exist
+      // Interpolated value
       let displayMetric = scene.metric;
       if (typeof scene.startNum === 'number' && typeof scene.endNum === 'number') {
         const val = scene.startNum + (scene.endNum - scene.startNum) * Math.min(1, progress * 1.2);
@@ -1232,15 +1721,15 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       }
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '900 24px -apple-system, BlinkMacSystemFont, monospace';
+      ctx.font = '900 18px monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(displayMetric, cardMarginX + cardW - 80, metricPodY + 44);
+      ctx.fillText(displayMetric, lowerCardX + lowerCardW - 24, metricBarY + 6);
     }
 
     ctx.restore();
 
-    // 9. SOCIAL FOOTER & SOUND FREQUENCY VISUALIZER BARS
-    const footerY = targetH * 0.88;
+    // 9. BOTTOM SOCIAL BRANDING & SOUND WAVE VISUALIZER
+    const footerY = targetH * (aspectRatio === '16:9' ? 0.94 : 0.89);
     const barCount = 36;
     const barWidth = 8;
     const barSpacing = 10;
@@ -1248,23 +1737,23 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
     for (let b = 0; b < barCount; b++) {
       const waveFreq = isPlaying ? 10 : 2;
-      const barHeight = 14 + Math.sin(currentTime * waveFreq + b * 0.35) * 22 * (isPlaying ? 1 : 0.25);
+      const barHeight = 12 + Math.sin(currentTime * waveFreq + b * 0.35) * 20 * (isPlaying ? 1 : 0.25);
       ctx.fillStyle = b % 4 === 0 ? accent : 'rgba(255, 255, 255, 0.25)';
       ctx.beginPath();
       ctx.roundRect(visualizerStartX + b * (barWidth + barSpacing), footerY - barHeight / 2, barWidth, barHeight, 4);
       ctx.fill();
     }
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.font = '700 20px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('@infratechai • Code-Driven Enterprise Cinema', targetW / 2, footerY + 54);
+    ctx.fillText('@infratechai • Code-Driven Enterprise Cinema', targetW / 2, footerY + 44);
 
-    // 10. TOP INSTAGRAM/TIKTOK PROGRESS BARS
-    const progY = 32;
+    // 10. TOP STORY SEGMENTS PROGRESS BARS
+    const progY = 24;
     const progH = 6;
     const progTotalW = targetW - 64;
-    const segSpacing = 12;
+    const segSpacing = 10;
     const segW = (progTotalW - segSpacing * (scenes.length - 1)) / scenes.length;
 
     let accTime = 0;
@@ -1359,7 +1848,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, handleRestart]);
 
-  // Update Scene Text
+  // Update Scene Text or Visual Type
   const updateSceneField = (index, field, value) => {
     setScenes((prev) => {
       const copy = [...prev];
@@ -1374,6 +1863,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       id: `sc_${Date.now()}`,
       title: `SCENE 0${scenes.length + 1}`,
       duration: 3.5,
+      visualType: 'swarm',
       tag: 'NEW HIGHLIGHT',
       mainText: 'AUTONOMOUS IMPACT DELIVERED.',
       subText: 'Engineered with 64 AI specialists working in real-time consensus.',
@@ -1444,7 +1934,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       const canvasStream = canvas.captureStream(60);
       const combinedTracks = [...canvasStream.getVideoTracks()];
 
-      // If audio is available, attach synthesized audio track
+      // Attach synthesized audio track if enabled
       if (audioDestRef.current && audioPreset !== 'muted' && audioEnabled) {
         const audioTracks = audioDestRef.current.stream.getAudioTracks();
         if (audioTracks.length > 0) {
@@ -1603,29 +2093,28 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
         replyText = "Switched to 16:9 Cinema Widescreen format (1920x1080) for YouTube and executive presentations.";
       } else if (lower.includes('apple') || lower.includes('minimal') || lower.includes('glass') || lower.includes('product')) {
         handleSelectTemplate(PRESET_TEMPLATES[1]);
-        replyText = "Activated the Apple Minimalist Glass Keynote style with Sonoma specular aura and 3D card tilt.";
+        replyText = "Activated the Apple Minimalist Glass Keynote style with holographic seal and 3D specular code terminal.";
       } else if (lower.includes('sales') || lower.includes('harvey') || lower.includes('outbound') || lower.includes('inr') || lower.includes('pipeline')) {
         handleSelectTemplate(PRESET_TEMPLATES[2]);
-        replyText = "Activated Harvey SDR Outbound Machine with real-time ₹2,00,000 monthly ARR ticker and sonar radar sweeps.";
+        replyText = "Activated Harvey SDR Outbound Machine with real-time ₹2,00,000 ARR ticker and buyer intent radar!";
       } else if (lower.includes('swarm') || lower.includes('agent') || lower.includes('company') || lower.includes('64') || lower.includes('department')) {
         handleSelectTemplate(PRESET_TEMPLATES[3]);
-        replyText = "Activated 64-Agent Workforce Swarm style with neural telemetry grid and 14 department boot sequences.";
+        replyText = "Activated 64-Agent Workforce Swarm style with real-time neural network nodes and laser photon streams.";
       } else if (lower.includes('outage') || lower.includes('production') || lower.includes('zero bug') || lower.includes('crash')) {
         handleSelectTemplate(PRESET_TEMPLATES[4]);
-        replyText = "Activated The Zero-Defect Pipeline template with Sev-1 incident self-healing telemetry!";
+        replyText = "Activated The Zero-Defect Pipeline template with Sev-1 incident radar and self-healing auto-patch terminal!";
       } else if (lower.includes('security') || lower.includes('soc2') || lower.includes('fintech') || lower.includes('cve')) {
         handleSelectTemplate(PRESET_TEMPLATES[5]);
-        replyText = "Activated Fintech Compliance & Audit Armor template with continuous SOC2 vulnerability scans.";
+        replyText = "Activated Fintech Compliance & Audit Armor template with continuous SOC2 vulnerability scanning.";
       } else if (lower.includes('add scene') || lower.includes('new scene')) {
         handleAddScene();
-        replyText = "Added a new scene to your video timeline! You can edit its headline and subtext in the Scene Editor.";
+        replyText = "Added a new scene to your video timeline! You can edit its headline, subtext, and visual graphic in the Scene Editor.";
       } else {
-        // Dynamic generation based on prompt
         const generated = generateScriptFromTopic(text);
         setActiveTemplate(generated.template);
         setAspectRatio(generated.aspectRatio);
         setScenes(generated.scenes);
-        replyText = `Generated a custom 4-scene video script for "${text}" with tailored hooks, metrics, and kinetic typography! Playing preview now.`;
+        replyText = `Generated a rich visual 4-scene short film for "${text}" with custom animated radar, agent swarm, code terminal, and keynote graphics!`;
       }
 
       const animatorReply = {
@@ -1677,7 +2166,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   Animations Studio
                 </span>
                 <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 border border-pink-500/30 uppercase tracking-wider">
-                  Gamma.app Fluid Engine
+                  Lemo-Opuscar Cinema Engine
                 </span>
               </div>
               <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1.5">
@@ -1793,7 +2282,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   Step 1: What is the story of your video?
                 </h2>
                 <p className="text-xs text-[#50545E]">
-                  Type any concept, product feature, or marketing angle. Siddharth Menon will structure the 4 scenes automatically.
+                  Type any topic. Siddharth Menon will structure 4 cinematic scenes with dedicated visual graphics (Radars, Swarms, Code Diffs).
                 </p>
               </div>
             </div>
@@ -1816,7 +2305,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                 className="btn-shine-effect px-6 py-3 rounded-2xl bg-[#141518] hover:bg-[#2B2D33] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.97] cursor-pointer disabled:opacity-40"
               >
                 <Sparkles size={15} className="text-pink-400" />
-                <span>{isSynthesizingOutline ? 'Structuring...' : 'Generate Outline'}</span>
+                <span>{isSynthesizingOutline ? 'Structuring...' : 'Generate Storyboard'}</span>
               </button>
             </div>
 
@@ -1872,9 +2361,15 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   className="glass-specular bg-white/80 hover:bg-white rounded-3xl p-5 border border-white/80 shadow-apple-sm transition-all space-y-3 group relative"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#141518]/5 text-[#141518] font-bold text-[10px] uppercase tracking-wider">
-                      Scene 0{idx + 1} • {sc.title}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#141518]/5 text-[#141518] font-bold text-[10px] uppercase tracking-wider">
+                        Scene 0{idx + 1} • {sc.title}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg bg-pink-100 text-pink-700">
+                        {sc.visualType || 'radar'}
+                      </span>
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -1887,7 +2382,6 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                       />
                       <span className="text-[10px] text-[#50545E]">sec</span>
 
-                      {/* Move / Delete actions */}
                       <button
                         onClick={() => handleMoveScene(idx, -1)}
                         disabled={idx === 0}
@@ -1912,6 +2406,24 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                         <Trash2 size={12} />
                       </button>
                     </div>
+                  </div>
+
+                  {/* Visual Type Selector for Scene */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[10px] font-bold text-[#50545E] uppercase tracking-wider mr-1">Graphic:</span>
+                    {['radar', 'swarm', 'terminal', 'pipeline', 'keynote', 'revenue'].map((vType) => (
+                      <button
+                        key={vType}
+                        onClick={() => updateSceneField(idx, 'visualType', vType)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold cursor-pointer uppercase ${
+                          sc.visualType === vType
+                            ? 'bg-[#141518] text-white shadow-2xs'
+                            : 'bg-white/80 hover:bg-white text-[#50545E] border border-black/5'
+                        }`}
+                      >
+                        {vType}
+                      </button>
+                    ))}
                   </div>
 
                   <div>
@@ -1983,7 +2495,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                 Step 2: Choose your Visual Style & Aesthetic
               </h2>
               <p className="text-xs text-[#50545E]">
-                Every style features tailored color chemistry, lighting, and typography physics.
+                Lemo-Opuscar film aesthetics with dedicated procedural graphics and color physics.
               </p>
             </div>
 
@@ -1995,7 +2507,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
             </button>
           </div>
 
-          {/* Visual Theme Cards Grid (Gamma Style) */}
+          {/* Visual Theme Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {PRESET_TEMPLATES.map((tmpl) => {
               const isSel = activeTemplate.id === tmpl.id;
@@ -2260,7 +2772,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   <span className="w-2.5 h-2.5 rounded-full bg-[#F6A943]" />
                   <span className="w-2.5 h-2.5 rounded-full bg-[#3ECF8E]" />
                   <span className="font-mono text-[11px] text-white/60 ml-2">
-                    OPUSCAR • {aspectRatio} • {activeTemplate.name}
+                    LEMO-OPUSCAR • {aspectRatio} • {activeTemplate.name} • Visual: {currentSceneInfo.scene?.visualType?.toUpperCase() || 'RADAR'}
                   </span>
                 </div>
 
@@ -2285,10 +2797,10 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
               </div>
 
               {/* Canvas Device Frame with Dynamic Island Mockup */}
-              <div className="py-6 flex items-center justify-center w-full min-h-[520px] relative z-10">
+              <div className="py-6 flex items-center justify-center w-full min-h-[540px] relative z-10">
                 <div 
                   className={`relative rounded-[32px] p-2 bg-[#1C1E24] border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] transition-all ${
-                    aspectRatio === '9:16' ? 'max-w-[340px] sm:max-w-[360px]' : aspectRatio === '1:1' ? 'max-w-[460px]' : 'max-w-[640px]'
+                    aspectRatio === '9:16' ? 'max-w-[360px] sm:max-w-[390px]' : aspectRatio === '1:1' ? 'max-w-[480px]' : 'max-w-[680px]'
                   }`}
                   style={{
                     aspectRatio: aspectRatio === '9:16' ? '9/16' : aspectRatio === '1:1' ? '1/1' : '16/9'
@@ -2304,7 +2816,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
 
                   <canvas
                     ref={canvasRef}
-                    className="w-full h-full rounded-[24px] object-contain block bg-[#0B0D13]"
+                    className="w-full h-full rounded-[24px] object-contain block bg-[#090B10]"
                   />
                 </div>
               </div>
@@ -2384,7 +2896,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                         }`}
                       >
                         <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                          Scene 0{i + 1}
+                          Scene 0{i + 1} • {sc.visualType?.toUpperCase() || 'RADAR'}
                         </div>
                         <div className="text-xs font-semibold truncate text-white">
                           {sc.title}
@@ -2500,7 +3012,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   </div>
 
                   <p className="text-xs text-[#50545E] bg-white/60 p-3 rounded-2xl border border-black/5 leading-relaxed">
-                    "I turn your technical specs, QA releases, and outbound sales signals into 60 FPS code-driven cinema. Tell me what to animate below or tap a quick directive!"
+                    "I build high-production visual reels using code: animated radars, 64-agent swarm networks, auto-patch terminals, and holographic keynotes. Tell me your story or tap a directive below!"
                   </p>
                 </div>
 
@@ -2583,7 +3095,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                         type="text"
                         value={animatorInput}
                         onChange={(e) => setAnimatorInput(e.target.value)}
-                        placeholder="Instruct Siddharth (e.g. 'Make a reel about our autonomous QA platform')..."
+                        placeholder="Instruct Siddharth (e.g. 'Make a reel with a cyber radar and 64 agent swarm')..."
                         className="flex-1 px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518]"
                       />
                       <button
@@ -2607,7 +3119,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
                     <div>
                       <h3 className="text-sm font-bold text-[#141518]">Direct Scene Overrides</h3>
-                      <p className="text-xs text-[#50545E]">Edit on-screen text, metrics, and duration in real time.</p>
+                      <p className="text-xs text-[#50545E]">Change visual graphics, on-screen text, metrics, and duration.</p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {scenes.map((_, idx) => (
@@ -2635,6 +3147,36 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
 
                   {scenes[selectedSceneIndex] && (
                     <div className="space-y-3.5">
+                      {/* Visual Graphic Type Selector */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1.5">
+                          Visual Graphic Actor
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'radar', label: '🛰️ Cyber Radar' },
+                            { id: 'swarm', label: '🤖 Agent Swarm' },
+                            { id: 'terminal', label: '💻 Code Terminal' },
+                            { id: 'pipeline', label: '⚡ CI/CD Pipeline' },
+                            { id: 'keynote', label: '🏆 Hologram Seal' },
+                            { id: 'revenue', label: '💰 Harvey Funnel' }
+                          ].map((vt) => (
+                            <button
+                              key={vt.id}
+                              type="button"
+                              onClick={() => updateSceneField(selectedSceneIndex, 'visualType', vt.id)}
+                              className={`p-2 rounded-xl text-xs font-bold border cursor-pointer apple-motion-quick text-left ${
+                                scenes[selectedSceneIndex].visualType === vt.id
+                                  ? 'bg-[#141518] text-white border-[#141518] shadow-sm'
+                                  : 'bg-white hover:bg-white/80 text-[#141518] border-black/10'
+                              }`}
+                            >
+                              {vt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
                           <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">

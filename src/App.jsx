@@ -19,6 +19,7 @@ import { BusinessCommandCenterView } from './components/business/BusinessCommand
 import { AiDevView } from './components/aidev/AiDevView';
 import { VirtualCompanyView } from './components/company/VirtualCompanyView';
 import { VirtualCustomerView } from './components/customers/VirtualCustomerView';
+import { AnimationStudioView } from './components/studio/AnimationStudioView';
 import { HarveySettingsModal } from './components/sales/HarveySettingsModal';
 import { FirebaseModal } from './components/modals/FirebaseModal';
 import { InviteMemberModal } from './components/modals/InviteMemberModal';
@@ -58,10 +59,10 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
     try {
       const params = new URLSearchParams(window.location.search);
       const app = params.get('app');
-      if (app && ['hub', 'company', 'customers', 'qa', 'business', 'sales', 'aidev'].includes(app)) {
-        return app;
+      if (app && ['hub', 'company', 'customers', 'qa', 'business', 'sales', 'aidev', 'studio', 'animations'].includes(app)) {
+        return app === 'studio' ? 'animations' : app;
       }
-    } catch {}
+    } catch { }
     return 'hub';
   });
 
@@ -75,7 +76,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         url.searchParams.set('app', newApp);
       }
       window.history.pushState({}, '', url.toString());
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
         const params = new URLSearchParams(window.location.search);
         const app = params.get('app') || 'hub';
         setActiveAppState(app);
-      } catch {}
+      } catch { }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -812,7 +813,7 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
             currentUser,
             clientId
           ).then(() => setSyncStatus('synced'))
-           .catch((err) => console.warn('[Firebase] Execution submit sync error:', err));
+            .catch((err) => console.warn('[Firebase] Execution submit sync error:', err));
         }
       } else if (!targetFileId && files.length > 0) {
         targetFileId = files.find((f) => f.projectId === activeProjectId)?.id;
@@ -1154,264 +1155,274 @@ function AuthenticatedWorkspace({ currentUser, logout }) {
 
         {/* Main Content Area — Full Screen Viewport */}
         <main className="flex-1 relative flex flex-col min-w-0 w-full h-full bg-[#E5E7EE] overflow-y-auto">
-        
-        {/* Mobile Header Bar (hidden on desktop, hub, and cyberpunk command views) */}
-        {activeApp !== 'hub' && activeApp !== 'company' && activeApp !== 'customers' && (
-          <MobileHeader
-            activeApp={activeApp}
-            setActiveApp={setActiveApp}
-            activeProject={activeProject}
-            activeProjectId={activeProjectId}
-            onExitProject={handleExitProject}
-            onOpenInviteModal={() => setIsInviteModalOpen(true)}
-            onSelectProjectsTab={() => {
-              setActiveProjectId(null);
-              setActiveFileId(null);
-              setActiveTab('projects');
-            }}
-            currentUser={currentUser}
-            onOpenOptionsSheet={() => setIsMobileOptionsOpen(true)}
-          />
-        )}
 
-        {/* ======================================================== */}
-        {/* MODE 0: INFRATECHAI GAMES & APPS LIBRARY (HOME ON LOGIN) */}
-        {/* ======================================================== */}
-        {activeApp === 'hub' && (
-          <AppLibraryView
-            onLaunchApp={(appId) => setActiveApp(appId)}
-            projects={projects}
-            openBugsCount={openBugsCount}
-            pendingOutboxCount={pendingOutboxCount}
-            contractsCount={contractMetrics.totalContracts}
-            contractsExpiringSoon={contractMetrics.expiringSoonCount}
-            contractsMRR={contractMetrics.totalMRR}
-            currentUser={currentUser}
-            onLogout={logout}
-            onOpenSettings={() => setIsHarveySettingsOpen(true)}
-          />
-        )}
-
-        {/* ======================================================== */}
-        {/* MODE 1: SALES MANAGER (HARVEY AUTONOMOUS AI SDR SUITE)   */}
-        {/* ======================================================== */}
-        {activeApp === 'sales' && (
-          <SalesManagerView 
-            currentUser={currentUser}
-            salesTab={salesTab}
-            setSalesTab={setSalesTab}
-            onOpenSettings={() => setIsHarveySettingsOpen(true)}
-            onUpdateOutboxCount={(count) => setPendingOutboxCount(count)}
-          />
-        )}
-
-        {/* ======================================================== */}
-        {/* MODE 2: QA MANAGER SUITE                                 */}
-        {/* ======================================================== */}
-        {activeApp === 'qa' && (
-          <>
-            {/* Workspace Invitation Banner */}
-            <InvitationBanner
-              invitations={pendingInvitations}
-              onAccept={handleAcceptInvitation}
-              onDecline={handleDeclineInvitation}
+          {/* Mobile Header Bar (hidden on desktop, hub, and cyberpunk command views) */}
+          {activeApp !== 'hub' && activeApp !== 'company' && activeApp !== 'customers' && activeApp !== 'studio' && activeApp !== 'animations' && (
+            <MobileHeader
+              activeApp={activeApp}
+              setActiveApp={setActiveApp}
+              activeProject={activeProject}
+              activeProjectId={activeProjectId}
+              onExitProject={handleExitProject}
+              onOpenInviteModal={() => setIsInviteModalOpen(true)}
+              onSelectProjectsTab={() => {
+                setActiveProjectId(null);
+                setActiveFileId(null);
+                setActiveTab('projects');
+              }}
+              currentUser={currentUser}
+              onOpenOptionsSheet={() => setIsMobileOptionsOpen(true)}
             />
+          )}
 
-            {activeTab === 'projects' && (
-              <ProjectsView
-                projects={projects}
-                files={files}
-                tests={tests}
-                onAddProject={handleAddProject}
-                onDeleteProject={handleDeleteProject}
-                activeProjectId={activeProjectId}
-                onSelectProject={(id) => {
-                  setActiveProjectId(id);
-                  setActiveFileId(null);
+          {/* ======================================================== */}
+          {/* MODE 0: INFRATECHAI GAMES & APPS LIBRARY (HOME ON LOGIN) */}
+          {/* ======================================================== */}
+          {activeApp === 'hub' && (
+            <AppLibraryView
+              onLaunchApp={(appId) => setActiveApp(appId)}
+              projects={projects}
+              openBugsCount={openBugsCount}
+              pendingOutboxCount={pendingOutboxCount}
+              contractsCount={contractMetrics.totalContracts}
+              contractsExpiringSoon={contractMetrics.expiringSoonCount}
+              contractsMRR={contractMetrics.totalMRR}
+              currentUser={currentUser}
+              onLogout={logout}
+              onOpenSettings={() => setIsHarveySettingsOpen(true)}
+            />
+          )}
+
+          {/* ======================================================== */}
+          {/* MODE 1: SALES MANAGER (HARVEY AUTONOMOUS AI SDR SUITE)   */}
+          {/* ======================================================== */}
+          {activeApp === 'sales' && (
+            <SalesManagerView
+              currentUser={currentUser}
+              salesTab={salesTab}
+              setSalesTab={setSalesTab}
+              onOpenSettings={() => setIsHarveySettingsOpen(true)}
+              onUpdateOutboxCount={(count) => setPendingOutboxCount(count)}
+            />
+          )}
+
+          {/* ======================================================== */}
+          {/* MODE 2: QA MANAGER SUITE                                 */}
+          {/* ======================================================== */}
+          {activeApp === 'qa' && (
+            <>
+              {/* Workspace Invitation Banner */}
+              <InvitationBanner
+                invitations={pendingInvitations}
+                onAccept={handleAcceptInvitation}
+                onDecline={handleDeclineInvitation}
+              />
+
+              {activeTab === 'projects' && (
+                <ProjectsView
+                  projects={projects}
+                  files={files}
+                  tests={tests}
+                  onAddProject={handleAddProject}
+                  onDeleteProject={handleDeleteProject}
+                  activeProjectId={activeProjectId}
+                  onSelectProject={(id) => {
+                    setActiveProjectId(id);
+                    setActiveFileId(null);
+                    setActiveTab('dashboard');
+                  }}
+                  pendingInvitations={pendingInvitations}
+                  onAcceptInvitation={handleAcceptInvitation}
+                  onDeclineInvitation={handleDeclineInvitation}
+                />
+              )}
+
+              {activeTab === 'dashboard' && (
+                <DashboardView
+                  tests={visibleProjectTests}
+                  bugs={projectBugs}
+                  project={activeProject}
+                  files={visibleProjectFiles}
+                  reports={reports.filter(r => r.projectId === activeProjectId)}
+                  onNavigateToTab={(tab) => setActiveTab(tab)}
+                  currentUser={currentUser}
+                  onOpenInviteModal={() => setIsInviteModalOpen(true)}
+                />
+              )}
+
+              {activeTab === 'execute' && (
+                <ExecutionWorkspace
+                  tests={visibleProjectTests}
+                  updateTest={handleUpdateTest}
+                  project={activeProject}
+                  files={visibleProjectFiles}
+                  activeFileId={activeFileId}
+                  onSelectFile={(id) => setActiveFileId(id)}
+                  onExitTestFile={handleExitTestFile}
+                  onAddBug={handleAddBug}
+                  bugs={projectBugs}
+                  onNavigateToBugs={() => setActiveTab('bugs')}
+                  onNavigateToFiles={() => setActiveTab('files')}
+                  onSubmitExecution={handleSubmitExecution}
+                  currentUser={currentUser}
+                />
+              )}
+
+              {activeTab === 'bugs' && (
+                <BugsView
+                  bugs={projectBugs}
+                  onAddBug={handleAddBug}
+                  onUpdateBug={handleUpdateBug}
+                  onDeleteBug={handleDeleteBug}
+                  project={activeProject}
+                  tests={visibleProjectTests}
+                  currentUser={currentUser}
+                  triggerNewBugModal={triggerNewBugModal}
+                />
+              )}
+
+              {(activeTab === 'files' || activeTab === 'import') && (
+                <TestFilesView
+                  files={visibleProjectFiles}
+                  tests={visibleProjectTests}
+                  allTests={projectTests}
+                  project={activeProject}
+                  onAddFile={handleAddFile}
+                  onDeleteFile={(id) => {
+                    if (activeFileId === id) setActiveFileId(null);
+                    handleDeleteFile(id);
+                  }}
+                  onAddTest={handleAddTestCase}
+                  onDeleteTest={handleDeleteTest}
+                  onUpdateTest={handleUpdateTest}
+                  onBulkAssignSuite={handleBulkAssignSuite}
+                  onImportTests={handleImportTests}
+                  activeFileId={activeFileId}
+                  onSelectFile={(id) => setActiveFileId(id)}
+                  onExitTestFile={handleExitTestFile}
+                  onNavigateToExecute={() => setActiveTab('execute')}
+                  currentUser={currentUser}
+                  triggerNewFileModal={triggerNewFileModal}
+                />
+              )}
+
+              {activeTab === 'reports' && (
+                <ReportsView
+                  reports={reports.filter(r => r.projectId === activeProjectId)}
+                  project={activeProject}
+                  currentUser={currentUser}
+                  onAddReport={(report) => {
+                    setReports(prev => {
+                      const updated = [report, ...prev];
+                      db.saveReports(updated, userId);
+                      return updated;
+                    });
+                  }}
+                  onUpdateReport={(id, updates) => {
+                    setReports(prev => {
+                      const updated = prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r);
+                      db.saveReports(updated, userId);
+                      return updated;
+                    });
+                  }}
+                  onDeleteReport={(id) => {
+                    setReports(prev => {
+                      const updated = prev.filter(r => r.id !== id);
+                      db.saveReports(updated, userId);
+                      return updated;
+                    });
+                  }}
+                />
+              )}
+            </>
+          )}
+
+          {/* ======================================================== */}
+          {/* MODE 3: BUSINESS COMMAND CENTER                         */}
+          {/* ======================================================== */}
+          {activeApp === 'business' && (
+            <BusinessCommandCenterView
+              currentUser={currentUser}
+              qaProjects={projects}
+              qaBugs={bugs}
+              qaTests={tests}
+              onContractsChange={(updated) => setContracts(updated)}
+              activeTab={businessTab}
+              onTabChange={setBusinessTab}
+              triggerAddModal={triggerAddContractModal}
+              onNavigateToApp={(appId) => setActiveApp(appId)}
+              onNavigateToQA={(projectId) => {
+                setActiveApp('qa');
+                if (projectId) {
+                  setActiveProjectId(projectId);
                   setActiveTab('dashboard');
-                }}
-                pendingInvitations={pendingInvitations}
-                onAcceptInvitation={handleAcceptInvitation}
-                onDeclineInvitation={handleDeclineInvitation}
-              />
-            )}
+                }
+              }}
+            />
+          )}
 
-            {activeTab === 'dashboard' && (
-              <DashboardView
-                tests={visibleProjectTests}
-                bugs={projectBugs}
-                project={activeProject}
-                files={visibleProjectFiles}
-                reports={reports.filter(r => r.projectId === activeProjectId)}
-                onNavigateToTab={(tab) => setActiveTab(tab)}
-                currentUser={currentUser}
-                onOpenInviteModal={() => setIsInviteModalOpen(true)}
-              />
-            )}
+          {/* ======================================================== */}
+          {/* MODE 4: AI DEV (AUTONOMOUS TECHNICAL COPILOT)           */}
+          {/* ======================================================== */}
+          {activeApp === 'aidev' && (
+            <AiDevView
+              currentUser={currentUser}
+              projects={projects}
+              files={files}
+              tests={tests}
+              bugs={bugs}
+              contracts={contracts}
+              leads={salesService.getLeads(userId)}
+              outbox={salesService.getOutbox(userId)}
+              syncStatus={syncStatus}
+              onSwitchApp={(targetApp) => setActiveApp(targetApp)}
+              agentVoice={aiDevVoice}
+              onAgentVoiceChange={setAiDevVoice}
+              speechLang={aiDevLang}
+              onSpeechLangChange={setAiDevLang}
+              isLiveCallActive={aiDevLiveCallActive}
+              onLiveCallActiveChange={setAiDevLiveCallActive}
+              isVoiceEnabled={aiDevVoiceEnabled}
+              onVoiceEnabledChange={setAiDevVoiceEnabled}
+              resetSignal={aiDevResetSignal}
+            />
+          )}
 
-            {activeTab === 'execute' && (
-              <ExecutionWorkspace
-                tests={visibleProjectTests}
-                updateTest={handleUpdateTest}
-                project={activeProject}
-                files={visibleProjectFiles}
-                activeFileId={activeFileId}
-                onSelectFile={(id) => setActiveFileId(id)}
-                onExitTestFile={handleExitTestFile}
-                onAddBug={handleAddBug}
-                bugs={projectBugs}
-                onNavigateToBugs={() => setActiveTab('bugs')}
-                onNavigateToFiles={() => setActiveTab('files')}
-                onSubmitExecution={handleSubmitExecution}
-                currentUser={currentUser}
-              />
-            )}
+          {/* ======================================================== */}
+          {/* MODE 5: VIRTUAL COMPANY (STARK CYBERPUNK HQ & HARVEY)    */}
+          {/* ======================================================== */}
+          {activeApp === 'company' && (
+            <VirtualCompanyView
+              currentUser={currentUser}
+              projects={projects}
+              tests={tests}
+              bugs={bugs}
+              contracts={contracts}
+              onNavigateToApp={(appId) => setActiveApp(appId)}
+              onOpenHarveySettings={() => setIsHarveySettingsOpen(true)}
+            />
+          )}
 
-            {activeTab === 'bugs' && (
-              <BugsView
-                bugs={projectBugs}
-                onAddBug={handleAddBug}
-                onUpdateBug={handleUpdateBug}
-                onDeleteBug={handleDeleteBug}
-                project={activeProject}
-                tests={visibleProjectTests}
-                currentUser={currentUser}
-                triggerNewBugModal={triggerNewBugModal}
-              />
-            )}
+          {/* ======================================================== */}
+          {/* MODE 6: VIRTUAL CUSTOMER SWARM (MIROFISH MULTI-AGENT)    */}
+          {/* ======================================================== */}
+          {activeApp === 'customers' && (
+            <VirtualCustomerView
+              currentUser={currentUser}
+              onNavigateToApp={(appId) => setActiveApp(appId)}
+            />
+          )}
 
-            {(activeTab === 'files' || activeTab === 'import') && (
-              <TestFilesView
-                files={visibleProjectFiles}
-                tests={visibleProjectTests}
-                allTests={projectTests}
-                project={activeProject}
-                onAddFile={handleAddFile}
-                onDeleteFile={(id) => {
-                  if (activeFileId === id) setActiveFileId(null);
-                  handleDeleteFile(id);
-                }}
-                onAddTest={handleAddTestCase}
-                onDeleteTest={handleDeleteTest}
-                onUpdateTest={handleUpdateTest}
-                onBulkAssignSuite={handleBulkAssignSuite}
-                onImportTests={handleImportTests}
-                activeFileId={activeFileId}
-                onSelectFile={(id) => setActiveFileId(id)}
-                onExitTestFile={handleExitTestFile}
-                onNavigateToExecute={() => setActiveTab('execute')}
-                currentUser={currentUser}
-                triggerNewFileModal={triggerNewFileModal}
-              />
-            )}
-
-            {activeTab === 'reports' && (
-              <ReportsView
-                reports={reports.filter(r => r.projectId === activeProjectId)}
-                project={activeProject}
-                currentUser={currentUser}
-                onAddReport={(report) => {
-                  setReports(prev => {
-                    const updated = [report, ...prev];
-                    db.saveReports(updated, userId);
-                    return updated;
-                  });
-                }}
-                onUpdateReport={(id, updates) => {
-                  setReports(prev => {
-                    const updated = prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r);
-                    db.saveReports(updated, userId);
-                    return updated;
-                  });
-                }}
-                onDeleteReport={(id) => {
-                  setReports(prev => {
-                    const updated = prev.filter(r => r.id !== id);
-                    db.saveReports(updated, userId);
-                    return updated;
-                  });
-                }}
-              />
-            )}
-          </>
-        )}
-
-        {/* ======================================================== */}
-        {/* MODE 3: BUSINESS COMMAND CENTER                         */}
-        {/* ======================================================== */}
-        {activeApp === 'business' && (
-          <BusinessCommandCenterView
-            currentUser={currentUser}
-            qaProjects={projects}
-            qaBugs={bugs}
-            qaTests={tests}
-            onContractsChange={(updated) => setContracts(updated)}
-            activeTab={businessTab}
-            onTabChange={setBusinessTab}
-            triggerAddModal={triggerAddContractModal}
-            onNavigateToApp={(appId) => setActiveApp(appId)}
-            onNavigateToQA={(projectId) => {
-              setActiveApp('qa');
-              if (projectId) {
-                setActiveProjectId(projectId);
-                setActiveTab('dashboard');
-              }
-            }}
-          />
-        )}
-
-        {/* ======================================================== */}
-        {/* MODE 4: AI DEV (AUTONOMOUS TECHNICAL COPILOT)           */}
-        {/* ======================================================== */}
-        {activeApp === 'aidev' && (
-          <AiDevView
-            currentUser={currentUser}
-            projects={projects}
-            files={files}
-            tests={tests}
-            bugs={bugs}
-            contracts={contracts}
-            leads={salesService.getLeads(userId)}
-            outbox={salesService.getOutbox(userId)}
-            syncStatus={syncStatus}
-            onSwitchApp={(targetApp) => setActiveApp(targetApp)}
-            agentVoice={aiDevVoice}
-            onAgentVoiceChange={setAiDevVoice}
-            speechLang={aiDevLang}
-            onSpeechLangChange={setAiDevLang}
-            isLiveCallActive={aiDevLiveCallActive}
-            onLiveCallActiveChange={setAiDevLiveCallActive}
-            isVoiceEnabled={aiDevVoiceEnabled}
-            onVoiceEnabledChange={setAiDevVoiceEnabled}
-            resetSignal={aiDevResetSignal}
-          />
-        )}
-
-        {/* ======================================================== */}
-        {/* MODE 5: VIRTUAL COMPANY (STARK CYBERPUNK HQ & HARVEY)    */}
-        {/* ======================================================== */}
-        {activeApp === 'company' && (
-          <VirtualCompanyView
-            currentUser={currentUser}
-            projects={projects}
-            tests={tests}
-            bugs={bugs}
-            contracts={contracts}
-            onNavigateToApp={(appId) => setActiveApp(appId)}
-            onOpenHarveySettings={() => setIsHarveySettingsOpen(true)}
-          />
-        )}
-
-        {/* ======================================================== */}
-        {/* MODE 6: VIRTUAL CUSTOMER SWARM (MIROFISH MULTI-AGENT)    */}
-        {/* ======================================================== */}
-        {activeApp === 'customers' && (
-          <VirtualCustomerView
-            currentUser={currentUser}
-            onNavigateToApp={(appId) => setActiveApp(appId)}
-          />
-        )}
-      </main>
+          {/* ======================================================== */}
+          {/* MODE 7: ANIMATIONS STUDIO (LEMO-OPUSCAR SOCIAL REELS)    */}
+          {/* ======================================================== */}
+          {(activeApp === 'studio' || activeApp === 'animations') && (
+            <AnimationStudioView
+              currentUser={currentUser}
+              onNavigateToApp={(appId) => setActiveApp(appId)}
+            />
+          )}
+        </main>
       </div>
 
       {/* Mobile Floating Glass Dock & Options Sheet (shown across ecosystem apps) */}

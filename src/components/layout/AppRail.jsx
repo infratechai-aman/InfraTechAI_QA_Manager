@@ -1,18 +1,19 @@
 import React from 'react';
 import {
   CheckSquare, Bot, Layers, Building2, Cpu, Users,
-  LayoutGrid, MessageSquare
+  LayoutGrid, MessageSquare, Film
 } from 'lucide-react';
 import { getUserInitial } from '../../utils/formatters';
 
 const NAV_ITEMS = [
-  { id: 'hub',       label: 'Launchpad',       icon: LayoutGrid,    accent: '#6E7BFF' },
-  { id: 'company',   label: 'Virtual Company',  icon: Building2,     accent: '#3ECF8E' },
-  { id: 'customers', label: 'Agent Swarm',      icon: Users,         accent: '#4A9EFF' },
-  { id: 'qa',        label: 'QA Manager',       icon: CheckSquare,   accent: '#6E7BFF' },
-  { id: 'business',  label: 'Business',         icon: MessageSquare, accent: '#F6A943' },
-  { id: 'sales',     label: 'Harvey SDR',       icon: Bot,           accent: '#F6A943' },
-  { id: 'aidev',     label: 'AI Dev',           icon: Cpu,           accent: '#3ECF8E' },
+  { id: 'hub',        label: 'Launchpad',       icon: LayoutGrid,    accent: '#6E7BFF' },
+  { id: 'animations', label: 'Animations',      icon: Film,          accent: '#EC4899' },
+  { id: 'company',    label: 'Virtual Company',  icon: Building2,     accent: '#3ECF8E' },
+  { id: 'customers',  label: 'Agent Swarm',      icon: Users,         accent: '#4A9EFF' },
+  { id: 'qa',         label: 'QA Manager',       icon: CheckSquare,   accent: '#6E7BFF' },
+  { id: 'business',   label: 'Business',         icon: MessageSquare, accent: '#F6A943' },
+  { id: 'sales',      label: 'Harvey SDR',       icon: Bot,           accent: '#F6A943' },
+  { id: 'aidev',      label: 'AI Dev',           icon: Cpu,           accent: '#3ECF8E' },
 ];
 
 export const AppRail = ({

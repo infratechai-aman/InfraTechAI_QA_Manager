@@ -462,28 +462,28 @@ export const MobileBottomNav = ({
                 }`}>
                   Switch Active Workspace
                 </span>
-                <div className={`grid grid-cols-4 gap-1 p-1 rounded-xl text-xs ${
+                <div className={`grid grid-cols-5 gap-1 p-1 rounded-xl text-xs ${
                   activeApp === 'aidev' ? 'bg-white/5 border border-white/10' : 'bg-black/[0.05] border border-black/[0.04]'
                 }`}>
                   <button
                     onClick={() => { onSwitchApp('qa'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                    className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer apple-press ${
                       activeApp === 'qa' ? 'bg-[#007AFF] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
-                    QA Manager
+                    QA
                   </button>
                   <button
                     onClick={() => { onSwitchApp('sales'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                    className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer apple-press ${
                       activeApp === 'sales' ? 'bg-[#FF9500] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
-                    Sales AI
+                    Sales
                   </button>
                   <button
                     onClick={() => { onSwitchApp('business'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                    className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer apple-press ${
                       activeApp === 'business' ? 'bg-[#34C759] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
@@ -491,11 +491,19 @@ export const MobileBottomNav = ({
                   </button>
                   <button
                     onClick={() => { onSwitchApp('aidev'); setIsOptionsOpen(false); }}
-                    className={`py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                    className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer apple-press ${
                       activeApp === 'aidev' ? 'bg-[#007AFF] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
                     }`}
                   >
                     AI Dev
+                  </button>
+                  <button
+                    onClick={() => { onSwitchApp('animations'); setIsOptionsOpen(false); }}
+                    className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all cursor-pointer apple-press ${
+                      (activeApp === 'animations' || activeApp === 'studio') ? 'bg-[#EC4899] text-white shadow-2xs font-semibold' : (activeApp === 'aidev' ? 'text-slate-400' : 'text-[#636366]')
+                    }`}
+                  >
+                    Animations
                   </button>
                 </div>
               </div>

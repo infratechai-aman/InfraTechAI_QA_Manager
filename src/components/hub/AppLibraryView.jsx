@@ -124,11 +124,12 @@ const inlineStyles = `
    FILTER CATEGORIES
    ───────────────────────────────────────────────────────────────────────── */
 const FILTERS = [
-  { id: 'all',       label: 'All' },
-  { id: 'qa',        label: 'QA Manager' },
-  { id: 'sales',     label: 'Sales AI' },
-  { id: 'business',  label: 'Business' },
-  { id: 'aidev',     label: 'AI Dev' },
+  { id: 'all',        label: 'All' },
+  { id: 'animations', label: 'Animations' },
+  { id: 'qa',         label: 'QA Manager' },
+  { id: 'sales',      label: 'Sales AI' },
+  { id: 'business',   label: 'Business' },
+  { id: 'aidev',      label: 'AI Dev' },
 ];
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -139,6 +140,17 @@ const makeApps = (projects, openBugsCount, pendingOutboxCount, contracts) => {
   const inrFmt = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
   return [
+    {
+      id: 'animations',
+      category: 'CODE-DRIVEN CINEMA & SOCIAL REELS',
+      name: 'Animations (AI Animator Studio)',
+      desc: 'Direct your dedicated AI Motion Director & Animator (Siddharth Menon & Lemo-Opuscar Engine) to create 60 FPS viral Reels, YouTube Shorts, Apple Keynote product reveals, and kinetic typography with instant in-browser MP4/WebM video export.',
+      status: 'Animator Active',
+      tags: ['AI Animator', '60 FPS Code Canvas', 'Reels / Shorts', '1-Click MP4'],
+      cta: 'Launch Animations',
+      iconDark: true,
+      filterCategory: 'animations',
+    },
     {
       id: 'company',
       category: 'AUTONOMOUS ENTERPRISE OPERATIONS',
@@ -230,6 +242,12 @@ const AppIcon = ({ id, dark }) => {
   const cls = dark ? 'text-[#E5E7EE]' : 'text-[#2B2D33]';
 
   const paths = {
+    animations: (
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    ),
+    studio: (
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    ),
     company: (
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     ),

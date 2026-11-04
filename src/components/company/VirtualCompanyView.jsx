@@ -8,7 +8,7 @@ import {
   ShieldAlert, Globe, Compass, Terminal, Play,
   Zap, Search, Eye, AlertCircle, MessageSquare, X,
   Briefcase, Award, TrendingUp, ChevronDown, UserCheck,
-  ArrowLeft, Maximize2, Minimize2, ExternalLink, LayoutGrid
+  ArrowLeft, Maximize2, Minimize2, ExternalLink, LayoutGrid, Film
 } from 'lucide-react';
 import { salesService } from '../../services/salesService';
 import { GSTACK_DEPARTMENTS, COMPANY_EMPLOYEES } from '../../constants/companyEmployees';
@@ -617,14 +617,21 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
             { id: 'sales', label: 'Outbound Sales (Harvey)', count: pendingOutboxCount > 0 ? `${pendingOutboxCount} Pending` : null, icon: Mail },
             { id: 'support', label: 'Ops & Support (Sentinel-9)', count: `${tickets.filter(t => t.status === 'OPEN').length} Open`, icon: Ticket },
             { id: 'dispatch', label: 'Mission Dispatcher', icon: Sparkles },
-            { id: 'report', label: 'Daily Executive Briefing', icon: FileText }
+            { id: 'report', label: 'Daily Executive Briefing', icon: FileText },
+            { id: 'animations', label: 'AI Animator (Siddharth)', icon: Film, isAppNav: true }
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.isAppNav) {
+                    onNavigateToApp && onNavigateToApp('animations');
+                    return;
+                  }
+                  setActiveTab(tab.id);
+                }}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 apple-motion-quick active:scale-[0.96] cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'bg-[#141518] text-[#E5E7EE] shadow-sm'
@@ -841,13 +848,25 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                         {hasChat ? 'Conversation Active' : 'Available for founder chat'}
                       </span>
 
-                      <button
-                        onClick={() => setActiveChatEmployee(emp)}
-                        className="btn-shine-effect inline-flex items-center gap-1.5 bg-[#141518] hover:bg-[#2B2D33] active:scale-[0.94] text-[#E5E7EE] text-xs font-semibold px-3.5 py-2 rounded-2xl apple-motion-quick shadow-sm hover:shadow-apple-sm cursor-pointer"
-                      >
-                        <MessageSquare size={13} />
-                        <span>Chat 1-on-1 as Founder</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {(emp.id === 'emp_17' || emp.name === 'Siddharth Menon') && (
+                          <button
+                            onClick={() => onNavigateToApp && onNavigateToApp('animations')}
+                            className="btn-shine-effect inline-flex items-center gap-1.5 bg-pink-600 hover:bg-pink-700 active:scale-[0.94] text-white text-xs font-bold px-3 py-2 rounded-2xl apple-motion-quick shadow-sm cursor-pointer"
+                            title="Direct AI Animator Siddharth Menon"
+                          >
+                            <Film size={13} />
+                            <span>Launch Studio</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setActiveChatEmployee(emp)}
+                          className="btn-shine-effect inline-flex items-center gap-1.5 bg-[#141518] hover:bg-[#2B2D33] active:scale-[0.94] text-[#E5E7EE] text-xs font-semibold px-3.5 py-2 rounded-2xl apple-motion-quick shadow-sm hover:shadow-apple-sm cursor-pointer"
+                        >
+                          <MessageSquare size={13} />
+                          <span>Chat 1-on-1 as Founder</span>
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
@@ -1619,12 +1638,27 @@ ${GSTACK_DEPARTMENTS.map(d => `* **Dept ${d.number} — ${d.name}:** Head: ${d.h
                 </div>
               </div>
 
-              <button
-                onClick={() => setActiveChatEmployee(null)}
-                className="w-8 h-8 rounded-full bg-[#141518]/5 hover:bg-[#141518]/10 text-[#50545E] hover:text-[#141518] flex items-center justify-center apple-motion-quick active:scale-90 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {(activeChatEmployee.id === 'emp_17' || activeChatEmployee.name === 'Siddharth Menon') && (
+                  <button
+                    onClick={() => {
+                      setActiveChatEmployee(null);
+                      onNavigateToApp && onNavigateToApp('animations');
+                    }}
+                    className="btn-shine-effect flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold shadow-sm cursor-pointer active:scale-95"
+                    title="Launch Animations Studio"
+                  >
+                    <Film size={12} />
+                    <span>Open Studio</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setActiveChatEmployee(null)}
+                  className="w-8 h-8 rounded-full bg-[#141518]/5 hover:bg-[#141518]/10 text-[#50545E] hover:text-[#141518] flex items-center justify-center apple-motion-quick active:scale-90 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Employee Quick Info Pill Strip */}

@@ -3,27 +3,29 @@ import {
   Play, Pause, RotateCcw, Download, Film, Sparkles, Video,
   Volume2, VolumeX, Maximize2, Minimize2, ArrowLeft, ArrowRight,
   Layers, Sliders, Smartphone, Monitor, Square, Check, Copy,
-  Share2, Wand2, Mic, Clock, Cpu, Zap, Radio, ChevronRight,
+  Share2, Wand2, Mic, MicOff, Clock, Cpu, Zap, Radio, ChevronRight,
   TrendingUp, Shield, BarChart3, Users, Bot, Send, MessageSquare,
   UserCheck, RefreshCw, Eye, Camera, Palette, Music, Lightbulb,
-  Plus, Trash2, Edit3, CheckCircle2
+  Plus, Trash2, Edit3, CheckCircle2, MoveUp, MoveDown
 } from 'lucide-react';
 
 /**
- * ANIMATIONS STUDIO — GAMMA.APP STYLE GUIDED CREATION WORKFLOW
+ * ANIMATIONS STUDIO — FULLY FUNCTIONAL AI ANIMATOR & MOTION ENGINE
+ * Directed by Siddharth Menon (Dept 04 • Design Engineering Studio)
  * 
- * Powered by:
- * - Gamma-Style Creation Pipeline:
- *     1. 📝 Storyboard (Narrative & Outline Cards)
- *     2. 🎨 Visual Styles (Theme Gallery & Color Palettes)
- *     3. ⏱️ Duration & Audio (Pacing, Aspect Ratio, Sound Synth)
- *     4. ⚡ Cinema Stage (60 FPS Device Player & AI Animator Siddharth Menon)
- * - Apple Human Interface Guidelines & Emil Kowalski Design Engineering
- * - Charcoal/Slate Specular Glass palette (#E5E7EE canvas, #141518 obsidian)
- * - In-Browser 60 FPS Video Export via MediaRecorder
+ * Capabilities:
+ * - 6 Curated Cinema Templates & Dynamic Prompt-to-Script Generator
+ * - 60 FPS HTML5 Canvas Kinetic Cinema Engine with Particle Swarms & Specular Glass
+ * - Procedural Web Audio Synth Clock (Tech Riser, Apple Ambient, Cyber Pulse)
+ * - Synchronized Audio Recording into MediaRecorder (Exports real sound into WebM/MP4)
+ * - Browser Web Speech API Voiceover Narration (SpeechSynthesis)
+ * - Dynamic Metric Interpolation (Numbers count up/down in real time)
+ * - Full Scene Timeline Management: Add, Delete, Reorder, Duration Tuning
+ * - Gamma-Style 4-Step Guided Flow: Storyboard -> Styles -> Audio -> Cinema Stage
+ * - Direct NLP AI Animator Co-Pilot (Siddharth Menon)
  */
 
-// 4 Curated Production Film Templates
+// 6 Curated Production Film Templates
 const PRESET_TEMPLATES = [
   {
     id: 'viral-qa',
@@ -45,7 +47,10 @@ const PRESET_TEMPLATES = [
         mainText: 'MANUAL QA IS DEAD.',
         subText: 'Engineers waste 14 hrs/week on regressions.',
         highlight: 'DEAD.',
-        metric: '542 BUGS'
+        metric: '542 BUGS',
+        startNum: 542,
+        endNum: 0,
+        numSuffix: ' BUGS'
       },
       {
         id: 's2',
@@ -55,7 +60,10 @@ const PRESET_TEMPLATES = [
         mainText: '$40 BILLION WASTED',
         subText: 'In slow releases, flaky tests & broken pipelines.',
         highlight: '$40B',
-        metric: 'FLAKY: 42%'
+        metric: 'FLAKY: 42%',
+        startNum: 10,
+        endNum: 42,
+        numSuffix: '% FLAKY'
       },
       {
         id: 's3',
@@ -65,7 +73,10 @@ const PRESET_TEMPLATES = [
         mainText: '64 AGENTS. 0 MANUAL CLICKS.',
         subText: 'InfratechAI auto-generates & executes test suites 24/7.',
         highlight: '64 AGENTS',
-        metric: '0 DEFECTS'
+        metric: '0 DEFECTS',
+        startNum: 64,
+        endNum: 64,
+        numSuffix: ' AGENTS ONLINE'
       },
       {
         id: 's4',
@@ -75,7 +86,10 @@ const PRESET_TEMPLATES = [
         mainText: 'SHIP FLAWLESS CODE.',
         subText: 'Try InfratechAI Enterprise • Link in Bio',
         highlight: 'SHIP NOW',
-        metric: '100% PASS'
+        metric: '100% PASS',
+        startNum: 0,
+        endNum: 100,
+        numSuffix: '% PASS'
       }
     ]
   },
@@ -99,7 +113,10 @@ const PRESET_TEMPLATES = [
         mainText: 'The Future of Autonomous Engineering.',
         subText: 'Designed for high-velocity teams refusing to compromise.',
         highlight: 'Autonomous',
-        metric: 'KEYNOTE 2026'
+        metric: 'KEYNOTE 2026',
+        startNum: 2024,
+        endNum: 2026,
+        numSuffix: ' KEYNOTE'
       },
       {
         id: 's2',
@@ -109,7 +126,10 @@ const PRESET_TEMPLATES = [
         mainText: 'Specular UI. Fluid Motion.',
         subText: 'Zero-latency interaction with 14 autonomous departments.',
         highlight: 'Fluid Motion',
-        metric: '60 FPS'
+        metric: '60 FPS',
+        startNum: 30,
+        endNum: 60,
+        numSuffix: ' FPS ENGINE'
       },
       {
         id: 's3',
@@ -119,7 +139,10 @@ const PRESET_TEMPLATES = [
         mainText: 'A Company of 64 Working Specialists.',
         subText: 'From YC Advisory to DevOps Cloud deployments.',
         highlight: '64 Specialists',
-        metric: '14 DEPTS'
+        metric: '14 DEPTS',
+        startNum: 1,
+        endNum: 14,
+        numSuffix: ' DEPARTMENTS'
       },
       {
         id: 's4',
@@ -129,7 +152,10 @@ const PRESET_TEMPLATES = [
         mainText: 'Welcome to InfratechAI.',
         subText: 'Experience the Master App • Built for visionaries.',
         highlight: 'InfratechAI',
-        metric: 'ENTERPRISE'
+        metric: 'ENTERPRISE',
+        startNum: 0,
+        endNum: 100,
+        numSuffix: '% READY'
       }
     ]
   },
@@ -153,7 +179,10 @@ const PRESET_TEMPLATES = [
         mainText: 'STOP COLD CALLING.',
         subText: 'Traditional SDR outbound is returning 0.8% replies.',
         highlight: 'COLD CALLING.',
-        metric: 'REPLY: 0.8%'
+        metric: 'REPLY: 0.8%',
+        startNum: 5,
+        endNum: 0.8,
+        numSuffix: '% REPLY'
       },
       {
         id: 's2',
@@ -163,7 +192,10 @@ const PRESET_TEMPLATES = [
         mainText: 'HARVEY DETECTS BUYERS',
         subText: 'Real-time corporate website intent & hiring signals.',
         highlight: 'INTENT SIGNALS',
-        metric: '48 PROSPECTS'
+        metric: '48 PROSPECTS',
+        startNum: 0,
+        endNum: 48,
+        numSuffix: ' PROSPECTS'
       },
       {
         id: 's3',
@@ -173,7 +205,10 @@ const PRESET_TEMPLATES = [
         mainText: '₹2,00,000 RETAINER ARR',
         subText: 'Hyper-personalized sequences drafted autonomously.',
         highlight: '₹2,00,000',
-        metric: '34.2% REPLIES'
+        metric: '₹2,00,000',
+        startNum: 50000,
+        endNum: 200000,
+        numSuffix: ' INR'
       },
       {
         id: 's4',
@@ -183,7 +218,10 @@ const PRESET_TEMPLATES = [
         mainText: 'AUTOMATE YOUR SALES.',
         subText: 'Book a demo today at infratech.ai/sales',
         highlight: 'DEMO TODAY',
-        metric: 'HARVEY SDR'
+        metric: 'HARVEY SDR',
+        startNum: 0,
+        endNum: 100,
+        numSuffix: '% AUTONOMOUS'
       }
     ]
   },
@@ -207,7 +245,10 @@ const PRESET_TEMPLATES = [
         mainText: 'GSTACK CORE ONLINE.',
         subText: 'Initializing 14 autonomous enterprise departments.',
         highlight: 'ONLINE.',
-        metric: 'SYSTEM 100%'
+        metric: 'SYSTEM 100%',
+        startNum: 0,
+        endNum: 100,
+        numSuffix: '% CORE BOOT'
       },
       {
         id: 's2',
@@ -217,7 +258,10 @@ const PRESET_TEMPLATES = [
         mainText: '64 SPECIALISTS SYNCED.',
         subText: 'Strategy, Architecture, QA, Security, Sales & Release.',
         highlight: 'SYNCED.',
-        metric: 'VELOCITY: 96.8%'
+        metric: 'VELOCITY: 96.8%',
+        startNum: 50,
+        endNum: 96.8,
+        numSuffix: '% VELOCITY'
       },
       {
         id: 's3',
@@ -227,7 +271,10 @@ const PRESET_TEMPLATES = [
         mainText: 'NO MANUAL APPROVAL CHOKEPOINTS.',
         subText: 'Direct NLP task dispatch from executive leadership.',
         highlight: 'ZERO FRICTION',
-        metric: 'LATENCY: 12ms'
+        metric: 'LATENCY: 12ms',
+        startNum: 120,
+        endNum: 12,
+        numSuffix: 'ms LATENCY'
       },
       {
         id: 's4',
@@ -237,11 +284,395 @@ const PRESET_TEMPLATES = [
         mainText: 'YOUR VIRTUAL EMPIRE.',
         subText: 'Explore the 3D HQ • Follow @infratechai',
         highlight: 'VIRTUAL EMPIRE',
-        metric: 'LIVE NOW'
+        metric: 'LIVE NOW',
+        startNum: 0,
+        endNum: 64,
+        numSuffix: ' AGENTS ACTIVE'
+      }
+    ]
+  },
+  {
+    id: 'zero-bugs',
+    name: 'The Zero-Defect Pipeline',
+    category: 'Developer Reel',
+    platform: 'Reels / Shorts / X',
+    ratio: '9:16',
+    duration: 14,
+    accentColor: '#EF4444',
+    description: 'Critical production outage stopped by autonomous self-healing test suites.',
+    palette: ['#EF4444', '#991B1B', '#0F172A', '#FEE2E2'],
+    fontPair: 'Plus Jakarta Sans Bold + SF Pro Mono',
+    scenes: [
+      {
+        id: 's1',
+        title: 'ALERT',
+        duration: 3.5,
+        tag: 'SEV-1 INCIDENT',
+        mainText: 'PRODUCTION BREAKS AT 2 AM.',
+        subText: 'Payment gateway crashed after an unvetted release.',
+        highlight: '2 AM.',
+        metric: 'CRASH 100%',
+        startNum: 0,
+        endNum: 100,
+        numSuffix: '% RISK'
+      },
+      {
+        id: 's2',
+        title: 'INTERCEPT',
+        duration: 3.5,
+        tag: 'AUTONOMOUS INTERCEPT',
+        mainText: 'DEFECT CAUGHT IN 4 SECONDS.',
+        subText: 'Argus Prime & TestMaster Rex generated 120 regression passes.',
+        highlight: '4 SECONDS.',
+        metric: '120 TESTS RUN',
+        startNum: 0,
+        endNum: 120,
+        numSuffix: ' TESTS'
+      },
+      {
+        id: 's3',
+        title: 'RESTORATION',
+        duration: 4.0,
+        tag: 'SELF-HEALING CODE',
+        mainText: 'PATCH MERGED & VERIFIED.',
+        subText: 'Helios Shift pushed clean build with zero downtime.',
+        highlight: 'ZERO DOWNTIME',
+        metric: '99.99% SLA',
+        startNum: 95,
+        endNum: 99.99,
+        numSuffix: '% UPTIME'
+      },
+      {
+        id: 's4',
+        title: 'CONCLUSION',
+        duration: 3.0,
+        tag: 'SLEEP SOUNDLY',
+        mainText: 'SLEEP THROUGH RELEASES.',
+        subText: 'InfratechAI protects your infrastructure 24/7.',
+        highlight: 'SLEEP SOUNDLY',
+        metric: '0 ALARMS',
+        startNum: 14,
+        endNum: 0,
+        numSuffix: ' CRITICAL BUGS'
+      }
+    ]
+  },
+  {
+    id: 'fintech-audit',
+    name: 'Fintech Compliance & Audit Armor',
+    category: 'Enterprise Widescreen',
+    platform: 'YouTube / Presentations',
+    ratio: '16:9',
+    duration: 16,
+    accentColor: '#06B6D4',
+    description: 'SOC2 Type II and ISO 27001 automated compliance telemetry with zero security CVEs.',
+    palette: ['#06B6D4', '#155E75', '#082F49', '#ECFEFF'],
+    fontPair: 'Space Grotesk + JetBrains Mono',
+    scenes: [
+      {
+        id: 's1',
+        title: 'AUDIT RISK',
+        duration: 4.0,
+        tag: 'FINTECH REGULATION',
+        mainText: 'COMPLIANCE AUDITS TAKE MONTHS.',
+        subText: 'Fintech and banking platforms dread manual spreadsheet audits.',
+        highlight: 'TAKE MONTHS.',
+        metric: '90 DAYS DELAY',
+        startNum: 90,
+        endNum: 1,
+        numSuffix: ' DAYS TURNAROUND'
+      },
+      {
+        id: 's2',
+        title: 'SECURITY SHIELD',
+        duration: 4.0,
+        tag: 'ZERO CVE MANDATE',
+        mainText: 'CONTINUOUS SOC2 ENFORCEMENT.',
+        subText: 'Aegis Ward and Argus Prime scan every pull request for vulnerabilities.',
+        highlight: 'SOC2 ENFORCEMENT.',
+        metric: '0 CRITICAL CVES',
+        startNum: 18,
+        endNum: 0,
+        numSuffix: ' VULNERABILITIES'
+      },
+      {
+        id: 's3',
+        title: 'AUDIT EVIDENCE',
+        duration: 4.5,
+        tag: 'INSTANT PROOF',
+        mainText: 'CRYPTOGRAPHIC AUDIT LOGS.',
+        subText: 'Export verifiable test attestations with one click for regulators.',
+        highlight: 'AUDIT LOGS.',
+        metric: '100% AUDIT READY',
+        startNum: 40,
+        endNum: 100,
+        numSuffix: '% VERIFIED'
+      },
+      {
+        id: 's4',
+        title: 'ENTERPRISE',
+        duration: 3.5,
+        tag: 'BANK GRADE',
+        mainText: 'TRUST IN EVERY COMMIT.',
+        subText: 'Deploy with enterprise assurance at infratech.ai/security',
+        highlight: 'TRUST',
+        metric: 'ISO 27001 CERT',
+        startNum: 0,
+        endNum: 1,
+        numSuffix: ' CERTIFIED'
       }
     ]
   }
 ];
+
+// Dynamic Prompt-to-Script Generation Engine
+const generateScriptFromTopic = (promptTopic) => {
+  const t = promptTopic.toLowerCase().trim();
+
+  if (t.includes('sale') || t.includes('harvey') || t.includes('outbound') || t.includes('revenue') || t.includes('pipeline') || t.includes('deal')) {
+    return {
+      template: PRESET_TEMPLATES[2],
+      aspectRatio: '9:16',
+      scenes: [
+        {
+          id: 'sc_1',
+          title: 'HOOK',
+          duration: 3.5,
+          tag: 'B2B OUTBOUND',
+          mainText: 'STOP WASTING WEEKS COLD CALLING.',
+          subText: 'Traditional outbound emails get less than 1% positive responses.',
+          highlight: 'COLD CALLING.',
+          metric: 'REPLY: 0.9%',
+          startNum: 5,
+          endNum: 0.9,
+          numSuffix: '% REPLY RATE'
+        },
+        {
+          id: 'sc_2',
+          title: 'INTENT RADAR',
+          duration: 3.5,
+          tag: 'AUTONOMOUS SDR',
+          mainText: 'HARVEY DETECTS IN-MARKET BUYERS.',
+          subText: 'Scans hiring spikes, tech stack changes, and website intent 24/7.',
+          highlight: 'INTENT BUYERS.',
+          metric: '48 PROSPECTS',
+          startNum: 0,
+          endNum: 48,
+          numSuffix: ' INTENT LEADS'
+        },
+        {
+          id: 'sc_3',
+          title: 'REVENUE ENGINE',
+          duration: 4.0,
+          tag: 'INR REVENUE',
+          mainText: '₹2,00,000 MONTHLY RETAINER PIPELINE.',
+          subText: 'Hyper-tailored multi-channel pitches generated in 8 seconds.',
+          highlight: '₹2,00,000',
+          metric: '34.2% REPLIES',
+          startNum: 0,
+          endNum: 34.2,
+          numSuffix: '% POSITIVE REPLY'
+        },
+        {
+          id: 'sc_4',
+          title: 'CALL TO ACTION',
+          duration: 3.5,
+          tag: 'SCALE NOW',
+          mainText: 'SCALE YOUR AGENCY PIPELINE.',
+          subText: 'Activate Harvey AI SDR today • Link in Bio',
+          highlight: 'SCALE NOW.',
+          metric: 'LIVE TODAY',
+          startNum: 0,
+          endNum: 100,
+          numSuffix: '% AUTOMATED'
+        }
+      ]
+    };
+  }
+
+  if (t.includes('apple') || t.includes('design') || t.includes('keynote') || t.includes('minimal') || t.includes('polish') || t.includes('glass')) {
+    return {
+      template: PRESET_TEMPLATES[1],
+      aspectRatio: '16:9',
+      scenes: [
+        {
+          id: 'sc_1',
+          title: 'INTRO',
+          duration: 4.0,
+          tag: 'DESIGN REVELATION',
+          mainText: 'SOFTWARE THAT FEELS PHYSICAL.',
+          subText: 'Engineered with Apple Fluid tactile springs and specular frosted glass.',
+          highlight: 'PHYSICAL.',
+          metric: '60 FPS',
+          startNum: 24,
+          endNum: 60,
+          numSuffix: ' FPS FLUIDITY'
+        },
+        {
+          id: 'sc_2',
+          title: 'ENGINEERING',
+          duration: 4.0,
+          tag: 'ZERO LATENCY',
+          mainText: 'PRECISION AT THE MICRO-LEVEL.',
+          subText: 'Instant keystroke feedback, zero mouse travel, pure speed.',
+          highlight: 'PRECISION',
+          metric: '12ms LATENCY',
+          startNum: 150,
+          endNum: 12,
+          numSuffix: 'ms LATENCY'
+        },
+        {
+          id: 'sc_3',
+          title: 'WORKFORCE',
+          duration: 4.5,
+          tag: '14 DEPARTMENTS',
+          mainText: '64 AGENTS OPERATING AS ONE.',
+          subText: 'Architecture, QA, Design & Release coordinated by Antigravity.',
+          highlight: 'OPERATING AS ONE',
+          metric: '96.8% VELOCITY',
+          startNum: 50,
+          endNum: 96.8,
+          numSuffix: '% VELOCITY'
+        },
+        {
+          id: 'sc_4',
+          title: 'CTA',
+          duration: 3.5,
+          tag: 'JOIN THE FUTURE',
+          mainText: 'EXPERIENCE INFRATECHAI.',
+          subText: 'Crafted for founders who refuse to ship clumsy software.',
+          highlight: 'INFRATECHAI',
+          metric: 'AVAILABLE NOW',
+          startNum: 0,
+          endNum: 100,
+          numSuffix: '% POLISHED'
+        }
+      ]
+    };
+  }
+
+  if (t.includes('security') || t.includes('audit') || t.includes('fintech') || t.includes('bank') || t.includes('compliance')) {
+    return {
+      template: PRESET_TEMPLATES[5],
+      aspectRatio: '16:9',
+      scenes: [
+        {
+          id: 'sc_1',
+          title: 'SECURITY CRISIS',
+          duration: 3.5,
+          tag: 'SECURITY BREACH RISK',
+          mainText: 'MANUAL AUDITS MISS CRITICAL ZERO-DAYS.',
+          subText: 'Legacy compliance checklists fail against modern automated exploit chains.',
+          highlight: 'MISS ZERO-DAYS.',
+          metric: 'HIGH RISK',
+          startNum: 100,
+          endNum: 0,
+          numSuffix: ' CVE TOLERANCE'
+        },
+        {
+          id: 'sc_2',
+          title: 'AI SHIELD',
+          duration: 4.0,
+          tag: 'CONTINUOUS SCANNING',
+          mainText: 'AEGIS WARD BLOCKS EVERY EXPLOIT.',
+          subText: 'Real-time static code analysis and dependency vulnerability fuzzing.',
+          highlight: 'BLOCKS EXPLOITS.',
+          metric: '0 VULNERABILITIES',
+          startNum: 24,
+          endNum: 0,
+          numSuffix: ' EXPLOITS'
+        },
+        {
+          id: 'sc_3',
+          title: 'AUDIT PROOF',
+          duration: 4.0,
+          tag: 'SOC2 VERIFIED',
+          mainText: 'CRYPTOGRAPHIC ATTESTATIONS.',
+          subText: 'Regulator-ready verification reports generated on every commit.',
+          highlight: 'ATTESTATIONS.',
+          metric: '100% COMPLIANT',
+          startNum: 50,
+          endNum: 100,
+          numSuffix: '% SOC2 PASS'
+        },
+        {
+          id: 'sc_4',
+          title: 'ENTERPRISE',
+          duration: 3.5,
+          tag: 'ENTERPRISE SHIELD',
+          mainText: 'BANK-GRADE SECURITY GUARANTEED.',
+          subText: 'Explore InfratechAI Security Suite • Link in Bio',
+          highlight: 'GUARANTEED.',
+          metric: 'BANK GRADE',
+          startNum: 0,
+          endNum: 100,
+          numSuffix: '% ENCRYPTED'
+        }
+      ]
+    };
+  }
+
+  // Default: Viral QA & Autonomous Agent Reel
+  const topicCaps = promptTopic ? promptTopic.toUpperCase().slice(0, 32) : 'MANUAL TESTING';
+  return {
+    template: PRESET_TEMPLATES[0],
+    aspectRatio: '9:16',
+    scenes: [
+      {
+        id: 'sc_1',
+        title: 'VIRAL HOOK',
+        duration: 3.5,
+        tag: 'VIRAL ALERT',
+        mainText: `WHY ${topicCaps} IS OBSOLETE.`,
+        subText: 'Engineering teams lose hundreds of hours each quarter to slow loops.',
+        highlight: 'OBSOLETE.',
+        metric: '542 REGRESSIONS',
+        startNum: 542,
+        endNum: 0,
+        numSuffix: ' BUGS DETECTED'
+      },
+      {
+        id: 'sc_2',
+        title: 'THE CRISIS',
+        duration: 4.0,
+        tag: 'PRODUCTION OUTAGE',
+        mainText: 'SLOW RELEASES KILL USER TRUST.',
+        subText: 'Flaky test suites and manual validation drag sprint velocity to zero.',
+        highlight: 'KILL USER TRUST.',
+        metric: 'VELOCITY: -60%',
+        startNum: 80,
+        endNum: 15,
+        numSuffix: '% FLAKY RATE'
+      },
+      {
+        id: 'sc_3',
+        title: 'THE SOLUTION',
+        duration: 4.5,
+        tag: '64 AGENTS DEPLOYED',
+        mainText: 'INFRATECHAI AUTOMATES EVERY TEST.',
+        subText: 'From unit smoke tests to full browser UI flows, running 24/7 autonomously.',
+        highlight: 'AUTOMATES EVERY TEST.',
+        metric: '0 DEFECTS',
+        startNum: 0,
+        endNum: 64,
+        numSuffix: ' AGENTS ONLINE'
+      },
+      {
+        id: 'sc_4',
+        title: 'CALL TO ACTION',
+        duration: 3.0,
+        tag: 'SHIP TODAY',
+        mainText: 'SHIP FLAWLESS CODE TODAY.',
+        subText: 'Deploy with InfratechAI Enterprise • Link in Bio',
+        highlight: 'SHIP FLAWLESS CODE.',
+        metric: '100% PASS',
+        startNum: 0,
+        endNum: 100,
+        numSuffix: '% REGRESSION PASS'
+      }
+    ]
+  };
+};
 
 export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
   // GAMMA-STYLE STEP WORKFLOW: 1: Storyboard | 2: Styles | 3: Duration & Audio | 4: Cinema Stage
@@ -253,6 +684,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
   const [scenes, setScenes] = useState(PRESET_TEMPLATES[0].scenes);
   const [selectedPacing, setSelectedPacing] = useState('15s'); // '10s' | '15s' | '30s'
   const [audioPreset, setAudioPreset] = useState('tech-riser'); // 'tech-riser' | 'apple-ambient' | 'cyber-pulse' | 'muted'
+  const [voiceoverEnabled, setVoiceoverEnabled] = useState(false);
 
   // Studio Sub-tab (inside Cinema Stage): 'animator' | 'scenes' | 'export'
   const [studioTab, setStudioTab] = useState('animator');
@@ -266,7 +698,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       sender: 'animator',
       name: 'Siddharth Menon',
       time: 'Just now',
-      text: "Hey Founder Aman! I'm your dedicated AI Animator (Dept 04 • Design Engineering). I write and render 60 FPS code-driven cinema for social media (Reels, Shorts, Keynote). What video or motion design should we direct today?"
+      text: "Hey Founder Aman! I'm your dedicated AI Animator (Dept 04 • Design Engineering). I write, compose, and render 60 FPS code-driven cinema for social media (Reels, Shorts, Keynote). What video should we direct right now? Try typing a topic or tapping a prompt pill!"
     }
   ]);
   const [animatorInput, setAnimatorInput] = useState('');
@@ -284,20 +716,35 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
   const [storyboardPrompt, setStoryboardPrompt] = useState('');
   const [isSynthesizingOutline, setIsSynthesizingOutline] = useState(false);
 
-  // Canvas refs
+  // Canvas and Audio Refs
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
   const lastTimeRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const masterGainRef = useRef(null);
+  const audioDestRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
+  const beatTimerRef = useRef(null);
+
+  // Floating particles simulation for 60 FPS canvas
+  const particlesRef = useRef(
+    Array.from({ length: 45 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      size: Math.random() * 2.5 + 1,
+      speedX: (Math.random() - 0.5) * 0.0008,
+      speedY: -Math.random() * 0.001 - 0.0003,
+      alpha: Math.random() * 0.7 + 0.2
+    }))
+  );
 
   // Calculate total duration
   const totalDuration = useMemo(() => {
     return scenes.reduce((sum, s) => sum + s.duration, 0);
   }, [scenes]);
 
-  // Sync template changes
+  // Handle template selection
   const handleSelectTemplate = (template) => {
     setActiveTemplate(template);
     setAspectRatio(template.ratio);
@@ -327,23 +774,44 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       scene: last,
       index: scenes.length - 1,
       progress: 1,
-      sceneLocalTime: last.duration
+      sceneLocalTime: last ? last.duration : 0
     };
   }, [currentTime, scenes]);
 
-  // Procedural Web Audio Sound Generator (Apple-grade tactile acoustics)
+  // Initialize or resume Web Audio Context
+  const ensureAudioContext = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioCtx();
+        const gain = audioCtxRef.current.createGain();
+        gain.gain.value = 0.3;
+        gain.connect(audioCtxRef.current.destination);
+        masterGainRef.current = gain;
+
+        // Create MediaStreamDestination node for capturing audio during video recording
+        if (audioCtxRef.current.createMediaStreamDestination) {
+          const dest = audioCtxRef.current.createMediaStreamDestination();
+          gain.connect(dest);
+          audioDestRef.current = dest;
+        }
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+      return audioCtxRef.current;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Procedural Web Audio Sound Generator
   const playSoundEffect = useCallback((type) => {
     if (!audioEnabled || audioPreset === 'muted') return;
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioCtx();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      const ctx = ensureAudioContext();
+      if (!ctx || !masterGainRef.current) return;
 
       const now = ctx.currentTime;
 
@@ -359,71 +827,158 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
         const filter = ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(400, now);
-        filter.frequency.exponentialRampToValueAtTime(3200, now + 0.3);
+        filter.frequency.setValueAtTime(350, now);
+        filter.frequency.exponentialRampToValueAtTime(3600, now + 0.3);
 
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(0.01, now);
-        gain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+        gain.gain.linearRampToValueAtTime(0.22, now + 0.15);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
         noise.connect(filter);
         filter.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGainRef.current);
         noise.start(now);
       } else if (type === 'bass') {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.setValueAtTime(140, now);
         osc.frequency.exponentialRampToValueAtTime(45, now + 0.4);
 
-        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.setValueAtTime(0.25, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGainRef.current);
         osc.start(now);
         osc.stop(now + 0.45);
       } else if (type === 'tick') {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(1400, now);
-        gain.gain.setValueAtTime(0.06, now);
+        osc.frequency.setValueAtTime(1200, now);
+        gain.gain.setValueAtTime(0.08, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(masterGainRef.current);
         osc.start(now);
         osc.stop(now + 0.08);
       }
     } catch {}
-  }, [audioEnabled, audioPreset]);
+  }, [audioEnabled, audioPreset, ensureAudioContext]);
 
-  // Track scene transitions for sound effects
-  const prevSceneIndexRef = useRef(0);
+  // Procedural Rhythmic Synthesizer Loop (Generates Background Beat / Chords)
   useEffect(() => {
-    if (isPlaying && currentSceneInfo.index !== prevSceneIndexRef.current) {
-      playSoundEffect('whoosh');
-      playSoundEffect('bass');
-      prevSceneIndexRef.current = currentSceneInfo.index;
+    if (!isPlaying || !audioEnabled || audioPreset === 'muted') {
+      if (beatTimerRef.current) clearInterval(beatTimerRef.current);
+      return;
     }
-  }, [currentSceneInfo.index, isPlaying, playSoundEffect]);
 
-  // Text to Speech preview using Web Speech API
-  const handleSpeakScene = () => {
+    const ctx = ensureAudioContext();
+    if (!ctx || !masterGainRef.current) return;
+
+    // 120 BPM interval = 250ms per 8th note
+    let stepCount = 0;
+    const intervalMs = 250;
+
+    beatTimerRef.current = setInterval(() => {
+      try {
+        const now = ctx.currentTime;
+        stepCount++;
+
+        if (audioPreset === 'tech-riser') {
+          // Kick on 1 and 3 (step 0 and 4)
+          if (stepCount % 4 === 0) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.connect(gain);
+            gain.connect(masterGainRef.current);
+            osc.start(now);
+            osc.stop(now + 0.15);
+          }
+          // Hi-hat on every 8th note
+          if (stepCount % 2 === 1) {
+            const hiHatGain = ctx.createGain();
+            hiHatGain.gain.setValueAtTime(0.03, now);
+            hiHatGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+            const osc = ctx.createOscillator();
+            osc.type = 'highpass';
+            osc.frequency.setValueAtTime(8000, now);
+            osc.connect(hiHatGain);
+            hiHatGain.connect(masterGainRef.current);
+            osc.start(now);
+            osc.stop(now + 0.05);
+          }
+        } else if (audioPreset === 'apple-ambient') {
+          // Warm resonant pad pulse every 8 steps
+          if (stepCount % 8 === 0) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            const notes = [220, 261.63, 329.63, 392]; // Am7
+            const freq = notes[(stepCount / 8) % notes.length];
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.06, now + 0.4);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+            osc.connect(gain);
+            gain.connect(masterGainRef.current);
+            osc.start(now);
+            osc.stop(now + 1.8);
+          }
+        } else if (audioPreset === 'cyber-pulse') {
+          // 16th note arp synth
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const arp = [130.81, 164.81, 196.00, 246.94]; // C-E-G-B
+          osc.frequency.setValueAtTime(arp[stepCount % 4], now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(masterGainRef.current);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        }
+      } catch {}
+    }, intervalMs);
+
+    return () => {
+      if (beatTimerRef.current) clearInterval(beatTimerRef.current);
+    };
+  }, [isPlaying, audioEnabled, audioPreset, ensureAudioContext]);
+
+  // Voiceover Speech Synthesis Handler
+  const speakCurrentScene = useCallback((scene) => {
     try {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
-      const current = currentSceneInfo.scene;
-      const textToSpeak = `${current.tag}. ${current.mainText}. ${current.subText}`;
+      const textToSpeak = `${scene.tag}. ${scene.mainText}. ${scene.subText}`;
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
       window.speechSynthesis.speak(utterance);
     } catch {}
-  };
+  }, []);
+
+  // Track scene transitions for sound effects & voiceover
+  const prevSceneIndexRef = useRef(0);
+  useEffect(() => {
+    if (isPlaying && currentSceneInfo.index !== prevSceneIndexRef.current) {
+      playSoundEffect('whoosh');
+      playSoundEffect('bass');
+      if (voiceoverEnabled && currentSceneInfo.scene) {
+        speakCurrentScene(currentSceneInfo.scene);
+      }
+      prevSceneIndexRef.current = currentSceneInfo.index;
+    }
+  }, [currentSceneInfo.index, currentSceneInfo.scene, isPlaying, playSoundEffect, voiceoverEnabled, speakCurrentScene]);
 
   // Main 60 FPS Canvas Render Loop
   useEffect(() => {
@@ -447,15 +1002,15 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       canvas.height = targetH;
     }
 
-    const { scene, index, sceneLocalTime } = currentSceneInfo;
+    const { scene, index, sceneLocalTime, progress } = currentSceneInfo;
     const accent = activeTemplate.accentColor || '#10B981';
 
-    // 1. BACKGROUND RENDER (Deep Obsidian & Sonoma Mesh)
+    // 1. CLEAR & OBSIDIAN BASE
     ctx.clearRect(0, 0, targetW, targetH);
     ctx.fillStyle = '#0B0D13';
     ctx.fillRect(0, 0, targetW, targetH);
 
-    // Dynamic Atmospheric Mesh Aura
+    // 2. DYNAMIC ATMOSPHERIC MESH AURA
     const auraX = targetW * (0.5 + Math.sin(currentTime * 0.8) * 0.15);
     const auraY = targetH * (0.35 + Math.cos(currentTime * 0.7) * 0.1);
     const auraRadius = Math.max(targetW, targetH) * 0.65;
@@ -466,24 +1021,45 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.fillStyle = auraGrad;
     ctx.fillRect(0, 0, targetW, targetH);
 
-    // Subtle Apple Grid
+    // 3. MOVING PERSPECTIVE FLOOR GRID
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
     ctx.lineWidth = 1;
     const gridSize = 64;
+    const gridOffset = (currentTime * 40) % gridSize;
     for (let x = 0; x < targetW; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, targetH);
       ctx.stroke();
     }
-    for (let y = 0; y < targetH; y += gridSize) {
+    for (let y = gridOffset; y < targetH; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(targetW, y);
       ctx.stroke();
     }
 
-    // 2. BRANDING POD (Apple Specular Header)
+    // 4. FLOATING PARTICLES SIMULATION
+    const particles = particlesRef.current;
+    ctx.save();
+    for (let p = 0; p < particles.length; p++) {
+      const pt = particles[p];
+      if (isPlaying) {
+        pt.x += pt.speedX;
+        pt.y += pt.speedY;
+        if (pt.y < 0) pt.y = 1;
+        if (pt.x < 0) pt.x = 1;
+        if (pt.x > 1) pt.x = 0;
+      }
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = pt.alpha * (0.5 + Math.sin(currentTime * 2 + p) * 0.2);
+      ctx.beginPath();
+      ctx.arc(pt.x * targetW, pt.y * targetH, pt.size * (aspectRatio === '16:9' ? 1.5 : 2), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 5. BRANDING POD (Apple Specular Header)
     const headerY = targetH * 0.08;
     ctx.save();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -515,7 +1091,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.fillText('60 FPS', pillX - 50, headerY - 2);
     ctx.restore();
 
-    // 3. CENTER HERO CARD (Apple Specular Glass Box)
+    // 6. CENTER HERO CARD (Apple Specular Glass Box)
     const cardMarginX = targetW * 0.07;
     const cardW = targetW - cardMarginX * 2;
     const cardH = targetH * (aspectRatio === '9:16' ? 0.62 : 0.58);
@@ -527,26 +1103,31 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.shadowOffsetY = 20;
 
     // Glass Background Fill
-    ctx.fillStyle = 'rgba(24, 27, 36, 0.8)';
+    ctx.fillStyle = 'rgba(24, 27, 36, 0.85)';
     ctx.beginPath();
     ctx.roundRect(cardMarginX, cardY, cardW, cardH, 36);
     ctx.fill();
 
-    // Specular Glass Border
+    // Specular Glass Border with Dynamic Light Sheen
     ctx.shadowColor = 'transparent';
-    const borderGrad = ctx.createLinearGradient(cardMarginX, cardY, cardMarginX + cardW, cardY + cardH);
+    const sheenPos = (currentTime * 0.5) % 2;
+    const borderGrad = ctx.createLinearGradient(
+      cardMarginX + cardW * (sheenPos - 0.5), cardY,
+      cardMarginX + cardW * (sheenPos + 0.5), cardY + cardH
+    );
     borderGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
     borderGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.08)');
-    borderGrad.addColorStop(1, `${accent}60`);
+    borderGrad.addColorStop(1, `${accent}70`);
     ctx.strokeStyle = borderGrad;
     ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.restore();
 
-    // 4. ANIMATED CONTENT (Kinetic Typography & Ease-Out)
-    const enterEase = Math.min(1, sceneLocalTime * 2.8);
-    const textOffsetY = (1 - enterEase) * 36;
-    const opacity = enterEase;
+    // 7. ANIMATED CONTENT (Kinetic Typography & Ease-Out)
+    const enterEase = Math.min(1, Math.max(0, sceneLocalTime * 2.8));
+    const smoothEase = 1 - Math.pow(1 - enterEase, 3); // Cubic Ease Out
+    const textOffsetY = (1 - smoothEase) * 36;
+    const opacity = smoothEase;
 
     ctx.save();
     ctx.globalAlpha = opacity;
@@ -554,7 +1135,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     // TAG BADGE
     const badgeY = cardY + 70 + textOffsetY * 0.5;
     ctx.fillStyle = `${accent}25`;
-    const tagText = scene.tag || 'SYSTEM DIRECTIVE';
+    const tagText = scene?.tag || 'SYSTEM DIRECTIVE';
     ctx.font = '800 20px -apple-system, BlinkMacSystemFont, sans-serif';
     const tagMetrics = ctx.measureText(tagText);
     const tagPadding = 24;
@@ -578,13 +1159,13 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
     // MAIN HEADLINE
     const mainY = cardY + 180 + textOffsetY;
-    const fontSize = aspectRatio === '9:16' ? 58 : 64;
+    const fontSize = aspectRatio === '9:16' ? 56 : 64;
     ctx.font = `900 ${fontSize}px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif`;
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'left';
 
     const maxWidth = cardW - 96;
-    const words = scene.mainText.split(' ');
+    const words = (scene?.mainText || '').split(' ');
     let line = '';
     let curY = mainY;
     const lineHeight = fontSize * 1.18;
@@ -605,9 +1186,9 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     // SUBTITLE
     curY += 36;
     ctx.font = '500 26px -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = 'rgba(229, 231, 238, 0.8)';
+    ctx.fillStyle = 'rgba(229, 231, 238, 0.85)';
 
-    const subWords = scene.subText.split(' ');
+    const subWords = (scene?.subText || '').split(' ');
     let subLine = '';
     const subLineHeight = 38;
     for (let n = 0; n < subWords.length; n++) {
@@ -623,8 +1204,8 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     }
     ctx.fillText(subLine, cardMarginX + 48, curY);
 
-    // METRIC POD
-    if (scene.metric) {
+    // 8. DYNAMIC INTERPOLATED METRIC POD
+    if (scene?.metric) {
       const metricPodY = cardY + cardH - 120;
       ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
       ctx.beginPath();
@@ -642,23 +1223,32 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       ctx.font = '700 18px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.fillText('TELEMETRY OUTPUT', cardMarginX + 104, metricPodY + 43);
 
+      // Dynamic calculation if startNum and endNum exist
+      let displayMetric = scene.metric;
+      if (typeof scene.startNum === 'number' && typeof scene.endNum === 'number') {
+        const val = scene.startNum + (scene.endNum - scene.startNum) * Math.min(1, progress * 1.2);
+        const formatted = Number.isInteger(scene.endNum) ? Math.round(val) : val.toFixed(1);
+        displayMetric = `${formatted}${scene.numSuffix || ''}`;
+      }
+
       ctx.fillStyle = '#FFFFFF';
       ctx.font = '900 24px -apple-system, BlinkMacSystemFont, monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(scene.metric, cardMarginX + cardW - 80, metricPodY + 44);
+      ctx.fillText(displayMetric, cardMarginX + cardW - 80, metricPodY + 44);
     }
 
     ctx.restore();
 
-    // 5. SOCIAL FOOTER & FREQUENCY BARS
+    // 9. SOCIAL FOOTER & SOUND FREQUENCY VISUALIZER BARS
     const footerY = targetH * 0.88;
-    const barCount = 32;
+    const barCount = 36;
     const barWidth = 8;
     const barSpacing = 10;
     const visualizerStartX = (targetW - (barCount * (barWidth + barSpacing))) / 2;
 
     for (let b = 0; b < barCount; b++) {
-      const barHeight = 15 + Math.sin(currentTime * 8 + b * 0.4) * 20 * (isPlaying ? 1 : 0.2);
+      const waveFreq = isPlaying ? 10 : 2;
+      const barHeight = 14 + Math.sin(currentTime * waveFreq + b * 0.35) * 22 * (isPlaying ? 1 : 0.25);
       ctx.fillStyle = b % 4 === 0 ? accent : 'rgba(255, 255, 255, 0.25)';
       ctx.beginPath();
       ctx.roundRect(visualizerStartX + b * (barWidth + barSpacing), footerY - barHeight / 2, barWidth, barHeight, 4);
@@ -670,7 +1260,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.textAlign = 'center';
     ctx.fillText('@infratechai • Code-Driven Enterprise Cinema', targetW / 2, footerY + 54);
 
-    // Top Story Progress Bars
+    // 10. TOP INSTAGRAM/TIKTOK PROGRESS BARS
     const progY = 32;
     const progH = 6;
     const progTotalW = targetW - 64;
@@ -739,17 +1329,19 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
   // Play / Pause toggle
   const togglePlay = useCallback(() => {
+    ensureAudioContext();
     if (currentTime >= totalDuration) {
       setCurrentTime(0);
     }
     setIsPlaying((prev) => !prev);
-  }, [currentTime, totalDuration]);
+  }, [currentTime, totalDuration, ensureAudioContext]);
 
   const handleRestart = useCallback(() => {
+    ensureAudioContext();
     setCurrentTime(0);
     setIsPlaying(true);
     playSoundEffect('whoosh');
-  }, [playSoundEffect]);
+  }, [playSoundEffect, ensureAudioContext]);
 
   // Keyboard shortcut for Space (play/pause) & R (restart)
   useEffect(() => {
@@ -776,7 +1368,67 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     });
   };
 
-  // Direct In-Browser Video Recording via MediaRecorder
+  // Add a new scene to the timeline
+  const handleAddScene = () => {
+    const newScene = {
+      id: `sc_${Date.now()}`,
+      title: `SCENE 0${scenes.length + 1}`,
+      duration: 3.5,
+      tag: 'NEW HIGHLIGHT',
+      mainText: 'AUTONOMOUS IMPACT DELIVERED.',
+      subText: 'Engineered with 64 AI specialists working in real-time consensus.',
+      highlight: 'IMPACT.',
+      metric: '100% OPERATIONAL',
+      startNum: 0,
+      endNum: 100,
+      numSuffix: '%'
+    };
+    setScenes(prev => [...prev, newScene]);
+    setSelectedSceneIndex(scenes.length);
+    playSoundEffect('whoosh');
+  };
+
+  // Delete scene
+  const handleDeleteScene = (index) => {
+    if (scenes.length <= 2) {
+      alert('A minimum of 2 scenes is required for narrative flow.');
+      return;
+    }
+    setScenes(prev => prev.filter((_, i) => i !== index));
+    if (selectedSceneIndex >= scenes.length - 1) {
+      setSelectedSceneIndex(Math.max(0, scenes.length - 2));
+    }
+    playSoundEffect('tick');
+  };
+
+  // Reorder scene
+  const handleMoveScene = (index, direction) => {
+    const targetIdx = index + direction;
+    if (targetIdx < 0 || targetIdx >= scenes.length) return;
+    setScenes(prev => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
+    setSelectedSceneIndex(targetIdx);
+    playSoundEffect('tick');
+  };
+
+  // Scale pacing presets (10s, 15s, 30s)
+  const handleApplyPacing = (targetPacing) => {
+    setSelectedPacing(targetPacing);
+    const targetSec = targetPacing === '10s' ? 10 : targetPacing === '30s' ? 30 : 15;
+    const factor = targetSec / totalDuration;
+    setScenes(prev => prev.map(sc => ({
+      ...sc,
+      duration: Math.max(1.5, Math.round(sc.duration * factor * 10) / 10)
+    })));
+    playSoundEffect('whoosh');
+  };
+
+  // Direct In-Browser Video Recording via MediaRecorder (with Audio Destination)
   const handleExportVideo = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -787,9 +1439,22 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
       setCurrentTime(0);
       setIsPlaying(false);
 
-      const stream = canvas.captureStream(60);
+      ensureAudioContext();
 
-      let mimeType = 'video/webm;codecs=vp9';
+      const canvasStream = canvas.captureStream(60);
+      const combinedTracks = [...canvasStream.getVideoTracks()];
+
+      // If audio is available, attach synthesized audio track
+      if (audioDestRef.current && audioPreset !== 'muted' && audioEnabled) {
+        const audioTracks = audioDestRef.current.stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          combinedTracks.push(audioTracks[0]);
+        }
+      }
+
+      const stream = new MediaStream(combinedTracks);
+
+      let mimeType = 'video/webm;codecs=vp9,opus';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = 'video/webm';
       }
@@ -831,7 +1496,7 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
         const percent = Math.min(99, Math.round((elapsed / totalDuration) * 100));
         setRecordingProgress(percent);
 
-        if (elapsed >= totalDuration + 0.2) {
+        if (elapsed >= totalDuration + 0.3) {
           clearInterval(interval);
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.stop();
@@ -860,9 +1525,9 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
 
   // Copy Viral Social Media Caption
   const handleCopyCaption = () => {
-    const caption = `🚀 ${scenes[0].mainText}
+    const caption = `🚀 ${scenes[0]?.mainText}
 
-${scenes[1].subText}
+${scenes[1]?.subText}
 
 With @infratechai, 64 autonomous AI agents execute your test suites, analyze regressions, and book outbound enterprise meetings 24/7.
 
@@ -882,59 +1547,22 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
     setIsSynthesizingOutline(true);
 
     setTimeout(() => {
-      const generated = [
-        {
-          id: 'sc_1',
-          title: 'HOOK',
-          duration: 3.5,
-          tag: 'VIRAL HOOK',
-          mainText: `WHY ${topic.toUpperCase()} IS OBSOLETE.`,
-          subText: 'The standard approach is costing teams 14+ hours every week.',
-          highlight: 'OBSOLETE.',
-          metric: 'RETENTION: 98%'
-        },
-        {
-          id: 'sc_2',
-          title: 'THE PROBLEM',
-          duration: 4.0,
-          tag: 'HIDDEN TAX',
-          mainText: 'MANUAL OVERHEAD KILLS SPEED.',
-          subText: 'Repetitive regressions and slow turnaround drag velocity to a halt.',
-          highlight: 'KILLS SPEED',
-          metric: 'LATENCY: -80%'
-        },
-        {
-          id: 'sc_3',
-          title: 'SOLUTION',
-          duration: 4.5,
-          tag: 'INFRATECHAI AGENTS',
-          mainText: '64 AGENTS AUTOMATE EVERYTHING.',
-          subText: 'End-to-end execution with zero manual confirmation friction.',
-          highlight: '64 AGENTS',
-          metric: '0 DEFECTS'
-        },
-        {
-          id: 'sc_4',
-          title: 'CALL TO ACTION',
-          duration: 3.0,
-          tag: 'SHIP WITH CONFIDENCE',
-          mainText: 'SCALE WITHOUT BLOAT.',
-          subText: 'Experience InfratechAI Enterprise • Link in Bio',
-          highlight: 'SCALE NOW',
-          metric: '100% PASS'
-        }
-      ];
-
-      setScenes(generated);
+      const result = generateScriptFromTopic(topic);
+      setActiveTemplate(result.template);
+      setAspectRatio(result.aspectRatio);
+      setScenes(result.scenes);
       setIsSynthesizingOutline(false);
       playSoundEffect('whoosh');
-    }, 700);
+      playSoundEffect('bass');
+    }, 600);
   };
 
-  // Direct AI Animator Directive Handler
+  // Direct AI Animator Directive Handler (Siddharth Menon Co-Pilot)
   const handleDirectAnimator = (directiveText) => {
     const text = (directiveText || animatorInput).trim();
     if (!text) return;
+
+    ensureAudioContext();
 
     const userMsg = {
       id: Date.now(),
@@ -952,7 +1580,22 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
       const lower = text.toLowerCase();
       let replyText = "Directive applied! Updating our code-driven scene timeline.";
 
-      if (lower.includes('9:16') || lower.includes('vertical') || lower.includes('reel') || lower.includes('tiktok') || lower.includes('short')) {
+      if (lower.includes('export') || lower.includes('download') || lower.includes('render video')) {
+        replyText = "Starting video render! Exporting 1080p 60 FPS WebM with embedded sound.";
+        handleExportVideo();
+      } else if (lower.includes('voice') || lower.includes('speech') || lower.includes('speak')) {
+        const nextState = !voiceoverEnabled;
+        setVoiceoverEnabled(nextState);
+        replyText = nextState 
+          ? "AI Voiceover enabled! I will narrate scene headlines automatically as each scene starts." 
+          : "AI Voiceover turned off.";
+      } else if (lower.includes('faster') || lower.includes('10s') || lower.includes('10 sec')) {
+        handleApplyPacing('10s');
+        replyText = "Tuned pacing to 10s Snappy Teaser! Scene cuts are now accelerated for peak retention.";
+      } else if (lower.includes('30s') || lower.includes('longer') || lower.includes('30 sec')) {
+        handleApplyPacing('30s');
+        replyText = "Extended duration to 30s Explainer Reel for deeper technical storytelling.";
+      } else if (lower.includes('9:16') || lower.includes('vertical') || lower.includes('reel') || lower.includes('tiktok') || lower.includes('short')) {
         setAspectRatio('9:16');
         replyText = "Switched to 9:16 Vertical Reel format (1080x1920) optimized for Instagram Reels and YouTube Shorts retention!";
       } else if (lower.includes('16:9') || lower.includes('widescreen') || lower.includes('youtube') || lower.includes('keynote')) {
@@ -967,17 +1610,22 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
       } else if (lower.includes('swarm') || lower.includes('agent') || lower.includes('company') || lower.includes('64') || lower.includes('department')) {
         handleSelectTemplate(PRESET_TEMPLATES[3]);
         replyText = "Activated 64-Agent Workforce Swarm style with neural telemetry grid and 14 department boot sequences.";
-      } else if (lower.includes('bug') || lower.includes('qa') || lower.includes('manual') || lower.includes('death')) {
-        handleSelectTemplate(PRESET_TEMPLATES[0]);
-        replyText = "Activated 'The Death of Manual QA' viral reel template with the 542-to-0 defect counter drop!";
+      } else if (lower.includes('outage') || lower.includes('production') || lower.includes('zero bug') || lower.includes('crash')) {
+        handleSelectTemplate(PRESET_TEMPLATES[4]);
+        replyText = "Activated The Zero-Defect Pipeline template with Sev-1 incident self-healing telemetry!";
+      } else if (lower.includes('security') || lower.includes('soc2') || lower.includes('fintech') || lower.includes('cve')) {
+        handleSelectTemplate(PRESET_TEMPLATES[5]);
+        replyText = "Activated Fintech Compliance & Audit Armor template with continuous SOC2 vulnerability scans.";
+      } else if (lower.includes('add scene') || lower.includes('new scene')) {
+        handleAddScene();
+        replyText = "Added a new scene to your video timeline! You can edit its headline and subtext in the Scene Editor.";
       } else {
-        setScenes(prev => {
-          const updated = [...prev];
-          updated[0].mainText = text.toUpperCase().slice(0, 36);
-          updated[0].subText = `Direct request executed by Animator Siddharth Menon for ${currentUser?.displayName || 'Aman'}.`;
-          return updated;
-        });
-        replyText = `Directing request accepted! I updated Scene 01 with "${text.slice(0, 36)}..." and tuned typography curves for maximum visual retention.`;
+        // Dynamic generation based on prompt
+        const generated = generateScriptFromTopic(text);
+        setActiveTemplate(generated.template);
+        setAspectRatio(generated.aspectRatio);
+        setScenes(generated.scenes);
+        replyText = `Generated a custom 4-scene video script for "${text}" with tailored hooks, metrics, and kinetic typography! Playing preview now.`;
       }
 
       const animatorReply = {
@@ -994,7 +1642,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
       setIsPlaying(true);
       playSoundEffect('whoosh');
       playSoundEffect('bass');
-    }, 750);
+    }, 700);
   };
 
   return (
@@ -1026,14 +1674,14 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-[16px] font-bold tracking-tight text-[#141518]">
-                  Animations
+                  Animations Studio
                 </span>
                 <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 border border-pink-500/30 uppercase tracking-wider">
                   Gamma.app Fluid Engine
                 </span>
               </div>
               <span className="text-[11px] text-[#50545E] font-medium flex items-center gap-1.5">
-                <span>AI Animator: Siddharth Menon</span>
+                <span>Director: Siddharth Menon (Dept 04)</span>
                 <span>•</span>
                 <span className="text-emerald-700 flex items-center gap-1 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1074,10 +1722,28 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
           })}
         </div>
 
-        {/* Right Controls: Audio Synth, Frame Snapshot, Export Video */}
+        {/* Right Controls: Voiceover, Audio Synth, Frame Snapshot, Export Video */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* AI Voiceover Toggle */}
           <button
-            onClick={() => setAudioEnabled((prev) => !prev)}
+            onClick={() => setVoiceoverEnabled(prev => !prev)}
+            className={`p-2 rounded-2xl border apple-motion-quick cursor-pointer active:scale-[0.97] flex items-center gap-1.5 text-xs font-semibold ${
+              voiceoverEnabled
+                ? 'bg-pink-500/10 text-pink-700 border-pink-500/30'
+                : 'bg-white/40 text-[#50545E] border-transparent'
+            }`}
+            title={voiceoverEnabled ? 'AI Voiceover Active (Web Speech API)' : 'Voiceover Disabled'}
+          >
+            {voiceoverEnabled ? <Mic size={15} className="text-pink-600" /> : <MicOff size={15} />}
+            <span className="hidden xl:inline">{voiceoverEnabled ? 'Voice Active' : 'Voice Off'}</span>
+          </button>
+
+          {/* Audio Synth Toggle */}
+          <button
+            onClick={() => {
+              ensureAudioContext();
+              setAudioEnabled((prev) => !prev);
+            }}
             className={`p-2 rounded-2xl border apple-motion-quick cursor-pointer active:scale-[0.97] ${
               audioEnabled && audioPreset !== 'muted'
                 ? 'bg-white/80 text-[#141518] border-white/80 shadow-apple-sm' 
@@ -1127,7 +1793,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   Step 1: What is the story of your video?
                 </h2>
                 <p className="text-xs text-[#50545E]">
-                  Type a concept or feature launch. Siddharth Menon will structure the 4 scenes automatically.
+                  Type any concept, product feature, or marketing angle. Siddharth Menon will structure the 4 scenes automatically.
                 </p>
               </div>
             </div>
@@ -1138,6 +1804,9 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                 type="text"
                 value={storyboardPrompt}
                 onChange={(e) => setStoryboardPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleGenerateStoryboardOutline();
+                }}
                 placeholder="e.g. Why manual QA is dead in 2026, or Launching Harvey SDR Outbound..."
                 className="flex-1 px-4 py-3 rounded-2xl bg-white border border-[#9AA0AC]/30 text-sm text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518] shadow-apple-sm"
               />
@@ -1158,7 +1827,9 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                 'The Death of Manual QA',
                 'Harvey SDR Outbound Machine',
                 'Apple Glass Keynote Reveal',
-                '64-Agent Workforce Swarm'
+                '64-Agent Workforce Swarm',
+                'Zero-Defect Production Intercept',
+                'Fintech SOC2 Compliance Shield'
               ].map((pill, i) => (
                 <button
                   key={i}
@@ -1174,30 +1845,73 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
             </div>
           </div>
 
-          {/* 4 Interactive Storyboard Outline Cards (Gamma style) */}
+          {/* Interactive Storyboard Outline Cards */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-[#50545E]">
-                Narrative Outline (4 Scenes • {totalDuration.toFixed(1)}s Total)
+                Narrative Outline ({scenes.length} Scenes • {totalDuration.toFixed(1)}s Total)
               </h3>
-              <span className="text-xs text-[#50545E] font-medium">
-                Click any scene card to edit text inline
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleAddScene}
+                  className="btn-shine-effect inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-xs font-bold text-[#141518] border border-black/10 shadow-2xs cursor-pointer active:scale-95"
+                >
+                  <Plus size={13} className="text-emerald-600" />
+                  <span>Add Scene</span>
+                </button>
+                <span className="text-xs text-[#50545E] font-medium hidden sm:inline">
+                  Click any card to edit text inline
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {scenes.map((sc, idx) => (
                 <div
                   key={sc.id}
-                  className="glass-specular bg-white/80 hover:bg-white rounded-3xl p-5 border border-white/80 shadow-apple-sm transition-all space-y-3 group"
+                  className="glass-specular bg-white/80 hover:bg-white rounded-3xl p-5 border border-white/80 shadow-apple-sm transition-all space-y-3 group relative"
                 >
                   <div className="flex items-center justify-between">
                     <span className="px-2.5 py-0.5 rounded-full bg-[#141518]/5 text-[#141518] font-bold text-[10px] uppercase tracking-wider">
                       Scene 0{idx + 1} • {sc.title}
                     </span>
-                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                      {sc.duration}s
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1.5"
+                        max="10"
+                        step="0.5"
+                        value={sc.duration}
+                        onChange={(e) => updateSceneField(idx, 'duration', parseFloat(e.target.value) || 3.5)}
+                        className="w-16 text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-center focus:outline-none"
+                      />
+                      <span className="text-[10px] text-[#50545E]">sec</span>
+
+                      {/* Move / Delete actions */}
+                      <button
+                        onClick={() => handleMoveScene(idx, -1)}
+                        disabled={idx === 0}
+                        className="p-1 rounded-lg text-[#50545E] hover:text-[#141518] disabled:opacity-20 cursor-pointer"
+                        title="Move Up"
+                      >
+                        <MoveUp size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleMoveScene(idx, 1)}
+                        disabled={idx === scenes.length - 1}
+                        className="p-1 rounded-lg text-[#50545E] hover:text-[#141518] disabled:opacity-20 cursor-pointer"
+                        title="Move Down"
+                      >
+                        <MoveDown size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteScene(idx)}
+                        className="p-1 rounded-lg text-red-500 hover:text-red-700 cursor-pointer ml-1"
+                        title="Delete Scene"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1282,7 +1996,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
           </div>
 
           {/* Visual Theme Cards Grid (Gamma Style) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {PRESET_TEMPLATES.map((tmpl) => {
               const isSel = activeTemplate.id === tmpl.id;
               return (
@@ -1300,14 +2014,14 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                       {tmpl.category}
                     </span>
                     <span className="text-xs font-semibold text-[#50545E]">
-                      {tmpl.ratio} • {tmpl.platform}
+                      {tmpl.ratio}
                     </span>
                   </div>
 
                   <h3 className="text-lg font-extrabold text-[#141518] mb-1">
                     {tmpl.name}
                   </h3>
-                  <p className="text-xs text-[#50545E] leading-relaxed mb-4">
+                  <p className="text-xs text-[#50545E] leading-relaxed mb-4 line-clamp-2">
                     {tmpl.description}
                   </p>
 
@@ -1322,15 +2036,15 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                         title={color}
                       />
                     ))}
-                    <span className="text-[10px] text-[#50545E] ml-auto font-mono">{tmpl.fontPair}</span>
+                    <span className="text-[10px] text-[#50545E] ml-auto font-mono truncate max-w-[90px]">{tmpl.fontPair.split(' ')[0]}</span>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-black/5 text-xs font-bold">
                     <span className="text-emerald-700 flex items-center gap-1">
-                      <Sparkles size={13} /> {isSel ? 'Selected Theme' : 'Click to Apply'}
+                      <Sparkles size={13} /> {isSel ? 'Selected' : 'Apply'}
                     </span>
                     <span className="text-[#141518]">
-                      {isSel ? '✓ Active' : 'Select Style →'}
+                      {isSel ? '✓ Active' : 'Select →'}
                     </span>
                   </div>
                 </div>
@@ -1419,7 +2133,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
             {/* Pacing & Duration */}
             <div className="glass-specular bg-white/80 rounded-3xl p-6 border border-white/80 shadow-apple-sm space-y-4">
               <span className="text-xs font-bold uppercase tracking-wider text-[#50545E] flex items-center gap-1.5">
-                <Clock size={15} /> Pacing & Duration
+                <Clock size={15} /> Pacing Presets
               </span>
 
               <div className="space-y-2.5">
@@ -1432,7 +2146,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   return (
                     <div
                       key={pc.id}
-                      onClick={() => setSelectedPacing(pc.id)}
+                      onClick={() => handleApplyPacing(pc.id)}
                       className={`p-3.5 rounded-2xl border cursor-pointer apple-motion-quick active:scale-[0.98] ${
                         isSel
                           ? 'bg-[#141518] text-white border-[#141518] shadow-sm'
@@ -1457,8 +2171,9 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
 
               <div className="space-y-2.5">
                 {[
-                  { id: 'tech-riser', title: '🎵 Cyber Tech Riser', desc: 'White noise whoosh + filtered sub-bass' },
-                  { id: 'apple-ambient', title: '🔊 Minimal Studio Ambient', desc: 'Subtle high-frequency sine pulses' },
+                  { id: 'tech-riser', title: '🎵 Cyber Tech Riser', desc: 'Procedural 120 BPM kick + hi-hat & whooshes' },
+                  { id: 'apple-ambient', title: '🔊 Minimal Studio Ambient', desc: 'Warm analog sine chords & subtle resonance' },
+                  { id: 'cyber-pulse', title: '⚡ Arp Synth Pulse', desc: '16th-note electronic pulse sequence' },
                   { id: 'muted', title: '🔇 Muted / Silent', desc: 'Export video without audio tracks' }
                 ].map((snd) => {
                   const isSel = audioPreset === snd.id;
@@ -1466,6 +2181,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                     <div
                       key={snd.id}
                       onClick={() => {
+                        ensureAudioContext();
                         setAudioPreset(snd.id);
                         if (snd.id !== 'muted') playSoundEffect('whoosh');
                       }}
@@ -1499,6 +2215,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
             <button
               onClick={() => {
                 setGammaStep(4);
+                ensureAudioContext();
                 setCurrentTime(0);
                 setIsPlaying(true);
                 playSoundEffect('whoosh');
@@ -1507,7 +2224,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
               className="btn-shine-effect px-10 py-4 rounded-3xl bg-[#141518] hover:bg-[#2B2D33] text-white font-bold text-sm shadow-xl flex items-center gap-2.5 cursor-pointer active:scale-[0.97] apple-motion-quick"
             >
               <Zap size={17} className="text-pink-400" />
-              <span>Generate 60 FPS Video in Cinema Stage →</span>
+              <span>Launch 60 FPS Video in Cinema Stage →</span>
             </button>
           </div>
 
@@ -1553,9 +2270,16 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                     REC 60 FPS ({recordingProgress}%)
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 font-semibold text-[10px]">
-                    <Camera size={11} className="text-emerald-400" />
-                    <span>1080p Engine</span>
+                  <div className="flex items-center gap-2">
+                    {voiceoverEnabled && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-bold">
+                        <Mic size={10} /> Voiceover
+                      </span>
+                    )}
+                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 font-semibold text-[10px]">
+                      <Camera size={11} className="text-emerald-400" />
+                      <span>1080p Engine</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1606,9 +2330,9 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                     </button>
 
                     <button
-                      onClick={handleSpeakScene}
+                      onClick={() => currentSceneInfo.scene && speakCurrentScene(currentSceneInfo.scene)}
                       className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 apple-motion-quick cursor-pointer active:scale-[0.97]"
-                      title="Listen to Voiceover via Web Speech API"
+                      title="Speak Current Scene aloud via Web Speech API"
                     >
                       <Mic size={14} className="text-pink-400" />
                       <span>Voice Preview</span>
@@ -1631,27 +2355,29 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   step="0.05"
                   value={currentTime}
                   onChange={(e) => {
+                    ensureAudioContext();
                     setCurrentTime(parseFloat(e.target.value));
                     if (!isPlaying) playSoundEffect('tick');
                   }}
                   className="w-full accent-emerald-400 cursor-pointer h-2 bg-white/20 rounded-lg appearance-none"
                 />
 
-                {/* 4 Interactive Scene Jump Markers */}
-                <div className="grid grid-cols-4 gap-2 pt-1">
+                {/* Interactive Scene Jump Markers */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                   {scenes.map((sc, i) => {
                     const isCurrent = currentSceneInfo.index === i;
                     return (
                       <button
                         key={sc.id}
                         onClick={() => {
+                          ensureAudioContext();
                           let acc = 0;
                           for (let k = 0; k < i; k++) acc += scenes[k].duration;
                           setCurrentTime(acc);
                           setSelectedSceneIndex(i);
                           playSoundEffect('tick');
                         }}
-                        className={`px-3 py-2 rounded-2xl text-left border apple-motion-quick cursor-pointer active:scale-[0.97] ${
+                        className={`flex-1 min-w-[90px] px-3 py-2 rounded-2xl text-left border apple-motion-quick cursor-pointer active:scale-[0.97] ${
                           isCurrent
                             ? 'bg-emerald-500/20 border-emerald-500/50 text-white shadow-sm'
                             : 'bg-white/5 border-white/5 text-[#9AA0AC] hover:bg-white/10'
@@ -1779,7 +2505,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                 </div>
 
                 {/* Directing & Chat Console */}
-                <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card flex flex-col h-[380px]">
+                <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card flex flex-col h-[400px]">
                   <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] mb-3">
                     <span className="text-xs font-bold text-[#141518] flex items-center gap-1.5">
                       <Bot size={14} className="text-purple-600" />
@@ -1827,11 +2553,14 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   <div className="pt-3 border-t border-black/[0.06] mt-2">
                     <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
                       {[
-                        '⚡ Viral Reel (9:16)',
+                        '⚡ 9:16 Viral Reel',
                         '🍏 Apple Minimal Glass',
                         '💰 Harvey ₹2,00,000 ARR',
                         '🤖 64-Agent Swarm',
-                        '🔥 The Death of Manual QA'
+                        '🔥 Death of Manual QA',
+                        '🛡️ SOC2 Security Audit',
+                        '⏱️ 10s Snappy Teaser',
+                        '📹 Export 1080p Video'
                       ].map((pill, idx) => (
                         <button
                           key={idx}
@@ -1854,7 +2583,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                         type="text"
                         value={animatorInput}
                         onChange={(e) => setAnimatorInput(e.target.value)}
-                        placeholder="Instruct Siddharth (e.g. 'Make a 9:16 vertical reel about why manual QA is dead')..."
+                        placeholder="Instruct Siddharth (e.g. 'Make a reel about our autonomous QA platform')..."
                         className="flex-1 px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-medium focus:outline-none focus:ring-2 focus:ring-[#141518]"
                       />
                       <button
@@ -1878,7 +2607,7 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                   <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
                     <div>
                       <h3 className="text-sm font-bold text-[#141518]">Direct Scene Overrides</h3>
-                      <p className="text-xs text-[#50545E]">Edit on-screen text, metrics, and hooks in real time.</p>
+                      <p className="text-xs text-[#50545E]">Edit on-screen text, metrics, and duration in real time.</p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {scenes.map((_, idx) => (
@@ -1894,21 +2623,44 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                           {idx + 1}
                         </button>
                       ))}
+                      <button
+                        onClick={handleAddScene}
+                        className="w-8 h-8 rounded-xl font-bold text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 flex items-center justify-center cursor-pointer active:scale-95"
+                        title="Add New Scene"
+                      >
+                        <Plus size={14} />
+                      </button>
                     </div>
                   </div>
 
                   {scenes[selectedSceneIndex] && (
                     <div className="space-y-3.5">
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
-                          Scene 0{selectedSceneIndex + 1} Title
-                        </label>
-                        <input
-                          type="text"
-                          value={scenes[selectedSceneIndex].title}
-                          onChange={(e) => updateSceneField(selectedSceneIndex, 'title', e.target.value)}
-                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-semibold focus:outline-none focus:ring-2 focus:ring-[#141518]"
-                        />
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                            Scene 0{selectedSceneIndex + 1} Title
+                          </label>
+                          <input
+                            type="text"
+                            value={scenes[selectedSceneIndex].title}
+                            onChange={(e) => updateSceneField(selectedSceneIndex, 'title', e.target.value)}
+                            className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-semibold focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                            Duration
+                          </label>
+                          <input
+                            type="number"
+                            min="1.5"
+                            max="10"
+                            step="0.5"
+                            value={scenes[selectedSceneIndex].duration}
+                            onChange={(e) => updateSceneField(selectedSceneIndex, 'duration', parseFloat(e.target.value) || 3.5)}
+                            className="w-full px-3 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] font-mono font-bold text-center focus:outline-none"
+                          />
+                        </div>
                       </div>
 
                       <div>
@@ -1946,6 +2698,37 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
                           className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#141518]"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#50545E] uppercase tracking-wider mb-1">
+                          Metric Pod Text
+                        </label>
+                        <input
+                          type="text"
+                          value={scenes[selectedSceneIndex].metric || ''}
+                          onChange={(e) => updateSceneField(selectedSceneIndex, 'metric', e.target.value)}
+                          placeholder="e.g. 542 BUGS"
+                          className="w-full px-3.5 py-2 rounded-2xl bg-white border border-[#9AA0AC]/30 text-xs font-mono font-bold text-[#141518] focus:outline-none focus:ring-2 focus:ring-[#141518]"
+                        />
+                      </div>
+
+                      <div className="pt-2 flex justify-between items-center">
+                        <button
+                          onClick={() => handleDeleteScene(selectedSceneIndex)}
+                          className="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                          <span>Delete Scene</span>
+                        </button>
+
+                        <button
+                          onClick={handleAddScene}
+                          className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Plus size={13} />
+                          <span>Add Scene</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1957,13 +2740,17 @@ With @infratechai, 64 autonomous AI agents execute your test suites, analyze reg
               <div className="glass-specular bg-white/80 backdrop-blur-2xl rounded-3xl p-5 border border-white/80 shadow-apple-card space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-[#141518]">Publish & Share</h3>
-                  <p className="text-xs text-[#50545E]">Export high-bitrate video, thumbnail, and viral copy ready for posting.</p>
+                  <p className="text-xs text-[#50545E]">Export high-bitrate video with synchronized procedural audio and viral social copy.</p>
                 </div>
 
                 <div className="p-4 rounded-3xl bg-[#141518] text-white space-y-2.5">
                   <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
                     <span>Export Spec:</span>
                     <span className="text-emerald-400">1080p • 60 FPS • WebM / MP4</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
+                    <span>Audio Track:</span>
+                    <span className="text-white">{audioPreset !== 'muted' ? `Synthesized (${audioPreset})` : 'Muted'}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs font-semibold text-[#9AA0AC]">
                     <span>Total Duration:</span>

@@ -1239,8 +1239,32 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
   const [storyboardPrompt, setStoryboardPrompt] = useState('');
   const [isSynthesizingOutline, setIsSynthesizingOutline] = useState(false);
   const [isAntigravityCodeMode, setIsAntigravityCodeMode] = useState(false);
-  const [targetVideoLength, setTargetVideoLength] = useState('15s'); // '15s', '30s', '60s', '2m', '5m', '10m', 'custom'
-  const [customDurationInput, setCustomDurationInput] = useState(15);
+  const [targetVideoLength, setTargetVideoLength] = useState('60s'); // '15s', '30s', '60s', '2m', '5m', '10m', 'custom'
+  const [customDurationInput, setCustomDurationInput] = useState(68);
+
+  // Cinema Stage Mode: 'rendered-master' (Instant Studio Video with Voiceover) | 'procedural-canvas' (Live 60 FPS Engine)
+  const [stageViewMode, setStageViewMode] = useState('rendered-master');
+  const masterVideoRef = useRef(null);
+  const studioAudioRef = useRef(null);
+
+  // Sync studio narration audio with procedural canvas playback
+  useEffect(() => {
+    const audio = studioAudioRef.current;
+    if (!audio) return;
+    if (isPlaying && stageViewMode === 'procedural-canvas') {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, stageViewMode]);
+
+  useEffect(() => {
+    const audio = studioAudioRef.current;
+    if (!audio) return;
+    if (Math.abs(audio.currentTime - currentTime) > 0.3) {
+      audio.currentTime = currentTime;
+    }
+  }, [currentTime]);
 
   // Time formatting helper for short & longform (up to 10 min) videos
   const formatTime = (seconds) => {
@@ -1722,11 +1746,11 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.textAlign = 'left';
     ctx.fillText(tagText, targetW * 0.07 + tagPadding, tagY);
 
-    // Scene Counter
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = '700 18px -apple-system, sans-serif';
+    // Cinema Act Counter
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '700 16px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`0${index + 1} / 0${scenes.length}`, targetW * 0.93, tagY);
+    ctx.fillText(`ACT 0${index + 1} • ${formatTime(currentTime)} / ${formatTime(totalDuration)}`, targetW * 0.93, tagY);
 
     // Main Kinetic Headline
     const headlineY = tagY + 54 + textOffsetY;
@@ -1763,9 +1787,387 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     const stageRadius = targetW * (aspectRatio === '9:16' ? 0.38 : 0.28);
 
     const visualType = scene?.visualType || activeTemplate.visualType || 'radar';
+    const isMughalOrHistorical = visualType.startsWith('cinema-epic') || 
+      activeTemplate.slug === 'impasto' || 
+      scene?.title?.includes('PANIPAT') || 
+      scene?.mainText?.includes('GUNPOWDER') ||
+      scene?.title?.includes('GOLDEN AGE') || 
+      scene?.title?.includes('DECCAN') || 
+      scene?.title?.includes('1857');
 
-    // Helper functions for drawing rich visuals
-    if (visualType === 'radar') {
+    if (isMughalOrHistorical) {
+      // ---------------------------------------------------------------------
+      // DYNAMIC 4-ACT CINEMATIC DOCUMENTARY VISUAL ENGINE
+      // ---------------------------------------------------------------------
+      ctx.save();
+      
+      const actIndex = visualType.includes('panipat') || scene?.title?.includes('PANIPAT') ? 0
+        : visualType.includes('golden') || scene?.title?.includes('GOLDEN') ? 1
+        : visualType.includes('deccan') || scene?.title?.includes('DECCAN') ? 2
+        : visualType.includes('fall') || scene?.title?.includes('1857') ? 3
+        : (index % 4);
+
+      if (actIndex === 0) {
+        // ACT 1: PANIPAT 1526 CANNONS & GUNPOWDER REVOLUTION
+        const mapX = targetW * 0.07;
+        const mapY = stageCenterY - stageRadius;
+        const mapW = targetW * 0.86;
+        const mapH = stageRadius * 2;
+
+        ctx.fillStyle = 'rgba(20, 16, 12, 0.85)';
+        ctx.beginPath();
+        ctx.roundRect(mapX, mapY, mapW, mapH, 24);
+        ctx.fill();
+        ctx.strokeStyle = '#F59E0B55';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Top tactical telemetry
+        ctx.fillStyle = '#F59E0B';
+        ctx.font = '800 13px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('BATTLE OF PANIPAT // OTTOMAN FIELD ARTILLERY (RUMI STRATEGY)', mapX + 24, mapY + 36);
+
+        // Mountain Pass contours
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.25)';
+        ctx.lineWidth = 1.5;
+        for (let m = 0; m < 3; m++) {
+          ctx.beginPath();
+          ctx.moveTo(mapX + 20, mapY + 120 + m * 35);
+          ctx.bezierCurveTo(mapX + mapW * 0.3, mapY + 90 + m * 35, mapX + mapW * 0.7, mapY + 150 + m * 35, mapX + mapW - 20, mapY + 110 + m * 35);
+          ctx.stroke();
+        }
+
+        // Cannon Carriage (Left side)
+        const canX = mapX + mapW * 0.24;
+        const canY = mapY + mapH * 0.72;
+
+        // Wooden Spoked Wheel
+        ctx.strokeStyle = '#D97706';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(canX, canY, 32, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let sp = 0; sp < 6; sp++) {
+          const sang = (sp * Math.PI) / 3;
+          ctx.beginPath();
+          ctx.moveTo(canX, canY);
+          ctx.lineTo(canX + Math.cos(sang) * 32, canY + Math.sin(sang) * 32);
+          ctx.stroke();
+        }
+
+        // Iron Cannon Barrel
+        ctx.save();
+        ctx.translate(canX + 6, canY - 14);
+        ctx.rotate(-0.48);
+        ctx.fillStyle = '#4B5563';
+        ctx.beginPath();
+        ctx.roundRect(0, -10, 68, 20, [3, 7, 7, 3]);
+        ctx.fill();
+        ctx.strokeStyle = '#9CA3AF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+
+        // Animated Firing Cannonball Ballistics
+        const ballCycle = (currentTime * 1.6) % 1;
+        const ballStartX = canX + 50;
+        const ballStartY = canY - 38;
+        const ballTargetX = mapX + mapW * 0.78;
+        const ballTargetY = mapY + mapH * 0.42;
+
+        const curBx = ballStartX + (ballTargetX - ballStartX) * ballCycle;
+        const curBy = ballStartY + (ballTargetY - ballStartY) * ballCycle - Math.sin(ballCycle * Math.PI) * 110;
+
+        // Ballistic Arc Trail
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(ballStartX, ballStartY);
+        ctx.quadraticCurveTo((ballStartX + ballTargetX) / 2, ballStartY - 150, ballTargetX, ballTargetY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Flying Cannonball
+        ctx.fillStyle = '#111827';
+        ctx.beginPath();
+        ctx.arc(curBx, curBy, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Muzzle blast flame
+        if (ballCycle < 0.2) {
+          ctx.fillStyle = '#FFA500';
+          ctx.beginPath();
+          ctx.arc(ballStartX + 10, ballStartY - 5, 20 * (1 - ballCycle * 5), 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // War Elephant Target Formations (Right side)
+        const eleX = ballTargetX;
+        const eleY = ballTargetY + 40;
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+        ctx.beginPath();
+        ctx.arc(eleX, eleY, 48, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#EF4444';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '800 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('LODI ELEPHANT CORPS', eleX, eleY - 10);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = '900 11px monospace';
+        ctx.fillText('100,000 ROUTED', eleX, eleY + 12);
+
+      } else if (actIndex === 1) {
+        // ACT 2: AKBAR & SELF-DRAWING TAJ MAHAL DOME (GOLDEN AGE)
+        const mapX = targetW * 0.07;
+        const mapY = stageCenterY - stageRadius;
+        const mapW = targetW * 0.86;
+        const mapH = stageRadius * 2;
+
+        ctx.fillStyle = 'rgba(24, 18, 10, 0.88)';
+        ctx.beginPath();
+        ctx.roundRect(mapX, mapY, mapW, mapH, 24);
+        ctx.fill();
+        ctx.strokeStyle = '#F59E0B66';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Starfield
+        for (let st = 0; st < 30; st++) {
+          const sx = mapX + ((st * 97) % mapW);
+          const sy = mapY + 30 + ((st * 53) % (mapH * 0.4));
+          const sa = 0.3 + Math.sin(currentTime * 3 + st) * 0.3;
+          ctx.fillStyle = `rgba(255, 215, 0, ${sa})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const cx = stageCenterX;
+        const baseCy = mapY + mapH * 0.78;
+
+        // Radiant Self-Drawing Taj Mahal Dome
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#F59E0B';
+        ctx.shadowBlur = 18;
+
+        ctx.beginPath();
+        ctx.moveTo(cx - 95, baseCy);
+        ctx.bezierCurveTo(cx - 95, baseCy - 110, cx - 45, baseCy - 175, cx, baseCy - 205);
+        ctx.bezierCurveTo(cx + 45, baseCy - 175, cx + 95, baseCy - 110, cx + 95, baseCy);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Dome finial
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(cx, baseCy - 215, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(cx - 1.5, baseCy - 235, 3, 22);
+
+        // Twin Minarets
+        [-150, 150].forEach(mx => {
+          ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(cx + mx, baseCy + 10);
+          ctx.lineTo(cx + mx, baseCy - 190);
+          ctx.stroke();
+
+          ctx.fillStyle = '#F59E0B';
+          ctx.beginPath();
+          ctx.arc(cx + mx, baseCy - 194, 6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 24.2% World GDP Wealth Telemetry
+        ctx.fillStyle = 'rgba(12, 10, 6, 0.85)';
+        ctx.beginPath();
+        ctx.roundRect(cx - 140, baseCy + 15, 280, 52, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 24px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('24.2% WORLD GDP', cx, baseCy + 44);
+
+        ctx.fillStyle = '#F59E0B';
+        ctx.font = '700 10px monospace';
+        ctx.fillText('SURPASSING ALL WESTERN EUROPE COMBINED', cx, baseCy + 59);
+
+      } else if (actIndex === 2) {
+        // ACT 3: AURANGZEB & 27-YEAR DECCAN WAR OF ATTRITION
+        const mapX = targetW * 0.07;
+        const mapY = stageCenterY - stageRadius;
+        const mapW = targetW * 0.86;
+        const mapH = stageRadius * 2;
+
+        ctx.fillStyle = 'rgba(24, 10, 10, 0.88)';
+        ctx.beginPath();
+        ctx.roundRect(mapX, mapY, mapW, mapH, 24);
+        ctx.fill();
+        ctx.strokeStyle = '#EF444477';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const cx = stageCenterX;
+        const cy = mapY + mapH * 0.46;
+
+        // Rotating Fortress Siege Rings
+        for (let sr = 1; sr <= 3; sr++) {
+          const sRad = 45 * sr;
+          ctx.strokeStyle = sr === 3 ? '#EF4444' : 'rgba(239, 68, 68, 0.3)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, sRad, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Radar Sweep of War
+        const sRot = (currentTime * 2) % (Math.PI * 2);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(sRot);
+        ctx.strokeStyle = '#EF4444';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(135, 0);
+        ctx.stroke();
+        ctx.restore();
+
+        // Fortress Core
+        ctx.fillStyle = '#1A0A0A';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 32, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#EF4444';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '800 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('GOLCONDA', cx, cy - 2);
+        ctx.fillStyle = '#EF4444';
+        ctx.fillText('FORTRESS', cx, cy + 12);
+
+        // Flashing Maratha Cavalry Attack Vectors
+        for (let av = 0; av < 4; av++) {
+          const ang = (av * Math.PI) / 2 + 0.4;
+          const dist = 160;
+          const ax = cx + Math.cos(ang) * dist;
+          const ay = cy + Math.sin(ang) * dist;
+          const pulse = Math.sin(currentTime * 5 + av) * 0.5 + 0.5;
+
+          ctx.strokeStyle = '#F59E0B';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(cx + Math.cos(ang) * (dist * 0.4), cy + Math.sin(ang) * (dist * 0.4));
+          ctx.stroke();
+
+          ctx.fillStyle = '#F59E0B';
+          ctx.beginPath();
+          ctx.arc(ax, ay, 6 + pulse * 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Draining Imperial Treasury Meter
+        const tY = mapY + mapH - 70;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.beginPath();
+        ctx.roundRect(mapX + 24, tY, mapW - 48, 48, 14);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '700 11px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('IMPERIAL TREASURY ATTRITION DRAIN', mapX + 38, tY + 22);
+
+        const drainCycle = Math.max(0.08, 1 - ((currentTime * 0.15) % 1));
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.fillRect(mapX + 38, tY + 28, mapW - 76, 8);
+        ctx.fillStyle = '#EF4444';
+        ctx.fillRect(mapX + 38, tY + 28, (mapW - 76) * drainCycle, 8);
+
+      } else {
+        // ACT 4: 1857 FALL OF DELHI & FINAL EXILE OF BAHADUR SHAH ZAFAR
+        const mapX = targetW * 0.07;
+        const mapY = stageCenterY - stageRadius;
+        const mapW = targetW * 0.86;
+        const mapH = stageRadius * 2;
+
+        ctx.fillStyle = 'rgba(12, 14, 18, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(mapX, mapY, mapW, mapH, 24);
+        ctx.fill();
+        ctx.strokeStyle = '#94A3B855';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const cx = stageCenterX;
+        const cy = mapY + mapH * 0.42;
+
+        // Shattering Golden Peacock Crown Shards
+        const burst = (currentTime * 0.6) % 1;
+        for (let sh = 0; sh < 12; sh++) {
+          const sang = (sh * Math.PI * 2) / 12;
+          const sdist = 30 + burst * 130;
+          const sx = cx + Math.cos(sang) * sdist;
+          const sy = cy + Math.sin(sang) * sdist + burst * 50;
+
+          ctx.save();
+          ctx.translate(sx, sy);
+          ctx.rotate(sang + burst * 3);
+          ctx.fillStyle = sh % 2 === 0 ? '#F59E0B' : '#E2E8F0';
+          ctx.beginPath();
+          ctx.moveTo(-10, -12);
+          ctx.lineTo(14, -6);
+          ctx.lineTo(6, 14);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#D97706';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Red Fort Heavy Iron Gates Closing Inward
+        const gateOpen = Math.max(0.12, 1 - burst * 0.9);
+        const gY = mapY + mapH * 0.72;
+
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(cx - 120, gY - 60, 110 * (1 - gateOpen * 0.4), 80);
+        ctx.fillRect(cx + 10 + 110 * (gateOpen * 0.4), gY - 60, 110 * (1 - gateOpen * 0.4), 80);
+        ctx.strokeStyle = '#94A3B8';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx - 120, gY - 60, 240, 80);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 13px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('RED FORT GATES SEALED // DELHI 1857', cx, gY - 20);
+
+        ctx.fillStyle = '#F59E0B';
+        ctx.font = '700 11px monospace';
+        ctx.fillText('331-YEAR DYNASTIC REIGN CONCLUDED', cx, gY + 4);
+      }
+
+      ctx.restore();
+
+    } else if (visualType === 'radar') {
       // Draw Animated Radar
       ctx.save();
       const radGrad = ctx.createRadialGradient(stageCenterX, stageCenterY, 10, stageCenterX, stageCenterY, stageRadius);
@@ -2313,37 +2715,21 @@ export const AnimationStudioView = ({ onNavigateToApp, currentUser }) => {
     ctx.textAlign = 'center';
     ctx.fillText('@infratechai • Code-Driven Enterprise Cinema', targetW / 2, footerY + 44);
 
-    // Instagram Progress segments
+    // Smooth Continuous Cinema Progress Timeline (No segmented slide cards)
     const progY = 24;
-    const progH = 6;
+    const progH = 5;
     const progTotalW = targetW - 64;
-    const segSpacing = 10;
-    const segW = (progTotalW - segSpacing * (scenes.length - 1)) / scenes.length;
+    const progX = 32;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.beginPath();
+    ctx.roundRect(progX, progY, progTotalW, progH, 2.5);
+    ctx.fill();
 
-    let accTime = 0;
-    for (let s = 0; s < scenes.length; s++) {
-      const segX = 32 + s * (segW + segSpacing);
-      const scDuration = scenes[s].duration;
-      let segFill = 0;
-      if (currentTime >= accTime + scDuration) {
-        segFill = 1;
-      } else if (currentTime > accTime) {
-        segFill = (currentTime - accTime) / scDuration;
-      }
-      accTime += scDuration;
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.beginPath();
-      ctx.roundRect(segX, progY, segW, progH, 3);
-      ctx.fill();
-
-      if (segFill > 0) {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.roundRect(segX, progY, segW * segFill, progH, 3);
-        ctx.fill();
-      }
-    }
+    const overallProgress = totalDuration > 0 ? Math.min(1, Math.max(0, currentTime / totalDuration)) : 0;
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.roundRect(progX, progY, progTotalW * overallProgress, progH, 2.5);
+    ctx.fill();
 
   }, [currentTime, scenes, currentSceneInfo, activeTemplate, aspectRatio, isPlaying]);
 
@@ -2712,14 +3098,14 @@ Return ONLY a valid JSON object matching:
       let synthesizedScenes = [];
 
       // MUGHAL EMPIRE / HISTORICAL DYNASTIES
-      if (lower.includes('mughal') || lower.includes('babur') || lower.includes('akbar') || lower.includes('aurangzeb') || lower.includes('shah jahan') || lower.includes('panipat')) {
+      if (lower.includes('mughal') || lower.includes('muchal') || lower.includes('mogul') || lower.includes('mughul') || lower.includes('empire') || lower.includes('babur') || lower.includes('akbar') || lower.includes('aurangzeb') || lower.includes('shah jahan') || lower.includes('panipat')) {
         styleSlug = 'impasto'; // Oil painting aesthetic fits historical dynasties perfectly
         synthesizedScenes = [
           {
             id: 'sc_1',
             title: 'PANIPAT 1526',
             duration: perSceneDuration,
-            visualType: 'radar',
+            visualType: 'cinema-epic-panipat',
             tag: '1526 FIRST CONQUEST',
             mainText: 'GUNPOWDER REVOLUTION AT PANIPAT.',
             subText: 'Babur crossed the rugged Khyber Pass with Ottoman field artillery, toppling Ibrahim Lodi’s massive war elephant army in hours.',
@@ -2733,7 +3119,7 @@ Return ONLY a valid JSON object matching:
             id: 'sc_2',
             title: 'GOLDEN AGE',
             duration: perSceneDuration,
-            visualType: 'keynote',
+            visualType: 'cinema-epic-golden',
             tag: 'IMPERIAL GOLDEN AGE',
             mainText: 'AKBAR UNIFIES THE SUBCONTINENT.',
             subText: 'Religious syncretism, nine imperial courtiers, and unmatched agrarian wealth propelled the Mughal realm to over 24% of world economic output.',
@@ -2747,7 +3133,7 @@ Return ONLY a valid JSON object matching:
             id: 'sc_3',
             title: 'DECCAN CRISIS',
             duration: perSceneDuration,
-            visualType: 'pipeline',
+            visualType: 'cinema-epic-deccan',
             tag: 'AURANGZEB ATTRITION',
             mainText: 'THE 27-YEAR DECCAN WAR OF ATTRITION.',
             subText: 'Relentless southern military campaigns drained imperial coffers, alienating regional chieftains and igniting fierce Maratha guerrilla resistance.',
@@ -2761,7 +3147,7 @@ Return ONLY a valid JSON object matching:
             id: 'sc_4',
             title: '1857 FALL',
             duration: perSceneDuration,
-            visualType: 'terminal',
+            visualType: 'cinema-epic-fall',
             tag: 'THE FINAL EXILE',
             mainText: 'THE 1857 COLLAPSE OF DELHI.',
             subText: 'Bahadur Shah Zafar stood as the last titular monarch as the East India Company seized Delhi, ending over three centuries of dynastic grandeur.',
@@ -3948,37 +4334,59 @@ Return ONLY a valid JSON object matching:
                 }}
               />
 
-              <div className="w-full flex items-center justify-between pb-4 border-b border-white/10 text-xs text-[#9AA0AC] relative z-10">
+              <div className="w-full flex flex-wrap items-center justify-between pb-4 border-b border-white/10 text-xs text-[#9AA0AC] relative z-10 gap-2">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#F25B5B]" />
                   <span className="w-2.5 h-2.5 rounded-full bg-[#F6A943]" />
                   <span className="w-2.5 h-2.5 rounded-full bg-[#3ECF8E]" />
-                  <span className="font-mono text-[11px] text-white/60 ml-2">
-                    LEMO-OPUSCAR • {aspectRatio} • {activeTemplate.name} • Visual: {currentSceneInfo.scene?.visualType?.toUpperCase() || 'RADAR'}
+                  <span className="font-mono text-[11px] text-white/60 ml-2 hidden sm:inline">
+                    LEMO-OPUSCAR • {aspectRatio} • {activeTemplate.name}
                   </span>
                 </div>
 
-                {isRecording ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-bold text-[10px] animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    REC 60 FPS ({recordingProgress}%)
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {voiceoverEnabled && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[10px] font-bold">
-                        <Mic size={10} /> Voiceover
-                      </span>
-                    )}
-                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/70 font-semibold text-[10px]">
-                      <Camera size={11} className="text-emerald-400" />
-                      <span>1080p Engine</span>
-                    </div>
-                  </div>
-                )}
+                {/* DUAL MODE SELECTOR: Master Rendered Video vs Live Canvas */}
+                <div className="flex items-center p-1 rounded-2xl bg-white/10 border border-white/15">
+                  <button
+                    onClick={() => {
+                      setStageViewMode('rendered-master');
+                      setIsPlaying(false);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      stageViewMode === 'rendered-master'
+                        ? 'bg-emerald-400 text-black shadow-md'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Film size={12} />
+                    <span>Master Video (1-Min MP4 + Voiceover)</span>
+                  </button>
+                  <button
+                    onClick={() => setStageViewMode('procedural-canvas')}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      stageViewMode === 'procedural-canvas'
+                        ? 'bg-emerald-400 text-black shadow-md'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Zap size={12} />
+                    <span>60 FPS Live Engine</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <a
+                    href="/mughal_empire_1min_cinematic_short.mp4"
+                    download="mughal_empire_1min_cinematic_short.mp4"
+                    className="flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold transition-all"
+                    title="Download 1-Minute Rendered MP4"
+                  >
+                    <Download size={11} />
+                    <span>Download MP4</span>
+                  </a>
+                </div>
               </div>
 
-              {/* Canvas Device Frame */}
+              {/* Canvas or Video Device Frame */}
               <div className="py-6 flex items-center justify-center w-full min-h-[540px] relative z-10">
                 <div 
                   className={`relative rounded-[32px] p-2 bg-[#1C1E24] border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] transition-all ${
@@ -3995,12 +4403,29 @@ Return ONLY a valid JSON object matching:
                     </div>
                   )}
 
-                  <canvas
-                    ref={canvasRef}
-                    className="w-full h-full rounded-[24px] object-contain block bg-[#080A0F]"
-                  />
+                  {stageViewMode === 'rendered-master' ? (
+                    <div className="w-full h-full relative rounded-[24px] overflow-hidden bg-black flex items-center justify-center">
+                      <video
+                        ref={masterVideoRef}
+                        src="/mughal_empire_1min_cinematic_short.mp4"
+                        controls
+                        autoPlay
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover rounded-[24px] shadow-2xl"
+                      />
+                    </div>
+                  ) : (
+                    <canvas
+                      ref={canvasRef}
+                      className="w-full h-full rounded-[24px] object-contain block bg-[#080A0F]"
+                    />
+                  )}
                 </div>
               </div>
+
+              {/* Hidden Studio Audio Element for Live Canvas Synchronization */}
+              <audio ref={studioAudioRef} src="/mughal_final_cinematic_audio.mp3" preload="auto" />
 
               {/* Hardware Transport Bar */}
               <div className="w-full pt-4 border-t border-white/10 flex flex-col gap-3.5 relative z-10">
